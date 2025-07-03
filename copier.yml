@@ -1,0 +1,27 @@
+# questions
+fastmcp_app_name:
+  type: str
+  default: "web"
+  help: "The name/folder of your FastMCP Web App. Required to use a python friendly name like web or api_backend"
+
+fastmcp_local_port:
+  type: int
+  default: "8000"
+  help: "The port to run this FastMCP Web App"
+
+copyright_year:
+  type: int
+  default: 2025
+  help: "The current year to register copyright properly in the license file"
+
+base_answers_file:
+  type: str
+  default: ".datarobot/answers/base.yml"
+  help: "Path to the base component answers file"
+
+# Grab the base component answers to re-use answers
+_external_data:
+  base: "{{ base_answers_file }}"
+
+_subdirectory: template
+_answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
