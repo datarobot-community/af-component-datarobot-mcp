@@ -12,5 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# import all fixtures from the base_conftest.py
-from .base_conftest import *
+# import all fixtures from the conftest_base.py and conftest_recipe.py
+from .conftest_base import *
+from .conftest_recipe import *

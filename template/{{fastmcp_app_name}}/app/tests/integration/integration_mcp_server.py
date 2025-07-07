@@ -21,8 +21,7 @@ import os
 
 from app.shared.dr_mcp_server import DataRobotMCPServer
 from app.shared.mcp_instance import mcp
-
-from .mcp_server_stubs import create_test_mock_dr_client
+from app.tests.integration.mcp_server_stubs import create_test_mock_dr_client
 
 
 def _mock_dependencies():
