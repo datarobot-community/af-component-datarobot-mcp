@@ -21,8 +21,8 @@ import os
 
 from mcp_server_stubs import create_test_mock_dr_client
 
-from mcp_instance import mcp
 from shared.dr_mcp_server import DataRobotMCPServer
+from shared.mcp_instance import mcp
 
 
 def _mock_dependencies():

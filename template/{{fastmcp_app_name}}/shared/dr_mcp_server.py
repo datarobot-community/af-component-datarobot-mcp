@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import asyncio
-import logging
-import importlib
 import glob
+import importlib
+import logging
 import os
 
 from mcp.server.fastmcp import FastMCP
@@ -30,6 +30,7 @@ for file in glob.glob(os.path.join(tools_dir, "*.py")):
     if os.path.basename(file) != "__init__.py":
         module_name = f"tools.{os.path.splitext(os.path.basename(file))[0]}"
         importlib.import_module(module_name)
+
 
 class DataRobotMCPServer:
     """

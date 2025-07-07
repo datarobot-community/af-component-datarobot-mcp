@@ -15,9 +15,8 @@ This server allows Large Language Models (LLMs) to interact with DataRobot deplo
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-3. Create a `.env` file in the root directory with the following variables:
+2. Create a `.env` file in the root directory from `.env.sample` with the following variables:
 ```bash
-cat > .env << EOL
 DATAROBOT_API_TOKEN=your_api_token
 DATAROBOT_ENDPOINT=your_datarobot_endpoint
 # AWS_ACCESS_KEY_ID=your_aws_access_key
@@ -30,7 +29,6 @@ DATAROBOT_ENDPOINT=your_datarobot_endpoint
 # MCP_SERVER_LOG_LEVEL=optional_DEBUG_optional
 # MCP_SERVER_HOST=optional_127.0.0.1_optional
 # ROOT_LOGGER_LEVEL=optional_DEBUG_optional
-EOL
 ```
 
 ## Running the Server
@@ -110,9 +108,12 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
 ### Debugging
 Check the the Output of the MCP Logs
 
-### Code Hygiene
-
-#### Sorting, linter and formatter
+### Sorting, linter and formatter
 ```bash
 uv sync --all-extras && uv run ruff check --select I --fix && uv run ruff format
+```
+
+### Run tests
+```bash
+uv sync --all-extras && uv run pytest
 ```

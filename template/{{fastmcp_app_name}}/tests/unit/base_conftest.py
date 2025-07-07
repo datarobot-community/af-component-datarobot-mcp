@@ -14,21 +14,17 @@
 
 # NOTE: This is only to be updated in the base component repository.
 
-from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
-from shared.common import get_sdk_client
 
+@pytest.fixture(autouse=True)
+def mock_datarobot_token():
+    """Fixture to provide mock DataRobot API token.
 
-@pytest.fixture(scope="session")
-def test_data_dir():
-    """Path to the test data directory."""
-    return Path(__file__).parent / "data"
-
-
-# Only used for fixtures, the tests use the MCP session directly
-@pytest.fixture(scope="session")
-def dr_client():
-    """Get DataRobot client for integration tests."""
-    return get_sdk_client()
+    This fixture is automatically used in all unit tests to ensure
+    DataRobot credentials validation passes.
+    """
+    with patch.dict("os.environ", {"DATAROBOT_API_TOKEN": "test-token"}):
+        yield

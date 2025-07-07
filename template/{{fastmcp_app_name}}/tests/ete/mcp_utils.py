@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 
 # Try to load from script directory first, then fall back to root
 script_dir = Path(__file__).resolve().parent
-root_dir = script_dir.parent.parent
+root_dir = script_dir.parent.parent.parent
 script_env = script_dir / ".env"
 root_env = root_dir / ".env"
 

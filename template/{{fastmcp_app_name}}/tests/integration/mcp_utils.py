@@ -24,7 +24,7 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 # Try to load from script directory first, then fall back to root
 _script_dir = Path(__file__).resolve().parent
-_root_dir = _script_dir.parent.parent
+_root_dir = _script_dir.parent.parent.parent
 _script_env = _script_dir / ".env"
 _root_env = _root_dir / ".env"
 

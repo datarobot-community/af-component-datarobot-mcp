@@ -56,5 +56,3 @@ def openai_llm_client() -> LLMMCPClient:
         raise ValueError(f"Missing required OpenAI environment variables: {e}") from e
     except Exception as e:
         raise ConnectionError(f"Failed to create LLM MCP client: {str(e)}") from e
-
-

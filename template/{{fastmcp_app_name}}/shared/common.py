@@ -32,4 +32,3 @@ def get_s3_bucket_info() -> dict[str, str]:
         "bucket": credentials.aws.s3_bucket,
         "prefix": credentials.aws.s3_prefix,
     }
-
