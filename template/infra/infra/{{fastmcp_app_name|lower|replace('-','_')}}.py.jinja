@@ -94,12 +94,12 @@ def get_{{fastmcp_app_name}}_app_files(
     # When we've upgraded to Python 3.13 we can use Path.glob(resuce_symlinks=True)
     # https://docs.python.org/3.13/library/pathlib.html#pathlib.Path.glob
     source_files = []
-    for dirpath, dirnames, filenames in os.walk(web_application_path, followlinks=True):
+    for dirpath, dirnames, filenames in os.walk({{fastmcp_app_name}}_application_path, followlinks=True):
         for filename in filenames:
             if filename == "metadata.yaml":
                 continue
             file_path = os.path.join(dirpath, filename)
-            rel_path = os.path.relpath(file_path, web_application_path)
+            rel_path = os.path.relpath(file_path, {{fastmcp_app_name}}_application_path)
             source_files.append((os.path.abspath(file_path), rel_path))
     # Add the metadata.yaml file
     source_files.append(

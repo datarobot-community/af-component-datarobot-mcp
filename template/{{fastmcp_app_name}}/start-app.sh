@@ -4,7 +4,7 @@
 export UV_CACHE_DIR=.uv
 
 # Change to the app directory
-cd /app
+cd ./app
 
 # Check for required environment variables
 if [ -z "$DATAROBOT_API_TOKEN" ]; then
