@@ -3,21 +3,20 @@
 # Configure environment
 export UV_CACHE_DIR=.uv
 
-# Get the number of CPU cores
-if [ -f /sys/fs/cgroup/cpu.max ] && ! grep -q "max" /sys/fs/cgroup/cpu.max; then
-    read -r max period < /sys/fs/cgroup/cpu.max
-    cpu_cores=$((max / period))
-else
-    cpu_cores=$(nproc)
+# Change to the app directory
+cd /app
+
+# Check for required environment variables
+if [ -z "$DATAROBOT_API_TOKEN" ]; then
+    echo "Error: DATAROBOT_API_TOKEN environment variable is required"
+    exit 1
 fi
 
-# Calculate the recommended number of workers
-workers=$((cpu_cores * 2 + 1))
-
-# Ensure at least 2 workers are started
-if [[ $workers -lt 2 ]]; then
-  workers=2
+if [ -z "$DATAROBOT_ENDPOINT" ]; then
+    echo "Error: DATAROBOT_ENDPOINT environment variable is required"
+    exit 1
 fi
 
-echo "Starting App with ${workers} workers"
-uv run fastmcp run --workers "$workers" --port 8080 --proxy-headers
+# Start the MCP server
+echo "Starting MCP server..."
+uv run main.py

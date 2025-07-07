@@ -14,7 +14,7 @@ tasks:
     desc: "🔨 Run the development server"
     cmds:
       - echo "🔨 Starting development server"
-      - uv run fastmcp dev
+      - uv run app/main.py
 
   lint:
     silent: true

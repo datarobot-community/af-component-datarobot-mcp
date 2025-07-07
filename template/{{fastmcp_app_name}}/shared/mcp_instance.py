@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from shared.mcp_instance import mcp
-from shared.dr_mcp_server import DataRobotMCPServer
+from mcp.server.fastmcp import FastMCP
 
-if __name__ == "__main__":
-    server = DataRobotMCPServer(mcp)
-    server.run()
+from shared.config import get_config
+
+mcp_server_configs = get_config()
+
+mcp = FastMCP(
+    name=mcp_server_configs.name,
+    port=mcp_server_configs.port,
+    log_level=mcp_server_configs.log_level,
+    host=mcp_server_configs.host,
+    stateless_http=True,
+)

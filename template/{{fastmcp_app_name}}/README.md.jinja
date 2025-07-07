@@ -1,74 +1,118 @@
 # {{ _external_data.base.template_name }}: FastMCP App {{ fastmcp_app_name }}
 
-## Tech Stack
+This server allows Large Language Models (LLMs) to interact with DataRobot deployments as tools or agents.
 
-- FastMCP
+## Prerequisites
 
+- uv (Python package installer)
+- DataRobot account and API credentials
+- AWS credentials (if using AWS-related features)
+
+## Setup
+
+1. Install uv if you haven't already:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+3. Create a `.env` file in the root directory with the following variables:
+```bash
+cat > .env << EOL
+DATAROBOT_API_TOKEN=your_api_token
+DATAROBOT_ENDPOINT=your_datarobot_endpoint
+# AWS_ACCESS_KEY_ID=your_aws_access_key
+# AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+# AWS_SESSION_TOKEN=your_aws_session_token
+# AWS_PREDICTIONS_S3_BUCKET=optional_your_aws_predictions_s3_bucket_optional
+# AWS_PREDICTIONS_S3_PREFIX=optional_your_aws_predictions_s3_prefix_optional
+# MCP_SERVER_NAME=optional_your_server_name_optional
+# MCP_SERVER_PORT=optional_8080_optional
+# MCP_SERVER_LOG_LEVEL=optional_DEBUG_optional
+# MCP_SERVER_HOST=optional_127.0.0.1_optional
+# ROOT_LOGGER_LEVEL=optional_DEBUG_optional
+EOL
+```
+
+## Running the Server
+
+Create a virtual environment, install dependencies and run the main server:
+```bash
+uv run app/main.py
+```
 
 ## Development
 
-To start the development server:
+### MCP Client Setup
 
-```
-uv run fastmcp run --reload
-```
-
-To run tests:
-
-```
-uv run pytest --cov --cov-report term --cov-report html
-```
-
-
-To test through a DataRobot like proxy:
-
-Install traefik by downloading from: https://github.com/traefik/traefik/releases
-
-
-Configure it like with `traefik.toml` like:
-
-```toml
-[entryPoints]
-  [entryPoints.http]
-    address = ":9999"
-
-[providers]
-  [providers.file]
-    filename = "routes.toml"
+#### Cursor
+Edit `~/.cursor/mcp.json`
+```json
+{
+  "mcpServers": {
+    "deployments": {
+      "url": "http://localhost:8080/mcp/"
+    },
+    "deployments-remote": {
+      "url": "https://app.datarobot.com/custom_applications/<custom-app-id>/mcp/",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
 ```
 
-Create a `routes.toml` file like:
+#### VSCode
 
-```toml
-[http]
-  [http.middlewares]
-    [http.middlewares.add-foo.addPrefix]
-      prefix = "/{{ fastmcp_app_name }}"
-    
-    [http.middlewares.add-prefix-header.headers]
-      customRequestHeaders = { X-Forwarded-Prefix = "/{{ fastmcp_app_name }}" }
+Edit `~/Library/Application Support/Code/User/settings.json`
 
-  [http.routers]
-    [http.routers.app-http]
-      entryPoints = ["http"]
-      service = "app"
-      rule = "PathPrefix(`/{{ fastmcp_app_name }}`)"
-      middlewares = ["add-prefix-header"]
-
-  [http.services]
-    [http.services.app]
-      [http.services.app.loadBalancer]
-        [[http.services.app.loadBalancer.servers]]
-          url = "http://127.0.0.1:8000"
+```json
+    "mcp": {
+        "servers": {
+            "deployments": {
+                "url": "http://localhost:8080/mcp/",
+                "type": "http"
+            }
+        }
+    }
 ```
 
+#### Claude Desktop
 
-And run locally with:
+```bash
+brew install node
+```
 
-`traefik --configFile=traefik.toml`
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
 
-With the fastmcp running now accessing:
+```json
+{
+  "mcpServers": {
+    "deployments": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://app.datarobot.com/custom_applications/<custom-app-id>/mcp/",
+        "--header",
+        "Authorization: ${AUTH_HEADER}",
+        "--transport",
+        "http"
+      ],
+      "env": {
+        "AUTH_HEADER": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
 
-http://localhost:9999/{{ fastmcp_app_name }}
+### Debugging
+Check the the Output of the MCP Logs
 
-will take you to a proxy compatible installation
+### Code Hygiene
+
+#### Sorting, linter and formatter
+```bash
+uv sync --all-extras && uv run ruff check --select I --fix && uv run ruff format
+```

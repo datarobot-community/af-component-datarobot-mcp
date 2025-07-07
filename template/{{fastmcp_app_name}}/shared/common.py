@@ -12,9 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from shared.mcp_instance import mcp
-from shared.dr_mcp_server import DataRobotMCPServer
+import datarobot as dr
 
-if __name__ == "__main__":
-    server = DataRobotMCPServer(mcp)
-    server.run()
+from shared.credentials import get_credentials
+
+
+def get_sdk_client():
+    credentials = get_credentials()
+    dr.Client(
+        token=credentials.datarobot.api_token, endpoint=credentials.datarobot.endpoint
+    )
+    return dr
+
+
+def get_s3_bucket_info() -> dict[str, str]:
+    """Get S3 bucket configuration."""
+    credentials = get_credentials()
+    return {
+        "bucket": credentials.aws.s3_bucket,
+        "prefix": credentials.aws.s3_prefix,
+    }
+
