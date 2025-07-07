@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from shared.common import get_sdk_client
+from app.shared.common import get_sdk_client
 
 
 @pytest.fixture(scope="session")

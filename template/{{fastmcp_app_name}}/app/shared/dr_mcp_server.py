@@ -21,14 +21,14 @@ import os
 from mcp.server.fastmcp import FastMCP
 from starlette.responses import JSONResponse
 
-from shared.config import get_config
-from shared.credentials import get_credentials
+from .config import get_config
+from .credentials import get_credentials
 
 # Dynamically import all modules from tools to register them with MCP
 tools_dir = os.path.dirname(os.path.dirname(__file__)) + "/tools"
 for file in glob.glob(os.path.join(tools_dir, "*.py")):
     if os.path.basename(file) != "__init__.py":
-        module_name = f"tools.{os.path.splitext(os.path.basename(file))[0]}"
+        module_name = f"app.tools.{os.path.splitext(os.path.basename(file))[0]}"
         importlib.import_module(module_name)
 
 

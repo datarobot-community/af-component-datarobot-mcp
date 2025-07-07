@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tests.integration.common import MockDRClient, MockModel, MockProject
+from app.tests.integration.common import MockDRClient, MockModel, MockProject
 
 
 def create_test_mock_dr_client():

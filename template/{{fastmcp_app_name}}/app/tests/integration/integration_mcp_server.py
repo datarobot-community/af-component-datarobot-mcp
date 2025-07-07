@@ -19,10 +19,10 @@
 import glob
 import os
 
-from mcp_server_stubs import create_test_mock_dr_client
+from app.shared.dr_mcp_server import DataRobotMCPServer
+from app.shared.mcp_instance import mcp
 
-from shared.dr_mcp_server import DataRobotMCPServer
-from shared.mcp_instance import mcp
+from .mcp_server_stubs import create_test_mock_dr_client
 
 
 def _mock_dependencies():
@@ -35,10 +35,12 @@ def _mock_dependencies():
 
         # Monkey patch get_sdk_client in all tool modules
         # Dynamically import all modules from tools to register them with MCP
-        tools_dir = os.path.dirname(os.path.dirname(__file__)) + "/tools"
+        tools_dir = (
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))) + "/tools"
+        )
         for file in glob.glob(os.path.join(tools_dir, "*.py")):
             if os.path.basename(file) != "__init__.py":
-                module_name = f"tools.{os.path.splitext(os.path.basename(file))[0]}"
+                module_name = f"app.tools.{os.path.splitext(os.path.basename(file))[0]}"
                 module = __import__(module_name, fromlist=["get_sdk_client"])
                 setattr(module, "get_sdk_client", lambda: dr_client)
 

@@ -12,16 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mcp.server.fastmcp import FastMCP
+import datarobot as dr
 
-from shared.config import get_config
+from .credentials import get_credentials
 
-mcp_server_configs = get_config()
 
-mcp = FastMCP(
-    name=mcp_server_configs.name,
-    port=mcp_server_configs.port,
-    log_level=mcp_server_configs.log_level,
-    host=mcp_server_configs.host,
-    stateless_http=True,
-)
+def get_sdk_client():
+    credentials = get_credentials()
+    dr.Client(
+        token=credentials.datarobot.api_token, endpoint=credentials.datarobot.endpoint
+    )
+    return dr
+
+
+def get_s3_bucket_info() -> dict[str, str]:
+    """Get S3 bucket configuration."""
+    credentials = get_credentials()
+    return {
+        "bucket": credentials.aws.s3_bucket,
+        "prefix": credentials.aws.s3_prefix,
+    }

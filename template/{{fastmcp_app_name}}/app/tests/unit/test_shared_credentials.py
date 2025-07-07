@@ -14,9 +14,7 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from shared import credentials
+from app.shared import credentials
 
 
 def test_datarobot_credentials_default_endpoint():
