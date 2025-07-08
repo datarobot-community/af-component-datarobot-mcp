@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import datarobot as dr
+from datarobot.context import Context
 
 from .credentials import get_credentials
 
@@ -22,6 +23,8 @@ def get_sdk_client():
     dr.Client(
         token=credentials.datarobot.api_token, endpoint=credentials.datarobot.endpoint
     )
+    # The trafaret setting up a use case in the context, seem to mess up the tool calls
+    Context.use_case = None
     return dr
 
 
