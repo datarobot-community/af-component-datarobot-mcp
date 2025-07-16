@@ -12,9 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from app.base.shared.dr_mcp_server import DataRobotMCPServer
+
+from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
 from app.base.shared.mcp_instance import mcp
 
-if __name__ == "__main__":
-    server = DataRobotMCPServer(mcp)
-    server.run()
+logger = setup_tool_logger(__name__)
+
+
+@mcp.tool()
+@log_tool_execution
+async def tool_example_placeholder(argument1: str) -> str:
+    """
+    A recipe tool example as a placeholder.
+
+    Args:
+        argument1: A placeholder argument.
+    Returns:
+        A placeholder return value.
+    """
+    client = get_sdk_client()
+    client.Project.list()
+    return "placeholder"

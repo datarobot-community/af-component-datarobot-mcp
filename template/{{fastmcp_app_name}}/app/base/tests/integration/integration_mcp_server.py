@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright 2025 DataRobot, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Simple MCP server for integration testing."""
+
 from app.base.shared.dr_mcp_server import DataRobotMCPServer
 from app.base.shared.mcp_instance import mcp
 
-if __name__ == "__main__":
-    server = DataRobotMCPServer(mcp)
+
+def main():
+    """Run the integration test MCP server."""
+
+    server = DataRobotMCPServer(mcp, transport="stdio")
     server.run()
+
+
+if __name__ == "__main__":
+    main()

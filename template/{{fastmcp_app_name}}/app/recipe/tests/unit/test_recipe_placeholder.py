@@ -12,9 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from app.base.shared.dr_mcp_server import DataRobotMCPServer
-from app.base.shared.mcp_instance import mcp
+from unittest.mock import MagicMock, patch
 
-if __name__ == "__main__":
-    server = DataRobotMCPServer(mcp)
-    server.run()
+import pytest
+
+from app.recipe.tools import example
+
+
+@pytest.mark.asyncio
+async def test_example():
+    mock_client = MagicMock()
+    with patch("app.recipe.tools.example.get_sdk_client", return_value=mock_client):
+        result = await example.tool_example_placeholder("test")
+        mock_client.Project.list.assert_called_once()
+        assert "placeholder" in result

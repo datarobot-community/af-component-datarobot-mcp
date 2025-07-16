@@ -12,9 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from app.base.shared.dr_mcp_server import DataRobotMCPServer
-from app.base.shared.mcp_instance import mcp
+from unittest.mock import patch
 
-if __name__ == "__main__":
-    server = DataRobotMCPServer(mcp)
-    server.run()
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def mock_datarobot_token():
+    """Fixture to provide mock DataRobot API token.
+
+    This fixture is automatically used in all unit tests to ensure
+    DataRobot credentials validation passes.
+    """
+    with patch.dict(
+        "os.environ",
+        {
+            "DATAROBOT_API_TOKEN": "test-token",
+            "DATAROBOT_ENDPOINT": "https://app.datarobot.com/api/v2",
+        },
+    ):
+        yield

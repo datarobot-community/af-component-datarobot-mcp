@@ -2,3 +2,6 @@
 
 # Responses
 app/tests/ete/.ete_responses/
+
+# temp files
+temp.txt

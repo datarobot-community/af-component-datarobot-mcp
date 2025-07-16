@@ -1,0 +1,95 @@
+# Copyright 2025 DataRobot, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import asyncio
+import glob
+import importlib
+import logging
+import os
+
+from mcp.server.fastmcp import FastMCP
+from starlette.responses import JSONResponse
+
+from .config import get_config
+from .credentials import get_credentials
+
+
+def _import_modules_from_dir(directory: str, package_prefix: str) -> None:
+    """Dynamically import all modules from a directory."""
+    for file in glob.glob(os.path.join(directory, "*.py")):
+        if os.path.basename(file) != "__init__.py":
+            module_name = (
+                f"{package_prefix}.{os.path.splitext(os.path.basename(file))[0]}"
+            )
+            importlib.import_module(module_name)
+
+
+# Dynamically import all modules from tools and prompts to register them with MCP
+app_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+_import_modules_from_dir(os.path.join(app_dir, "base", "tools"), "app.base.tools")
+_import_modules_from_dir(os.path.join(app_dir, "recipe", "tools"), "app.recipe.tools")
+
+
+class DataRobotMCPServer:
+    """
+    DataRobot MCP server implementation using FastMCP framework.
+    """
+
+    def __init__(self, mcp: FastMCP, transport: str = "streamable-http"):
+        """Initialize the server."""
+        self._logger = logging.getLogger(self.__class__.__name__)
+        self._config = get_config()
+        self._logger.info(f"Config initialized: {self._config}")
+        self._credentials = get_credentials()
+        self._logger.info("Credentials initialized")
+        self._mcp = mcp
+        self._mcp_transport = transport
+
+        if transport == "streamable-http":
+            # Custom apps checks this route to see if the server is running
+            @self._mcp.custom_route("/", methods=["GET"])
+            async def handle_health(_):
+                return JSONResponse(
+                    status_code=200,
+                    content={
+                        "status": "healthy",
+                        "message": "DataRobot MCP Server is running",
+                    },
+                )
+
+    def run(self) -> None:
+        """Run the DataRobot MCP server synchronously."""
+        try:
+            # Validate configuration
+            if not self._credentials.has_datarobot_credentials():
+                self._logger.error("DataRobot credentials not configured")
+                raise ValueError("Missing required DataRobot credentials")
+
+            # List registered tools and prompts before starting server
+            tools = asyncio.run(self._mcp.list_tools())
+            prompts = asyncio.run(self._mcp.list_prompts())
+            self._logger.info(f"Registered tools: {len(tools)}")
+            for tool in tools:
+                self._logger.info(f" - {tool.name}")
+            self._logger.info(f"Registered prompts: {len(prompts)}")
+            for prompt in prompts:
+                self._logger.info(f" - {prompt.name}")
+
+            # Start the server
+            self._logger.info("Starting MCP server...")
+            self._mcp.run(transport=self._mcp_transport)
+
+        except Exception as e:
+            self._logger.error(f"Server error: {e}")
+            raise

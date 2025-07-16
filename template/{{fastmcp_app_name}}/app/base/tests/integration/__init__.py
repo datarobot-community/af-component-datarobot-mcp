@@ -11,10 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from app.base.shared.dr_mcp_server import DataRobotMCPServer
-from app.base.shared.mcp_instance import mcp
-
-if __name__ == "__main__":
-    server = DataRobotMCPServer(mcp)
-    server.run()

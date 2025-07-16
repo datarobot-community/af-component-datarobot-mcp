@@ -1,0 +1,547 @@
+# Copyright 2025 DataRobot, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import asyncio
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+import pytest
+from mcp.client.session import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
+
+from .mcp_utils import get_dr_mcp_server_url, get_openai_llm_client_config
+from .openai_llm_mcp_client import LLMMCPClient
+from .tool_base_ete import (
+    SHOULD_NOT_BE_EMPTY,
+    ETETestExpectations,
+    ToolCallTestExpectations,
+)
+
+
+@pytest.fixture
+@asynccontextmanager
+async def ete_test_mcp_session(headers: dict[str, str] = None):
+    """
+    Create an MCP session for each test.
+    """
+    try:
+        async with streamablehttp_client(
+            url=get_dr_mcp_server_url(), headers=headers or {}
+        ) as (read_stream, write_stream, _):
+            async with ClientSession(read_stream, write_stream) as session:
+                await asyncio.wait_for(session.initialize(), timeout=5)
+                yield session
+    except asyncio.TimeoutError:
+        raise TimeoutError(
+            f"Check if the MCP server is running at {get_dr_mcp_server_url()}"
+        )
+
+
+@pytest.fixture(scope="session")
+def openai_llm_client() -> LLMMCPClient:
+    """
+    Create OpenAI LLM MCP client for the test session.
+    """
+    try:
+        config = get_openai_llm_client_config()
+        return LLMMCPClient(**config)
+    except ValueError as e:
+        raise ValueError(f"Missing required OpenAI environment variables: {e}") from e
+    except Exception as e:
+        raise ConnectionError(f"Failed to create LLM MCP client: {str(e)}") from e
+
+
+# Fixtures for data-related tests
+
+
+@pytest.fixture(scope="session")
+def diabetes_scoring_small_file_path() -> Path:
+    return (
+        Path(__file__).parent.parent.parent / "data" / "10k_diabetes_scoring_small.csv"
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_upload_dataset_to_ai_catalog_success(
+    diabetes_scoring_small_file_path: Path,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="upload_dataset_to_ai_catalog",
+                parameters={"file_path": str(diabetes_scoring_small_file_path)},
+                result="AI Catalog ID: ",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "dataset has been successfully uploaded",
+            "dataset has been uploaded",
+            "successfully",
+            "uploaded",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def nonexistent_file_path() -> str:
+    return "nonexistent_file_path"
+
+
+@pytest.fixture(scope="session")
+def expectations_for_upload_dataset_to_ai_catalog_failure(
+    nonexistent_file_path: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        potential_no_tool_calls=True,
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="upload_dataset_to_ai_catalog",
+                parameters={"file_path": nonexistent_file_path},
+                result=f"File not found: {nonexistent_file_path}",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "File not found",
+            "cannot be found",
+            "not found",
+            "does not exist",
+            nonexistent_file_path,
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_list_ai_catalog_items_success() -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="list_ai_catalog_items",
+                parameters={},
+                result="10k_diabetes_scoring_small.csv",
+            )
+        ],
+        llm_response_content_contains_expectations=[
+            "10k_diabetes_scoring_small.csv",
+            "datasets",
+            "dataset",
+        ],
+    )
+
+
+# Fixtures for deployment-related tests
+
+
+@pytest.fixture(scope="session")
+def deployment_id(classification_project: dict) -> str:
+    return classification_project["deployment_id"]
+
+
+@pytest.fixture(scope="session")
+def expectations_for_list_deployments_success(
+    deployment_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="list_deployments",
+                parameters={},
+                result=f"{deployment_id}: ",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "list of deployments",
+            "deployments",
+            "deployment",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_model_info_from_deployment_success(
+    deployment_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_model_info_from_deployment",
+                parameters={"deployment_id": deployment_id},
+                result=SHOULD_NOT_BE_EMPTY,
+            ),
+        ],
+        llm_response_content_contains_expectations=["model info", "model"],
+    )
+
+
+@pytest.fixture(scope="session")
+def nonexistent_deployment_id() -> str:
+    return "nonexistent_deployment_id"
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_model_info_from_deployment_failure(
+    nonexistent_deployment_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_model_info_from_deployment",
+                parameters={"deployment_id": nonexistent_deployment_id},
+                result="Error executing tool get_model_info_from_deployment: Error in get_model_info_from_deployment: ClientError: 404 client error: {'message': 'Not Found'}",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "Deployment with ID",
+            "Deployment not found",
+            "not found",
+            "does not exist",
+            "unable to",
+            nonexistent_deployment_id,
+        ],
+    )
+
+
+# Fixtures for deployment-info-related tests
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_deployment_features_success(
+    deployment_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_deployment_features",
+                parameters={"deployment_id": deployment_id},
+                result="total_features",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "features",
+            "feature types",
+            "importance scores",
+            "required input features",
+            "feature name",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_generate_prediction_data_template_success(
+    deployment_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="generate_prediction_data_template",
+                parameters={
+                    "deployment_id": deployment_id,
+                    "n_rows": 5,
+                },
+                result=f"# Prediction Data Template for Deployment: {deployment_id}",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "template",
+            "CSV",
+            "sample data",
+            "generated",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_validate_prediction_data_success(
+    deployment_id: str,
+    diabetes_scoring_small_file_path: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="validate_prediction_data",
+                parameters={
+                    "deployment_id": deployment_id,
+                    "file_path": str(diabetes_scoring_small_file_path),
+                },
+                result='"status": "valid"',
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "valid",
+            "suitable",
+            "can be used",
+            "ready for predictions",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_validate_prediction_data_failure(
+    deployment_id: str,
+    nonexistent_file_path: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="validate_prediction_data",
+                parameters={
+                    "deployment_id": deployment_id,
+                    "file_path": nonexistent_file_path,
+                },
+                result=f"[Errno 2] No such file or directory: '{nonexistent_file_path}'",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "file does not exist",
+            "cannot find the file",
+            "not found",
+            nonexistent_file_path,
+        ],
+    )
+
+
+# Fixtures for model-related tests
+
+
+@pytest.fixture(scope="session")
+def classification_project_id(classification_project: dict) -> str:
+    return classification_project["project"].id
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_best_model_success(
+    classification_project_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_best_model",
+                parameters={"project_id": classification_project_id},
+                # checking if the result has the correct keys
+                result={"model": "", "type": "", "metrics": {}, "ui_panel": []},
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "elastic-net regressor",
+            "elastic-net",
+            "Keras",
+            "AUC",
+            "Accuracy",
+            "Balanced Accuracy",
+            "FVE Multinomial",
+            "LogLoss",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def nonexistent_project_id() -> str:
+    return "nonexistent_project_id"
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_best_model_failure(
+    nonexistent_project_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_best_model",
+                parameters={"project_id": nonexistent_project_id},
+                result="Error executing tool get_best_model: Error in get_best_model: ClientError: 404 client error: {'message': 'Not Found'}",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "Project not found",
+            "not valid",
+            "does not exist",
+            "unable to",
+            "not found",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def model_id(classification_project: dict) -> str:
+    return classification_project["model"].id
+
+
+@pytest.fixture(scope="session")
+def dataset_url() -> str:
+    return "https://s3.amazonaws.com/datarobot_public_datasets/10k_diabetes_scoring_small.csv"
+
+
+@pytest.fixture(scope="session")
+def expectations_for_score_dataset_with_model_success(
+    classification_project_id: str, model_id: str, dataset_url: str
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="score_dataset_with_model",
+                parameters={
+                    "project_id": classification_project_id,
+                    "model_id": model_id,
+                    "dataset_url": dataset_url,
+                },
+                result=SHOULD_NOT_BE_EMPTY,
+            ),
+        ],
+        llm_response_content_contains_expectations=["Scoring job started"],
+    )
+
+
+@pytest.fixture(scope="session")
+def nonexistent_model_id() -> str:
+    return "nonexistent_model_id"
+
+
+@pytest.fixture(scope="session")
+def expectations_for_score_dataset_with_model_failure(
+    classification_project_id: str, nonexistent_model_id: str, dataset_url: str
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="score_dataset_with_model",
+                parameters={
+                    "project_id": classification_project_id,
+                    "model_id": nonexistent_model_id,
+                    "dataset_url": dataset_url,
+                },
+                result="Error executing tool score_dataset_with_model: Error in score_dataset_with_model: ClientError: 404 client error: {'message': 'Not Found'}",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "error",
+            "does not exist",
+            "not found",
+            nonexistent_model_id,
+            "issue",
+            "invalid",
+            "not valid",
+            "provide a valid model ID",
+        ],
+    )
+
+
+# Fixtures for project-related tests
+
+
+@pytest.fixture(scope="session")
+def expectations_for_list_projects_success(
+    classification_project_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="list_projects",
+                parameters={},
+                result=f"{classification_project_id}: ",
+            ),
+        ],
+        llm_response_content_contains_expectations=[classification_project_id],
+    )
+
+
+@pytest.fixture(scope="session")
+def classification_dataset_id(classification_project: dict) -> str:
+    return classification_project["source_dataset_id"]
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_project_dataset_by_name_success(
+    classification_project_id: str,
+    classification_dataset_name: str,
+    classification_dataset_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_project_dataset_by_name",
+                parameters={
+                    "project_id": classification_project_id,
+                    "dataset_name": classification_dataset_name,
+                },
+                result={
+                    "dataset_id": classification_dataset_id,
+                    "dataset_type": "source",
+                    "ui_panel": ["dataset"],
+                },
+            ),
+        ],
+        llm_response_content_contains_expectations=[classification_dataset_name],
+    )
+
+
+@pytest.fixture(scope="session")
+def nonexistent_dataset_name() -> str:
+    return "nonexistent_dataset_name"
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_project_dataset_by_name_failure(
+    classification_project_id: str, nonexistent_dataset_name: str
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_project_dataset_by_name",
+                parameters={
+                    "project_id": classification_project_id,
+                    "dataset_name": nonexistent_dataset_name,
+                },
+                result=f"Dataset with name containing '{nonexistent_dataset_name}' not found in project {classification_project_id}.",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "dataset exists in the project",
+            "not found",
+            nonexistent_dataset_name,
+            classification_project_id,
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_project_dataset_by_name_success_with_multiple_calls(
+    classification_project_name: str,
+    classification_dataset_name: str,
+    classification_project_id: str,
+    classification_dataset_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="list_projects",
+                parameters={},
+                result=f"{classification_project_id}: ",
+            ),
+            ToolCallTestExpectations(
+                name="get_project_dataset_by_name",
+                parameters={
+                    "project_id": classification_project_id,
+                    "dataset_name": classification_dataset_name,
+                },
+                result={
+                    "dataset_id": classification_dataset_id,
+                    "dataset_type": "source",
+                    "ui_panel": ["dataset"],
+                },
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            classification_project_name,
+            classification_dataset_name,
+        ],
+    )
