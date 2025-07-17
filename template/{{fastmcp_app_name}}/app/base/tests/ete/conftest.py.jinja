@@ -14,7 +14,7 @@
 
 import asyncio
 from contextlib import asynccontextmanager
-{% if mcp_template_framework == "base_tools_included" %}
+{% if mcp_template_framework == "base_with_tools" %}
 from pathlib import Path
 {% endif %}
 import pytest
@@ -23,7 +23,7 @@ from mcp.client.streamable_http import streamablehttp_client
 
 from .mcp_utils import get_dr_mcp_server_url, get_openai_llm_client_config
 from .openai_llm_mcp_client import LLMMCPClient
-{% if mcp_template_framework == "base_tools_included" %}
+{% if mcp_template_framework == "base_with_tools" %}
 from .tool_base_ete import (
     SHOULD_NOT_BE_EMPTY,
     ETETestExpectations,
@@ -64,7 +64,7 @@ def openai_llm_client() -> LLMMCPClient:
         raise ConnectionError(f"Failed to create LLM MCP client: {str(e)}") from e
 
 
-{% if mcp_template_framework == "base_tools_included" %}
+{% if mcp_template_framework == "base_with_tools" %}
 # Fixtures for data-related tests
 
 

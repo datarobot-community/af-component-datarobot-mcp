@@ -37,7 +37,7 @@ def _import_modules_from_dir(directory: str, package_prefix: str) -> None:
 
 # Dynamically import all modules from tools and prompts to register them with MCP
 app_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-{% if mcp_template_framework == "base_tools_included" %}
+{% if mcp_template_framework == "base_with_tools" %}
 _import_modules_from_dir(os.path.join(app_dir, "base", "tools"), "app.base.tools")
 {% endif %}
 _import_modules_from_dir(os.path.join(app_dir, "recipe", "tools"), "app.recipe.tools")

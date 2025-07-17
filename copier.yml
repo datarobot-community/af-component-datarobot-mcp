@@ -7,7 +7,7 @@ fastmcp_app_name:
 mcp_template_framework:
   type: str
   default: "base"
-  help: "The MCP framework template to start with. Supported frameworks: base, base_tools_included"
+  help: "The MCP framework template to start with. Supported frameworks: base, base_with_tools"
 
 fastmcp_local_port:
   type: int

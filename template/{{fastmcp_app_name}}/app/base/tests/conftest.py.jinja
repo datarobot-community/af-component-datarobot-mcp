@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pathlib import Path
-{% if mcp_template_framework == "base_tools_included" %}
+{% if mcp_template_framework == "base_with_tools" %}
 import datarobot as dr
 {% endif %}
 import pytest
@@ -33,7 +33,7 @@ def dr_client():
     """Get DataRobot client for integration tests."""
     return get_sdk_client()
 
-{% if mcp_template_framework == "base_tools_included" %}
+{% if mcp_template_framework == "base_with_tools" %}
 @pytest.fixture(scope="session")
 def timeseries_regression_dataset_name():
     return "timeseries_regression_train.csv"
