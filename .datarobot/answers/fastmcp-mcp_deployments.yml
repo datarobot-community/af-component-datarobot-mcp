@@ -1,9 +1,7 @@
----
-# Changes here will be overwritten by Copier
-_commit: '5600844'
+_commit: HEAD
 _src_path: .
-base_answers_file: .datarobot/answers/base.yml
-copyright_year: 2025
 fastmcp_app_name: mcp_deployments
-fastmcp_local_port: 8000
 mcp_template_framework: base_with_tools
+port: 8000
+year: 2025
+base_answers_file: .datarobot/answers/base.yml 
