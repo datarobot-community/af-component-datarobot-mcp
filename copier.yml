@@ -33,5 +33,5 @@ _answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
 
 _exclude:
     - "*.j2"
-    - "!**/tools/*.j2"
-    - "!**/tests/**/*.j2"
+    - "!app/base/tools/*.j2"
+    - "!app/base/tests/**/*.j2"
