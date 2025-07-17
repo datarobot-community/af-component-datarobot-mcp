@@ -13,8 +13,9 @@
 # limitations under the License.
 
 from pathlib import Path
-
+{% if mcp_template_framework == "base_tools_included" %}
 import datarobot as dr
+{% endif %}
 import pytest
 
 from app.base.shared.common import get_sdk_client

@@ -33,3 +33,6 @@ _answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
 
 _exclude:
     - "*.j2"
+    {% if mcp_template_framework == "base" %}
+    - "template/{{fastmcp_app_name}}/app/base/tools/*"
+    {% endif %}
