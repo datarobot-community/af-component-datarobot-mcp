@@ -48,7 +48,7 @@ class MCPServerConfig(BaseSettings):
     """MCP Server configuration using pydantic settings."""
 
     name: str = Field(
-        default="Deployments",
+        default="DataRobotMCP",
         validation_alias="MCP_SERVER_NAME",
         description="Name of the MCP server",
     )

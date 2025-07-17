@@ -32,7 +32,7 @@ def dr_client():
     """Get DataRobot client for integration tests."""
     return get_sdk_client()
 
-
+{% if mcp_template_framework == "base_tools_included" %}
 @pytest.fixture(scope="session")
 def timeseries_regression_dataset_name():
     return "timeseries_regression_train.csv"
@@ -379,3 +379,4 @@ def classification_project(
     #     dataset.delete()
     # except Exception as e:
     #     print(f"Warning: Could not delete dataset {dataset.id}: {e}")
+{% endif %}

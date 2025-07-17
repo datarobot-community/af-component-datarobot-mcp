@@ -71,7 +71,7 @@ class LLMMCPClient:
         self.available_tools = [
             {
                 "type": "mcp",
-                "server_label": "deployments",
+                "server_label": "DataRobotMCP",
                 "server_url": get_dr_mcp_server_url(),
                 "require_approval": "never",
             }

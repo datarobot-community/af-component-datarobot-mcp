@@ -62,6 +62,7 @@ def openai_llm_client() -> LLMMCPClient:
         raise ConnectionError(f"Failed to create LLM MCP client: {str(e)}") from e
 
 
+{% if mcp_template_framework == "base_tools_included" %}
 # Fixtures for data-related tests
 
 
@@ -545,3 +546,4 @@ def expectations_for_get_project_dataset_by_name_success_with_multiple_calls(
             classification_dataset_name,
         ],
     )
+{% endif %}

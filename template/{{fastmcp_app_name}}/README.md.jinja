@@ -1,6 +1,6 @@
 # {{ _external_data.base.template_name }}: FastMCP App {{ fastmcp_app_name }}
 
-This server allows Large Language Models (LLMs) to interact with DataRobot deployments as tools or agents.
+This server allows Large Language Models (LLMs) to interact with DataRobot tools.
 
 ## Prerequisites
 
@@ -47,10 +47,10 @@ Edit `~/.cursor/mcp.json`
 ```json
 {
   "mcpServers": {
-    "deployments": {
+    "DataRobotMCP": {
       "url": "http://localhost:8080/mcp/"
     },
-    "deployments-remote": {
+    "DataRobotMCP-remote": {
       "url": "https://app.datarobot.com/custom_applications/<custom-app-id>/mcp/",
       "headers": {
         "Authorization": "Bearer YOUR_API_KEY"
@@ -67,7 +67,7 @@ Edit `~/Library/Application Support/Code/User/settings.json`
 ```json
     "mcp": {
         "servers": {
-            "deployments": {
+            "DataRobotMCP": {
                 "url": "http://localhost:8080/mcp/",
                 "type": "http"
             }
@@ -86,7 +86,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
 ```json
 {
   "mcpServers": {
-    "deployments": {
+    "DataRobotMCP": {
       "command": "npx",
       "args": [
         "-y",
