@@ -1,0 +1,5 @@
+fastmcp_app_name: mcp_deployments
+mcp_template_framework: base_with_tools
+port: 8000
+year: 2025
+base_answers_file: .datarobot/answers/base.yml 
