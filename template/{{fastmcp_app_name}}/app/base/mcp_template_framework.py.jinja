@@ -1,30 +1,30 @@
 {% if mcp_template_framework == "base_with_tools" %}
 
-{% include 'tools/data.py.j2' -%}
-{% include 'tools/deployment_info.py.j2' -%}
-{% include 'tools/deployment.py.j2' -%}
-{% include 'tools/model.py.j2' -%}
-{% include 'tools/predict_realtime.py.j2' -%}
-{% include 'tools/predict.py.j2' -%}
-{% include 'tools/project.py.j2' -%}
-{% include 'tools/training.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tools/data.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tools/deployment_info.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tools/deployment.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tools/model.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tools/predict_realtime.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tools/predict.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tools/project.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tools/training.py.j2' -%}
 
-{% include 'tests/ete/test_data.py.j2' -%}
-{% include 'tests/ete/test_deployment_info.py.j2' -%}
-{% include 'tests/ete/test_deployment.py.j2' -%}
-{% include 'tests/ete/test_model.py.j2' -%}
-{% include 'tests/ete/test_projects.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/ete/test_data.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/ete/test_deployment_info.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/ete/test_deployment.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/ete/test_model.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/ete/test_projects.py.j2' -%}
 
-{% include 'tests/integration/test_deployment_info.py.j2' -%}
-{% include 'tests/integration/test_model.py.j2' -%}
-{% include 'tests/integration/test_predict_realtime.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/integration/test_deployment_info.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/integration/test_model.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/integration/test_predict_realtime.py.j2' -%}
 
-{% include 'tests/unit/test_data.py.j2' -%}
-{% include 'tests/unit/test_deployment_info.py.j2' -%}
-{% include 'tests/unit/test_deployment.py.j2' -%}
-{% include 'tests/unit/test_predict_realtime.py.j2' -%}
-{% include 'tests/unit/test_predict.py.j2' -%}
-{% include 'tests/unit/test_project.py.j2' -%}
-{% include 'tests/unit/test_model.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/unit/test_data.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/unit/test_deployment_info.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/unit/test_deployment.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/unit/test_predict_realtime.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/unit/test_predict.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/unit/test_project.py.j2' -%}
+{% include '{{fastmcp_app_name}}/app/base/tests/unit/test_model.py.j2' -%}
 
 {% endif -%}
