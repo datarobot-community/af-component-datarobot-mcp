@@ -37,3 +37,9 @@ _exclude:
     - "!{{fastmcp_app_name}}/app/base/tests/ete/*.j2"
     - "!{{fastmcp_app_name}}/app/base/tests/integration/*.j2"
     - "!{{fastmcp_app_name}}/app/base/tests/unit/*.j2"
+
+_tasks:
+    - "find {{ _copier_conf.dst_path }}/{{ fastmcp_app_name }}/app/base/tools -name '*.j2' -exec sh -c 'mv "$1" "${1%.j2}.py"' _ {} \;"
+    - "find {{ _copier_conf.dst_path }}/{{ fastmcp_app_name }}/app/base/tests/ete -name '*.j2' -exec sh -c 'mv "$1" "${1%.j2}.py"' _ {} \;"
+    - "find {{ _copier_conf.dst_path }}/{{ fastmcp_app_name }}/app/base/tests/integration -name '*.j2' -exec sh -c 'mv "$1" "${1%.j2}.py"' _ {} \;"
+    - "find {{ _copier_conf.dst_path }}/{{ fastmcp_app_name }}/app/base/tests/unit -name '*.j2' -exec sh -c 'mv "$1" "${1%.j2}.py"' _ {} \;"
