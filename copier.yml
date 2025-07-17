@@ -33,10 +33,10 @@ _answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
 
 _exclude:
     - "*.j2"
-    {% if mcp_template_framework == "base" %}
-    - "template/{{fastmcp_app_name}}/app/base/tools/*.py"
-    {% endif %}
+    - "template/{{fastmcp_app_name}}/app/base/tools/*"
+    - "!template/{{fastmcp_app_name}}/app/base/tools/.gitkeep"
+    - "!template/{{fastmcp_app_name}}/app/base/tools/__init__.py"
 
 _tasks:
-    - condition: "mcp_template_framework == 'base'"
-      command: "touch template/{{fastmcp_app_name}}/app/base/tools/.gitkeep"
+    - condition: "mcp_template_framework == 'base_tools_included'"
+      command: "mkdir -p template/{{fastmcp_app_name}}/app/base/tools"
