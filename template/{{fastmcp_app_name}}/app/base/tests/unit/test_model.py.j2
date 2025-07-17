@@ -87,7 +87,7 @@ async def test_score_dataset_with_model_project_not_found():
     with patch("app.base.tools.model.get_sdk_client") as mock_get_client:
         project_id = "pid"
         mock_client = MagicMock()
-        exception_message = f"404 client error: {{'message': 'Project with ID {project_id} doesn't exist'}}"
+        exception_message = f"404 client error: {{'message': 'Project with ID {project_id} doesn''t exist'}}"
         mock_client.Project.get.side_effect = Exception(exception_message)
         mock_get_client.return_value = mock_client
         with pytest.raises(Exception) as exc_info:
@@ -106,7 +106,7 @@ async def test_score_dataset_with_model_model_not_found():
         mock_project.get_models.return_value = []
         mock_client.Project.get.return_value = mock_project
         exception_message = (
-            "404 client error: {'message': 'Leaderboard Item Not Found'}"
+            "404 client error: {{'message': 'Leaderboard Item Not Found'}}"
         )
         mock_client.Model.get.side_effect = Exception(exception_message)
         mock_get_client.return_value = mock_client
