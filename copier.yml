@@ -33,6 +33,10 @@ _answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
 
 _exclude:
     - "*.j2"
+    - "!{{fastmcp_app_name}}/app/base/tools/*.j2"
+    - "!{{fastmcp_app_name}}/app/base/tests/ete/*.j2"
+    - "!{{fastmcp_app_name}}/app/base/tests/integration/*.j2"
+    - "!{{fastmcp_app_name}}/app/base/tests/unit/*.j2"
 
 _tasks:
     - >
