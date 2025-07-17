@@ -8,13 +8,45 @@ tasks:
     cmds:
       - echo "🔧 Installing dependencies.."
       - uv sync --all-extras --dev
+    silent: true
 
   dev:
-    silent: true
-    desc: "🔨 Run the development server"
+    desc: "🔨 Running MCP locally"
     cmds:
       - echo "🔨 Starting development server"
       - uv run app/main.py
+    silent: true
+
+  dev-background:
+    desc: "🔨 Running MCP locally in background"
+    vars:
+      PORT: '{{.CLI_ARGS | default "8082"}}'
+    cmds:
+      - echo "🔨 Starting development server"
+      - echo "MCP Server running on port {{.PORT}}"
+      # Kill any existing process on the port
+      - |
+        if lsof -i :{{.PORT}} > /dev/null 2>&1; then
+          echo "Killing existing process on port {{.PORT}}"
+          lsof -i :{{.PORT}} | grep LISTEN | awk '{print $2}' | xargs kill -9 2>/dev/null || true
+        fi
+      # Start server
+      - |
+        MCP_SERVER_PORT={{.PORT}} uv run app/main.py &
+      # Wait for server to be ready
+      - |
+        for i in {1..30}; do
+          if curl -s http://localhost:{{.PORT}}/ > /dev/null 2>&1; then
+            echo "Server is ready"
+            break
+          fi
+          if [ $i -eq 30 ]; then
+            echo "Server failed to start"
+            exit 1
+          fi
+          sleep 1
+        done
+    silent: true
 
   lint:
     silent: true
@@ -55,3 +87,29 @@ tasks:
       - echo "📜 Checking license headers"
       - docker run  --rm -v $PWD:/github/workspace ghcr.io/apache/skywalking-eyes/license-eye:eb0e0b091ea41213f712f622797e37526ca1e5d6
         -v info -c .licenserc.yaml header check
+
+  ete:
+    desc: "Run ETE tests"
+    cmds:
+      # Start server with default port 8082
+      - task: dev-background
+      # Set up cleanup to run on exit
+      - defer: |
+          echo "Stopping MCP Server"
+          lsof -i :8082 | grep LISTEN | awk '{print $2}' | xargs kill -9 2>/dev/null || true
+      # Run tests
+      - echo "Running ETE tests"
+      - uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/base/tests/ete/ app/recipe/tests/ete/{{end}} -s -vv
+    silent: true
+  integration:
+    desc: "Run integration tests"
+    cmds:
+      - echo "Running integration tests"
+      - uv sync --all-extras && uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/base/tests/integration/ app/recipe/tests/integration/{{end}} -s -vv
+    silent: true
+  unit:
+    desc: "Run unit tests"
+    cmds:
+      - echo "Running unit tests"
+      - uv sync --all-extras && uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/base/tests/unit/ app/recipe/tests/unit/{{end}} -s -vv
+    silent: true
