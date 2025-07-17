@@ -33,8 +33,3 @@ _answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
 
 _exclude:
     - "*.j2"
-    - "template/{{fastmcp_app_name}}/app/base/tools/*.py"
-
-_tasks:
-    - condition: "mcp_template_framework == 'base_tools_included'"
-      command: "mkdir -p template/{{fastmcp_app_name}}/app/base/tools"

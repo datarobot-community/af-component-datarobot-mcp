@@ -1,5 +1,16 @@
 {% if mcp_template_framework == "base_tools_included" %}
 
+{% include 'template/{{fastmcp_app_name}}/app/base/tools/data.py.j2' -%}
+
+{% include 'template/{{fastmcp_app_name}}/app/base/tools/data.py.j2' -%}
+{% include 'template/{{fastmcp_app_name}}/app/base/tools/deployment_info.py.j2' -%}
+{% include 'template/{{fastmcp_app_name}}/app/base/tools/deployment.py.j2' -%}
+{% include 'template/{{fastmcp_app_name}}/app/base/tools/model.py.j2' -%}
+{% include 'template/{{fastmcp_app_name}}/app/base/tools/predict_realtime.py.j2' -%}
+{% include 'template/{{fastmcp_app_name}}/app/base/tools/predict.py.j2' -%}
+{% include 'template/{{fastmcp_app_name}}/app/base/tools/project.py.j2' -%}
+{% include 'template/{{fastmcp_app_name}}/app/base/tools/training.py.j2' -%}
+
 {% include 'template/{{fastmcp_app_name}}/app/tests/ete/test_data.py.j2' -%}
 {% include 'template/{{fastmcp_app_name}}/app/tests/ete/test_deployment_info.py.j2' -%}
 {% include 'template/{{fastmcp_app_name}}/app/tests/ete/test_deployment.py.j2' -%}
