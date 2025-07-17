@@ -1,3 +1,5 @@
+_commit: HEAD
+_src_path: .
 fastmcp_app_name: mcp_deployments
 mcp_template_framework: base_with_tools
 port: 8000
