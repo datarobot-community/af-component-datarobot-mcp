@@ -32,29 +32,30 @@ _subdirectory: template
 _answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
 
 # Exclude tool and test files when using base framework
-_exclude: "[[ mcp_template_framework == 'base' and [
-    '{{fastmcp_app_name}}/app/base/tools/data.py',
-    '{{fastmcp_app_name}}/app/base/tools/deployment_info.py',
-    '{{fastmcp_app_name}}/app/base/tools/deployment.py',
-    '{{fastmcp_app_name}}/app/base/tools/model.py',
-    '{{fastmcp_app_name}}/app/base/tools/predict_realtime.py',
-    '{{fastmcp_app_name}}/app/base/tools/predict.py',
-    '{{fastmcp_app_name}}/app/base/tools/project.py',
-    '{{fastmcp_app_name}}/app/base/tools/training.py',
-    '{{fastmcp_app_name}}/app/base/tests/ete/test_data.py',
-    '{{fastmcp_app_name}}/app/base/tests/ete/test_deployment_info.py',
-    '{{fastmcp_app_name}}/app/base/tests/ete/test_deployment.py',
-    '{{fastmcp_app_name}}/app/base/tests/ete/test_model.py',
-    '{{fastmcp_app_name}}/app/base/tests/ete/test_projects.py',
-    '{{fastmcp_app_name}}/app/base/tests/integration/test_deployment_info.py',
-    '{{fastmcp_app_name}}/app/base/tests/integration/test_model.py',
-    '{{fastmcp_app_name}}/app/base/tests/integration/test_predict_realtime.py',
-    '{{fastmcp_app_name}}/app/base/tests/unit/test_data.py',
-    '{{fastmcp_app_name}}/app/base/tests/unit/test_deployment_info.py',
-    '{{fastmcp_app_name}}/app/base/tests/unit/test_deployment.py',
-    '{{fastmcp_app_name}}/app/base/tests/unit/test_predict_realtime.py',
-    '{{fastmcp_app_name}}/app/base/tests/unit/test_predict.py',
-    '{{fastmcp_app_name}}/app/base/tests/unit/test_project.py',
-    '{{fastmcp_app_name}}/app/base/tests/unit/test_model.py'
-] or [] ]]"
+_tasks:
+  - when: mcp_template_framework == 'base'
+    exclude:
+      - "*/app/base/tools/data.py"
+      - "*/app/base/tools/deployment_info.py"
+      - "*/app/base/tools/deployment.py"
+      - "*/app/base/tools/model.py"
+      - "*/app/base/tools/predict_realtime.py"
+      - "*/app/base/tools/predict.py"
+      - "*/app/base/tools/project.py"
+      - "*/app/base/tools/training.py"
+      - "*/app/base/tests/ete/test_data.py"
+      - "*/app/base/tests/ete/test_deployment_info.py"
+      - "*/app/base/tests/ete/test_deployment.py"
+      - "*/app/base/tests/ete/test_model.py"
+      - "*/app/base/tests/ete/test_projects.py"
+      - "*/app/base/tests/integration/test_deployment_info.py"
+      - "*/app/base/tests/integration/test_model.py"
+      - "*/app/base/tests/integration/test_predict_realtime.py"
+      - "*/app/base/tests/unit/test_data.py"
+      - "*/app/base/tests/unit/test_deployment_info.py"
+      - "*/app/base/tests/unit/test_deployment.py"
+      - "*/app/base/tests/unit/test_predict_realtime.py"
+      - "*/app/base/tests/unit/test_predict.py"
+      - "*/app/base/tests/unit/test_project.py"
+      - "*/app/base/tests/unit/test_model.py"
 
