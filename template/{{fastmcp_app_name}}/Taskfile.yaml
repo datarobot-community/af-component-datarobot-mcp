@@ -69,8 +69,13 @@ tasks:
     silent: true
     desc: "🧪 Run tests"
     cmds:
-      - echo "🧪 Running tests.."
-      - uv run pytest --cov --cov-report=html --cov-report=term --cov-report xml:.coverage.xml
+      - rm -rf .coverage .coverage.xml htmlcov
+      - echo "🧪 Running Unit tests.."
+      - uv run pytest app/base/tests/unit/ app/recipe/tests/unit/
+      - echo "🧪 Running Integration tests.."
+      - uv run pytest app/base/tests/integration/ app/recipe/tests/integration/
+      - echo "🧪 Running ETE tests.."
+      - uv run pytest app/base/tests/ete/ app/recipe/tests/ete/
 
   copyright:
     aliases: [license]

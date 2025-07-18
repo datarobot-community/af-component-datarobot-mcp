@@ -14,8 +14,7 @@
 
 import asyncio
 from contextlib import asynccontextmanager
-{% if mcp_template_framework == "base_with_tools" %}
-from pathlib import Path
+{% if mcp_template_framework == "base_with_tools" %}from pathlib import Path
 {% endif %}
 import pytest
 from mcp.client.session import ClientSession
@@ -23,8 +22,7 @@ from mcp.client.streamable_http import streamablehttp_client
 
 from .mcp_utils import get_dr_mcp_server_url, get_openai_llm_client_config
 from .openai_llm_mcp_client import LLMMCPClient
-{% if mcp_template_framework == "base_with_tools" %}
-from .tool_base_ete import (
+{% if mcp_template_framework == "base_with_tools" %}from .tool_base_ete import (
     SHOULD_NOT_BE_EMPTY,
     ETETestExpectations,
     ToolCallTestExpectations,
@@ -64,8 +62,7 @@ def openai_llm_client() -> LLMMCPClient:
         raise ConnectionError(f"Failed to create LLM MCP client: {str(e)}") from e
 
 
-{% if mcp_template_framework == "base_with_tools" %}
-# Fixtures for data-related tests
+{% if mcp_template_framework == "base_with_tools" %}# Fixtures for data-related tests
 
 
 @pytest.fixture(scope="session")
@@ -331,12 +328,16 @@ def expectations_for_get_best_model_success(
                 name="get_best_model",
                 parameters={"project_id": classification_project_id},
                 # checking if the result has the correct keys
-                result={"model": "", "type": "", "metrics": {}, "ui_panel": []},
+                result="Best model: Keras Text Convolutional Neural Network Classifier",
+            ),
+            ToolCallTestExpectations(
+                name="list_models",
+                parameters={"project_id": classification_project_id},
+                # checking if the result has the correct keys
+                result={"id": "", "model_type": "", "metrics": {}},
             ),
         ],
         llm_response_content_contains_expectations=[
-            "elastic-net regressor",
-            "elastic-net",
             "Keras",
             "AUC",
             "Accuracy",
@@ -546,6 +547,8 @@ def expectations_for_get_project_dataset_by_name_success_with_multiple_calls(
         llm_response_content_contains_expectations=[
             classification_project_name,
             classification_dataset_name,
+            classification_dataset_id,
+            "Source",
         ],
     )
 {% endif %}

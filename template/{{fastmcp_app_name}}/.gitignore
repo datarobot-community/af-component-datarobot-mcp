@@ -1,7 +1,7 @@
 /metadata.yaml
 
 # Responses
-app/tests/ete/.ete_responses/
+app/base/tests/ete/.ete_responses/
 
 # temp files
 temp.txt

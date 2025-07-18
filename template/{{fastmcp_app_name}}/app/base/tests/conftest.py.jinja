@@ -14,8 +14,7 @@
 
 from pathlib import Path
 {% if mcp_template_framework == "base_with_tools" %}
-import datarobot as dr
-{% endif %}
+import datarobot as dr{% endif %}
 import pytest
 
 from app.base.shared.common import get_sdk_client
@@ -364,7 +363,6 @@ def classification_project(
         "deployment_id": deployment.id,
         "source_dataset_id": dataset.id,
     }
-
     # Cleanup - commented out to preserve deployment for future test runs
     # try:
     #     deployment.delete()
