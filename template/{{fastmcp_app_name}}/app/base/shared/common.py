@@ -20,6 +20,7 @@ from typing import Any, Callable, TypeVar
 import datarobot as dr
 from datarobot.context import Context as DRContext
 from mcp.server.fastmcp import Context  # Correct import for FastMCP Context
+from opentelemetry import trace
 
 from .credentials import get_credentials
 
@@ -118,6 +119,11 @@ def log_tool_execution(func: F) -> F:
             error_msg = log_tool_error(
                 logger, func.__name__, e, args=args, kwargs=kwargs
             )
+
+            if span := trace.get_current_span():
+                span.set_attribute("tool.success", False)
+                span.record_exception(e)
+
             raise MCPError(error_msg)
 
     return wrapper

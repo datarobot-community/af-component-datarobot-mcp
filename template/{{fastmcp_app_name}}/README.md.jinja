@@ -1,6 +1,6 @@
-# {{ _external_data.base.template_name }}: FastMCP App {{ fastmcp_app_name }}
+# {{ fastmcp_app_name }}
 
-This server allows Large Language Models (LLMs) to interact with DataRobot tools.
+FastMCP Server implementation.
 
 ## Prerequisites
 
@@ -29,6 +29,9 @@ DATAROBOT_ENDPOINT=your_datarobot_endpoint
 # MCP_SERVER_LOG_LEVEL=optional_DEBUG_optional
 # MCP_SERVER_HOST=optional_127.0.0.1_optional
 # ROOT_LOGGER_LEVEL=optional_DEBUG_optional
+# OTEL_COLLECTOR_BASE_URL=optional_OTEL_URL_optional
+# OTEL_ENABLED=optional_false_optional
+# OTEL_ENTITY_ID=optional_ID_optional
 ```
 
 ## Running the Server
@@ -47,10 +50,10 @@ Edit `~/.cursor/mcp.json`
 ```json
 {
   "mcpServers": {
-    "DataRobotMCP": {
+    "datarobot-mcp-server": {
       "url": "http://localhost:8080/mcp/"
     },
-    "DataRobotMCP-remote": {
+    "datarobot-mcp-server-remote": {
       "url": "https://app.datarobot.com/custom_applications/<custom-app-id>/mcp/",
       "headers": {
         "Authorization": "Bearer YOUR_API_KEY"
@@ -62,12 +65,12 @@ Edit `~/.cursor/mcp.json`
 
 #### VSCode
 
-Edit `~/Library/Application Support/Code/User/settings.json`
+Edit `~/Library/Application Support/Code/User/mcp.json`
 
 ```json
     "mcp": {
         "servers": {
-            "DataRobotMCP": {
+            "datarobot-mcp-server": {
                 "url": "http://localhost:8080/mcp/",
                 "type": "http"
             }
@@ -86,7 +89,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
 ```json
 {
   "mcpServers": {
-    "DataRobotMCP": {
+    "datarobot-mcp-server": {
       "command": "npx",
       "args": [
         "-y",
@@ -103,6 +106,30 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
     }
   }
 }
+```
+
+### OpenTelemetry Configuration
+The server supports OpenTelemetry for distributed tracing.
+
+#### Features
+- Automatic HTTP client instrumentation (aiohttp, httpx, requests)
+- Tool execution tracing with parameters and results
+- Error tracking and status monitoring
+- Custom attribute support
+
+#### Optional Environment Variables
+```bash
+# OTEL URL (default: OTEL DATAROBOT_ENDPOINT)
+OTEL_COLLECTOR_BASE_URL=https://otel-collector.example.com
+
+# Enable/disable OpenTelemetry (default: true)
+OTEL_ENABLED=true
+
+# Entity ID for tracing (default: "fastmcp-default")
+OTEL_ENTITY_ID=your-entity-id
+
+# Custom attributes as JSON (optional)
+OTEL_ATTRIBUTES='{"deployment": "prod"}'
 ```
 
 ### Debugging

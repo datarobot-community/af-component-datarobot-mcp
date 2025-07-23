@@ -19,6 +19,7 @@ from datarobot.models.model import Model
 
 from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
 from app.base.shared.mcp_instance import mcp
+from app.base.shared.telemetry import trace_tool
 
 logger = setup_tool_logger(__name__)
 
@@ -51,6 +52,7 @@ class ModelEncoder(json.JSONEncoder):
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def get_best_model(project_id: str, metric: Optional[str] = None) -> str:
     """
     Get the best model for a DataRobot project, optionally by a specific metric.
@@ -108,6 +110,7 @@ async def get_best_model(project_id: str, metric: Optional[str] = None) -> str:
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def score_dataset_with_model(
     project_id: str, model_id: str, dataset_url: str
 ) -> str:
@@ -132,6 +135,7 @@ async def score_dataset_with_model(
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def list_models(project_id: str) -> str:
     """
     List all models in a project.

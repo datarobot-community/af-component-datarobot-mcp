@@ -23,6 +23,7 @@ from starlette.responses import JSONResponse
 
 from .config import get_config
 from .credentials import get_credentials
+from .telemetry import initialize_telemetry
 
 
 def _import_modules_from_dir(directory: str, package_prefix: str) -> None:
@@ -57,6 +58,7 @@ class DataRobotMCPServer:
         self._logger.info("Credentials initialized")
         self._mcp = mcp
         self._mcp_transport = transport
+        self._root_tracing_span = initialize_telemetry()
 
         if transport == "streamable-http":
             # Custom apps checks this route to see if the server is running
@@ -94,4 +96,5 @@ class DataRobotMCPServer:
 
         except Exception as e:
             self._logger.error(f"Server error: {e}")
+            self._root_tracing_span.record_exception(e)
             raise

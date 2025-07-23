@@ -26,6 +26,7 @@ from app.base.shared.common import (
     setup_tool_logger,
 )
 from app.base.shared.mcp_instance import mcp
+from app.base.shared.telemetry import trace_tool
 from app.base.shared.utils import generate_presigned_url
 
 logger = setup_tool_logger(__name__)
@@ -93,6 +94,7 @@ def wait_for_preds_and_cache_results(
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def predict_with_deployment_by_file_path(
     deployment_id: str,
     file_path: str,
@@ -124,6 +126,7 @@ async def predict_with_deployment_by_file_path(
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def predict_with_deployment_by_ai_catalog(
     deployment_id: str,
     dataset_id: str,
@@ -154,6 +157,7 @@ async def predict_with_deployment_by_ai_catalog(
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def predict_with_deployment_from_project_data(
     deployment_id: str,
     project_id: str,
@@ -196,6 +200,7 @@ async def predict_with_deployment_from_project_data(
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def get_prediction_explanations(
     project_id: str,
     model_id: str,

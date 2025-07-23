@@ -18,6 +18,8 @@ from dotenv import load_dotenv
 from pydantic import AliasChoices, AliasPath, Field
 from pydantic_settings import BaseSettings
 
+from app.base.shared.constants import DEFAULT_DATAROBOT_ENDPOINT
+
 load_dotenv(verbose=True, override=True)
 
 
@@ -31,7 +33,7 @@ class DataRobotCredentials(DRCredentials):
         validation_alias="DATAROBOT_API_TOKEN", description="DataRobot API token"
     )
     endpoint: str = Field(
-        default="https://app.datarobot.com/api/v2",
+        default=DEFAULT_DATAROBOT_ENDPOINT,
         validation_alias="DATAROBOT_ENDPOINT",
         description="DataRobot API endpoint",
     )

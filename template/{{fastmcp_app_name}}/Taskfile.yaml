@@ -32,6 +32,7 @@ tasks:
         fi
       # Start server
       - |
+        OTEL_ATTRIBUTES='{"environment":"test","service.instance.id":"ete-tests"}' \
         MCP_SERVER_PORT={{.PORT}} uv run app/main.py &
       # Wait for server to be ready
       - |
@@ -70,12 +71,10 @@ tasks:
     desc: "🧪 Run tests"
     cmds:
       - rm -rf .coverage .coverage.xml htmlcov
-      - echo "🧪 Running Unit tests.."
-      - uv run pytest app/base/tests/unit/ app/recipe/tests/unit/
-      - echo "🧪 Running Integration tests.."
-      - uv run pytest app/base/tests/integration/ app/recipe/tests/integration/
-      - echo "🧪 Running ETE tests.."
-      - uv run pytest app/base/tests/ete/ app/recipe/tests/ete/
+      - echo "🧪 Running all tests.."
+      - task unit
+      - task integration
+      - task ete
 
   copyright:
     aliases: [license]

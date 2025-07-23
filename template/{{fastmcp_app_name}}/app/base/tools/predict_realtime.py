@@ -30,6 +30,7 @@ from app.base.shared.common import (
     setup_tool_logger,
 )
 from app.base.shared.mcp_instance import mcp
+from app.base.shared.telemetry import trace_tool
 from app.base.shared.utils import PredictionResponse, predictions_result_response
 
 logger = setup_tool_logger(__name__)
@@ -48,6 +49,7 @@ def make_output_settings():
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def predict_with_deployment_by_ai_catalog_rt(
     deployment_id: str,
     dataset_id: str,
@@ -84,6 +86,7 @@ async def predict_with_deployment_by_ai_catalog_rt(
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def predict_realtime(
     deployment_id: str,
     file_path: str = None,

@@ -13,12 +13,16 @@
 # limitations under the License.
 
 import logging
+import os
 import re
-from typing import Optional
+from typing import Any, Dict, Optional
+from urllib.parse import urlparse, urlunparse
 
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings
+
+from app.base.shared.constants import DEFAULT_DATAROBOT_ENDPOINT
 
 load_dotenv(verbose=True, override=True)
 
@@ -44,11 +48,44 @@ class SecretRedactingFormatter(logging.Formatter):
         return message
 
 
+class OpenTelemetrySettings(BaseSettings):
+    """OpenTelemetry settings."""
+
+    def _get_default_otel_endpoint() -> str:
+        """Get the default OpenTelemetry endpoint e.g. https://app.datarobot.com/otel."""
+        parsed_url = urlparse(
+            os.environ.get("DATAROBOT_ENDPOINT", DEFAULT_DATAROBOT_ENDPOINT)
+        )
+        stripped_url = (parsed_url.scheme, parsed_url.netloc, "otel", "", "", "")
+        return urlunparse(stripped_url)
+
+    collector_base_url: str = Field(
+        default=_get_default_otel_endpoint(),
+        validation_alias="OTEL_COLLECTOR_BASE_URL",
+        description="Base URL for the OpenTelemetry collector",
+    )
+    entity_id: str = Field(
+        default="mcp-default",
+        validation_alias="OTEL_ENTITY_ID",
+        description="Entity ID for tracing",
+    )
+    attributes: Dict[str, Any] = Field(
+        default={},
+        validation_alias="OTEL_ATTRIBUTES",
+        description="Attributes for tracing",
+    )
+    enabled: bool = Field(
+        default=True,
+        validation_alias="OTEL_ENABLED",
+        description="Enable/disable OpenTelemetry",
+    )
+
+
 class MCPServerConfig(BaseSettings):
     """MCP Server configuration using pydantic settings."""
 
     name: str = Field(
-        default="DataRobotMCP",
+        default="datarobot-mcp-server",
         validation_alias="MCP_SERVER_NAME",
         description="Name of the MCP server",
     )
@@ -72,6 +109,7 @@ class MCPServerConfig(BaseSettings):
         validation_alias="ROOT_LOGGER_LEVEL",
         description="Root logger level",
     )
+    otel: OpenTelemetrySettings = OpenTelemetrySettings()
 
     def setup_logging(self):
         """Configure logging with secret redaction and set log level."""

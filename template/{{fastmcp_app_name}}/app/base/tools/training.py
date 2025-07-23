@@ -23,6 +23,7 @@ from datarobot.errors import ClientError
 
 from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
 from app.base.shared.mcp_instance import mcp
+from app.base.shared.telemetry import trace_tool
 
 logger = setup_tool_logger(__name__)
 
@@ -55,6 +56,7 @@ class DatasetInsight:
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def analyze_dataset(dataset_id: str) -> str:
     """
     Analyze a dataset to understand its structure and potential use cases.
@@ -115,6 +117,7 @@ async def analyze_dataset(dataset_id: str) -> str:
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def suggest_use_cases(dataset_id: str) -> str:
     """
     Analyze a dataset and suggest potential machine learning use cases.
@@ -150,6 +153,7 @@ async def suggest_use_cases(dataset_id: str) -> str:
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def get_exploratory_insights(
     dataset_id: str, target_col: Optional[str] = None
 ) -> str:
@@ -470,6 +474,7 @@ def _analyze_target_for_use_cases(
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def start_autopilot(
     target: str,
     project_id: Optional[str] = None,
@@ -545,6 +550,7 @@ async def start_autopilot(
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def get_model_roc_curve(
     project_id: str, model_id: str, source: str = "validation"
 ) -> str:
@@ -603,6 +609,7 @@ async def get_model_roc_curve(
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def get_model_feature_impact(project_id: str, model_id: str) -> str:
     """
     Get detailed feature impact for a specific model.
@@ -630,6 +637,7 @@ async def get_model_feature_impact(project_id: str, model_id: str) -> str:
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def get_model_lift_chart(
     project_id: str, model_id: str, source: str = "validation"
 ) -> str:

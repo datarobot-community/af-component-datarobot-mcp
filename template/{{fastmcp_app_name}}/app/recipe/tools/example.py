@@ -15,12 +15,14 @@
 
 from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
 from app.base.shared.mcp_instance import mcp
+from app.base.shared.telemetry import trace_tool
 
 logger = setup_tool_logger(__name__)
 
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def tool_example_placeholder(argument1: str) -> str:
     """
     A recipe tool example as a placeholder.

@@ -16,12 +16,14 @@ import json
 
 from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
 from app.base.shared.mcp_instance import mcp
+from app.base.shared.telemetry import trace_tool
 
 logger = setup_tool_logger(__name__)
 
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def list_projects() -> str:
     """
     List all DataRobot projects for the authenticated user.
@@ -38,6 +40,7 @@ async def list_projects() -> str:
 
 @mcp.tool()
 @log_tool_execution
+@trace_tool()
 async def get_project_dataset_by_name(project_id: str, dataset_name: str) -> str:
     """
     Get a dataset ID by name for a given project.

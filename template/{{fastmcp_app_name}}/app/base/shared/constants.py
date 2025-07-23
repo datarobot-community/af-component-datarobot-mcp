@@ -14,3 +14,4 @@
 
 
 MAX_INLINE_SIZE = 1024 * 1024  # 1MB
+DEFAULT_DATAROBOT_ENDPOINT = "https://app.datarobot.com/api/v2"

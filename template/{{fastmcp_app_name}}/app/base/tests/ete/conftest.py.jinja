@@ -485,7 +485,10 @@ def expectations_for_get_project_dataset_by_name_success(
                 },
             ),
         ],
-        llm_response_content_contains_expectations=[classification_dataset_name],
+        llm_response_content_contains_expectations=[
+            classification_dataset_name,
+            "source",
+        ],
     )
 
 
