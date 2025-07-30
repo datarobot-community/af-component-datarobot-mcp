@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from dotenv import load_dotenv
 
-from app.base.shared import common
+from app.base.core import common
 from app.base.tools import deployment
 
 
@@ -148,7 +148,7 @@ async def test_get_sdk_client_falls_back_to_env():
     ctx.request.headers = {}
     with (
         patch("datarobot.Client") as mock_client,
-        patch("app.base.shared.common.get_credentials") as mock_get_creds,
+        patch("app.base.core.common.get_credentials") as mock_get_creds,
     ):
         mock_creds = MagicMock()
         mock_creds.datarobot.api_token = "env-token"
@@ -156,7 +156,7 @@ async def test_get_sdk_client_falls_back_to_env():
         mock_get_creds.return_value = mock_creds
         common.get_sdk_client(ctx)
         mock_client.assert_called_once()
-        args, kwargs = mock_client.call_args
+        _, kwargs = mock_client.call_args
         assert kwargs["token"] == "env-token"
 
 
@@ -165,7 +165,7 @@ async def test_get_sdk_client_no_ctx():
     # No context provided, should use environment token
     with (
         patch("datarobot.Client") as mock_client,
-        patch("app.base.shared.common.get_credentials") as mock_get_creds,
+        patch("app.base.core.common.get_credentials") as mock_get_creds,
     ):
         mock_creds = MagicMock()
         mock_creds.datarobot.api_token = "env-token"
@@ -173,5 +173,5 @@ async def test_get_sdk_client_no_ctx():
         mock_get_creds.return_value = mock_creds
         common.get_sdk_client()
         mock_client.assert_called_once()
-        args, kwargs = mock_client.call_args
+        _, kwargs = mock_client.call_args
         assert kwargs["token"] == "env-token"

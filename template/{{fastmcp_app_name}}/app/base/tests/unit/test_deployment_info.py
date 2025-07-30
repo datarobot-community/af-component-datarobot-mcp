@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from app.base.shared.common import MCPError
+from app.base.core.common import MCPError
 from app.base.tools.deployment_info import (
     generate_prediction_data_template,
     get_deployment_features,

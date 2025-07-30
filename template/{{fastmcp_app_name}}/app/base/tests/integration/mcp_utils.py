@@ -44,7 +44,8 @@ def integration_test_mcp_server_params():
         "DATAROBOT_ENDPOINT": os.environ.get("DATAROBOT_ENDPOINT")
         or "https://test.datarobot.com/api/v2",
         "MCP_SERVER_LOG_LEVEL": os.environ.get("MCP_SERVER_LOG_LEVEL") or "WARNING",
-        "ROOT_LOGGER_LEVEL": os.environ.get("ROOT_LOGGER_LEVEL") or "WARNING",
+        "APP_LOG_LEVEL": os.environ.get("APP_LOG_LEVEL") or "WARNING",
+        "OTEL_ENABLED": os.environ.get("OTEL_ENABLED") or "false",
     }
 
     server_script = str(_script_dir / "integration_mcp_server.py")

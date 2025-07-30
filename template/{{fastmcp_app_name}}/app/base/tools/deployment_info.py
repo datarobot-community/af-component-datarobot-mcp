@@ -16,20 +16,18 @@
 
 import io
 import json
+import logging
 from datetime import datetime, timedelta
 
 import pandas as pd
 
-from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
-from app.base.shared.mcp_instance import mcp
-from app.base.shared.telemetry import trace_tool
+from app.base.core.common import get_sdk_client
+from app.base.core.mcp_instance import dr_mcp_tool
 
-logger = setup_tool_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_deployment_info(deployment_id: str) -> str:
     """
     Retrieve information about the deployment, including the list of
@@ -108,9 +106,7 @@ async def get_deployment_info(deployment_id: str) -> str:
     return json.dumps(result, indent=2)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def generate_prediction_data_template(deployment_id: str, n_rows: int = 1) -> str:
     """
     Generate a template CSV with the correct structure for making predictions.
@@ -215,9 +211,7 @@ async def generate_prediction_data_template(deployment_id: str, n_rows: int = 1)
     return result
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def validate_prediction_data(
     deployment_id: str, file_path: str = None, csv_string: str = None
 ) -> str:
@@ -353,9 +347,7 @@ async def validate_prediction_data(
     return json.dumps(validation_report, indent=2)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_deployment_features(deployment_id: str) -> str:
     """
     Retrieve only the features list for a deployment, as JSON string.

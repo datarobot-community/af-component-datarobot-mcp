@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from app.base.core.dr_mcp_server import DataRobotMCPServer
-from app.base.core.mcp_instance import mcp
+import os
 
-if __name__ == "__main__":
-    server = DataRobotMCPServer(mcp)
-    server.run()
+import pulumi_datarobot
+
+MCP_RECIPE_RUNTIME_PARAMETERS: list[
+    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs
+] = [
+    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+        key="recipe_name",
+        type="string",
+        value=os.getenv("RECIPE_NAME", "default-recipe"),
+    ),
+]

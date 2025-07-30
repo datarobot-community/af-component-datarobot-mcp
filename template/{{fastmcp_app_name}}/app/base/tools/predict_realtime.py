@@ -14,6 +14,7 @@
 
 import io
 import json
+import logging
 import uuid
 from datetime import datetime
 from typing import Optional, Union
@@ -23,17 +24,14 @@ from datarobot_predict import TimeSeriesType
 from datarobot_predict.deployment import predict as dr_predict
 from pydantic import BaseModel
 
-from app.base.shared.common import (
+from app.base.core.common import (
     get_s3_bucket_info,
     get_sdk_client,
-    log_tool_execution,
-    setup_tool_logger,
 )
-from app.base.shared.mcp_instance import mcp
-from app.base.shared.telemetry import trace_tool
-from app.base.shared.utils import PredictionResponse, predictions_result_response
+from app.base.core.mcp_instance import dr_mcp_tool
+from app.base.core.utils import PredictionResponse, predictions_result_response
 
-logger = setup_tool_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class BucketInfo(BaseModel):
@@ -47,9 +45,7 @@ def make_output_settings():
     return BucketInfo(bucket=bucket_info["bucket"], key=s3_key)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def predict_with_deployment_by_ai_catalog_rt(
     deployment_id: str,
     dataset_id: str,
@@ -84,9 +80,7 @@ async def predict_with_deployment_by_ai_catalog_rt(
     )
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def predict_realtime(
     deployment_id: str,
     file_path: str = None,

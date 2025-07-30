@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from mcp.server.fastmcp import FastMCP
 
-from app.base.shared.dr_mcp_server import DataRobotMCPServer
+from app.base.core.dr_mcp_server import DataRobotMCPServer
 
 
 @pytest.fixture
@@ -35,6 +35,7 @@ def mock_config():
     """Create a mock configuration."""
     mock = MagicMock()
     mock.has.return_value = True
+    mock.app_log_level = "INFO"
     return mock
 
 
@@ -53,7 +54,7 @@ class TestDataRobotMCPServer:
         assert server._mcp == mock_mcp
         assert server._mcp_transport == "stdio"
 
-    @patch("app.base.shared.dr_mcp_server.get_credentials")
+    @patch("app.base.core.dr_mcp_server.get_credentials")
     def test_run_missing_config(self, mock_get_credentials, mock_mcp):
         """Test server run with missing configuration."""
         mock_creds = MagicMock()
@@ -64,7 +65,7 @@ class TestDataRobotMCPServer:
         with pytest.raises(ValueError, match="Missing required DataRobot credentials"):
             server.run()
 
-    @patch("app.base.shared.dr_mcp_server.get_config")
+    @patch("app.base.core.dr_mcp_server.get_config")
     def test_run_success(self, mock_get_config, mock_mcp, mock_config):
         """Test successful server run."""
         mock_get_config.return_value = mock_config
@@ -78,7 +79,7 @@ class TestDataRobotMCPServer:
         # Verify tools were listed
         mock_mcp.list_tools.assert_called_once()
 
-    @patch("app.base.shared.dr_mcp_server.get_config")
+    @patch("app.base.core.dr_mcp_server.get_config")
     def test_run_server_error(self, mock_get_config, mock_mcp, mock_config):
         """Test server run with MCP error."""
         mock_get_config.return_value = mock_config
@@ -88,7 +89,7 @@ class TestDataRobotMCPServer:
         with pytest.raises(Exception, match="Server failed to start"):
             server.run()
 
-    @patch("app.base.shared.dr_mcp_server.get_config")
+    @patch("app.base.core.dr_mcp_server.get_config")
     def test_run_lists_tools(self, mock_get_config, mock_mcp, mock_config):
         """Test that tools are listed before server start."""
         mock_get_config.return_value = mock_config

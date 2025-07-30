@@ -1,10 +1,75 @@
 import inspect
+from pathlib import Path
 
 import pytest
 
 from .tool_base_ete import (
+    ETETestExpectations,
     ToolBaseE2E,
+    ToolCallTestExpectations,
 )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_upload_dataset_to_ai_catalog_success(
+    diabetes_scoring_small_file_path: Path,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="upload_dataset_to_ai_catalog",
+                parameters={"file_path": str(diabetes_scoring_small_file_path)},
+                result="AI Catalog ID: ",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "dataset has been successfully uploaded",
+            "dataset has been uploaded",
+            "successfully",
+            "uploaded",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_upload_dataset_to_ai_catalog_failure(
+    nonexistent_file_path: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        potential_no_tool_calls=True,
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="upload_dataset_to_ai_catalog",
+                parameters={"file_path": nonexistent_file_path},
+                result=f"File not found: {nonexistent_file_path}",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "File not found",
+            "cannot be found",
+            "not found",
+            "does not exist",
+            nonexistent_file_path,
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_list_ai_catalog_items_success() -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="list_ai_catalog_items",
+                parameters={},
+                result="10k_diabetes_scoring_small.csv",
+            )
+        ],
+        llm_response_content_contains_expectations=[
+            "10k_diabetes_scoring_small.csv",
+            "datasets",
+            "dataset",
+        ],
+    )
 
 
 @pytest.mark.asyncio

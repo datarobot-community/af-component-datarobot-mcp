@@ -41,14 +41,26 @@ _exclude:
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/predict.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/project.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/training.py{% endif %}"
+
+  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/prompts/deployment_info.py{% endif %}"
+
+  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/resources/config.py{% endif %}"
+
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_data.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_deployment_info.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_deployment.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_model.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_projects.py{% endif %}"
+  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_config_resource.py{% endif %}"
+  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_deployment_info_prompts.py{% endif %}"
+
+
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/integration/test_deployment_info.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/integration/test_model.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/integration/test_predict_realtime.py{% endif %}"
+  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/integration/test_config_resource.py{% endif %}"
+  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/integration/test_deployment_info_prompts.py{% endif %}"
+
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_data.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_deployment_info.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_deployment.py{% endif %}"
@@ -56,4 +68,5 @@ _exclude:
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_predict.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_project.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_model.py{% endif %}"
+  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_training.py{% endif %}"
 

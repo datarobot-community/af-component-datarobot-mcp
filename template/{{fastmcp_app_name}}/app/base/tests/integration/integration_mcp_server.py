@@ -16,8 +16,8 @@
 
 """Simple MCP server for integration testing."""
 
-from app.base.shared.dr_mcp_server import DataRobotMCPServer
-from app.base.shared.mcp_instance import mcp
+from app.base.core.dr_mcp_server import DataRobotMCPServer
+from app.base.core.mcp_instance import mcp
 
 
 def main():

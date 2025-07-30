@@ -21,8 +21,12 @@ import os
 from mcp.server.fastmcp import FastMCP
 from starlette.responses import JSONResponse
 
+from app.recipe.core.recipe_config import get_recipe_config
+from app.recipe.core.recipe_credentials import get_recipe_credentials
+
 from .config import get_config
 from .credentials import get_credentials
+from .logging import MCPLogging
 from .telemetry import initialize_telemetry
 
 
@@ -40,8 +44,18 @@ def _import_modules_from_dir(directory: str, package_prefix: str) -> None:
 app_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 {% if mcp_template_framework == "base_with_tools" %}
 _import_modules_from_dir(os.path.join(app_dir, "base", "tools"), "app.base.tools")
+_import_modules_from_dir(os.path.join(app_dir, "base", "prompts"), "app.base.prompts")
+_import_modules_from_dir(
+    os.path.join(app_dir, "base", "resources"), "app.base.resources"
+)
 {% endif %}
 _import_modules_from_dir(os.path.join(app_dir, "recipe", "tools"), "app.recipe.tools")
+_import_modules_from_dir(
+    os.path.join(app_dir, "recipe", "prompts"), "app.recipe.prompts"
+)
+_import_modules_from_dir(
+    os.path.join(app_dir, "recipe", "resources"), "app.recipe.resources"
+)
 
 
 class DataRobotMCPServer:
@@ -51,11 +65,16 @@ class DataRobotMCPServer:
 
     def __init__(self, mcp: FastMCP, transport: str = "streamable-http"):
         """Initialize the server."""
-        self._logger = logging.getLogger(self.__class__.__name__)
         self._config = get_config()
+        MCPLogging(self._config.app_log_level)
+        self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.info(f"Config initialized: {self._config}")
         self._credentials = get_credentials()
         self._logger.info("Credentials initialized")
+        self._recipe_config = get_recipe_config()
+        self._logger.info(f"Recipe config initialized: {self._recipe_config}")
+        self._recipe_credentials = get_recipe_credentials()
+        self._logger.info("Recipe credentials initialized")
         self._mcp = mcp
         self._mcp_transport = transport
         self._root_tracing_span = initialize_telemetry()
@@ -83,12 +102,17 @@ class DataRobotMCPServer:
             # List registered tools and prompts before starting server
             tools = asyncio.run(self._mcp.list_tools())
             prompts = asyncio.run(self._mcp.list_prompts())
+            resources = asyncio.run(self._mcp.list_resources())
+
             self._logger.info(f"Registered tools: {len(tools)}")
             for tool in tools:
                 self._logger.info(f" - {tool.name}")
             self._logger.info(f"Registered prompts: {len(prompts)}")
             for prompt in prompts:
                 self._logger.info(f" - {prompt.name}")
+            self._logger.info(f"Registered resources: {len(resources)}")
+            for resource in resources:
+                self._logger.info(f" - {resource.name}")
 
             # Start the server
             self._logger.info("Starting MCP server...")

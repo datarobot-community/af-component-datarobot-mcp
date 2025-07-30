@@ -13,15 +13,15 @@
 # limitations under the License.
 
 import json
+import logging
 from typing import Optional
 
 from datarobot.models.model import Model
 
-from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
-from app.base.shared.mcp_instance import mcp
-from app.base.shared.telemetry import trace_tool
+from app.base.core.common import get_sdk_client
+from app.base.core.mcp_instance import dr_mcp_tool
 
-logger = setup_tool_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def model_to_dict(model):
@@ -50,9 +50,7 @@ class ModelEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_best_model(project_id: str, metric: Optional[str] = None) -> str:
     """
     Get the best model for a DataRobot project, optionally by a specific metric.
@@ -108,9 +106,7 @@ async def get_best_model(project_id: str, metric: Optional[str] = None) -> str:
     return f"Best model: {best_model.model_type}{metric_info}"
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def score_dataset_with_model(
     project_id: str, model_id: str, dataset_url: str
 ) -> str:
@@ -133,9 +129,7 @@ async def score_dataset_with_model(
     return f"Scoring job started: {job.id}"
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def list_models(project_id: str) -> str:
     """
     List all models in a project.

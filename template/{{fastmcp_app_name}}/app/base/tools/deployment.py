@@ -13,17 +13,15 @@
 # limitations under the License.
 
 import json
+import logging
 
-from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
-from app.base.shared.mcp_instance import mcp
-from app.base.shared.telemetry import trace_tool
+from app.base.core.common import get_sdk_client
+from app.base.core.mcp_instance import dr_mcp_tool
 
-logger = setup_tool_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def list_deployments() -> str:
     """
     List all DataRobot deployments for the authenticated user.
@@ -41,9 +39,7 @@ async def list_deployments() -> str:
     return result
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_model_info_from_deployment(deployment_id: str) -> str:
     """
     Get model info associated with a given deployment ID.
@@ -59,9 +55,7 @@ async def get_model_info_from_deployment(deployment_id: str) -> str:
     return json.dumps(deployment.model, indent=2)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def deploy_model(model_id: str, label: str, description: str = "") -> str:
     """
     Deploy a model by creating a new DataRobot deployment.

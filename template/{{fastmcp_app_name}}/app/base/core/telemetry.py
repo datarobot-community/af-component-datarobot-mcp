@@ -53,8 +53,8 @@ def _setup_otel_env_variables() -> None:
     datarobot_api_token = credentials.datarobot.api_token
 
     config = get_config()
-    otlp_endpoint = config.otel.collector_base_url
-    entity_id = config.otel.entity_id
+    otlp_endpoint = config.otel_collector_base_url
+    entity_id = config.otel_entity_id
 
     otlp_headers = (
         f"X-DataRobot-Api-Key={datarobot_api_token},X-DataRobot-Entity-Id={entity_id}"
@@ -131,12 +131,12 @@ def initialize_telemetry() -> Optional[Span]:
     config = get_config()
 
     # If OpenTelemetry is disabled, return None
-    if not config.otel.enabled:
+    if not config.otel_enabled:
         root_logger.info("OpenTelemetry is disabled")
         return None
 
     # Create resource with service name from config
-    resource = Resource.create({"service.name": config.name})
+    resource = Resource.create({"service.name": config.mcp_server_name})
 
     # Set up tracer provider with service name from config
     provider = TracerProvider(resource=resource)
@@ -149,16 +149,17 @@ def initialize_telemetry() -> Optional[Span]:
     _setup_otel_exporter()
 
     # Setup HTTP client instrumentation
-    _setup_http_instrumentors()
+    if config.otel_enabled_http_instrumentors:
+        _setup_http_instrumentors()
 
     # Create root span for the application
     tracer = trace.get_tracer(__name__)
     span = tracer.start_span("mcp_server")
 
     # Add configured attributes
-    if config.otel.attributes:
+    if config.otel_attributes:
         root_logger.info("Setting up custom OTEL attributes")
-        _set_otel_attributes(span, config.otel.attributes)
+        _set_otel_attributes(span, config.otel_attributes)
 
     return span
 
@@ -178,21 +179,23 @@ def _add_parameters_to_span(
     sig = inspect.signature(func)
     param_names = list(sig.parameters.keys())
 
-    # Handle args (skip self for methods)
-    start_idx = 1 if args and hasattr(args[0], "__class__") else 0
-    for i, arg in enumerate(args[start_idx:], start=start_idx):
-        if i < len(param_names):
-            param_name = param_names[i]
-            if isinstance(arg, (str, int, float, bool)):
-                span.set_attribute(f"tool.param.{param_name}", arg)
+    # Skip 'self' parameter for methods (only if first param is named 'self')
+    start_idx = 1 if args and param_names and param_names[0] == "self" else 0
+    param_names = param_names[start_idx:]
+    args = args[start_idx:]
 
-    # Handle kwargs
+    # Add positional arguments
+    for name, value in zip(param_names, args):
+        if isinstance(value, (str, int, float, bool)):
+            span.set_attribute(f"tool.param.{name}", value)
+
+    # Add keyword arguments
     for name, value in kwargs.items():
         if isinstance(value, (str, int, float, bool)):
             span.set_attribute(f"tool.param.{name}", value)
 
 
-def _get_trace_id() -> Optional[str]:
+def get_trace_id() -> Optional[str]:
     """Get the current trace ID if available."""
     current_span = trace.get_current_span()
     if not current_span:
@@ -208,70 +211,91 @@ def _get_trace_id() -> Optional[str]:
 T = TypeVar("T", bound=Callable[..., Any])
 
 
-def trace_tool(name: str | None = None) -> Callable[[T], T]:
+def trace_execution(
+    trace_name: str | None = None, trace_type: str = "tool"
+) -> Callable[[T], T]:
     """Decorator to trace tool execution.
 
     Args:
-        name: Optional name for the span. If not provided, uses the function name.
+        trace_name: Optional name for the span. If not provided, uses the function name.
+        trace_type: Optional type for the span. If not provided, uses "tool".
 
     Example:
-        @trace_tool()
+        @trace_execution()
         async def my_tool(self, param1: str) -> str:
             return "result"
 
-        @trace_tool("custom_name")
+        @trace_execution("custom_name")
         async def another_tool(self, param1: str) -> str:
             return "result"
     """
 
     def decorator(func: T) -> T:
         def _create_span_for_tool(
-            name: str | None, args: tuple[Any, ...], kwargs: dict[str, Any]
+            trace_name: str | None,
+            trace_type: str,
+            args: tuple[Any, ...],
+            kwargs: dict[str, Any],
         ) -> Span:
             # Get span name from decorator arg, function name, or class method name
-            span_name = name
+            span_name = trace_name
             if not span_name:
-                if args and hasattr(args[0], "__class__"):
+                if (
+                    args
+                    and hasattr(args[0], "__class__")
+                    and not isinstance(args[0], (str, int, float, bool))
+                ):
                     # If it's a method, include the class name
                     span_name = f"{args[0].__class__.__name__}.{func.__name__}"
                 else:
+                    # Just use the function name without any prefix
                     span_name = func.__name__
 
             # Start a new span
             tracer = trace.get_tracer(__name__)
-            span = tracer.start_span(f"tool.{span_name}")
+            span = tracer.start_span(f"{trace_type}.{span_name}")
 
             # Add standard attributes
-            span.set_attribute("tool.name", span_name)
-            span.set_attribute("tool.type", "mcp")
+            span.set_attribute("mcp.type", trace_type)
+            span.set_attribute(f"{trace_type}.name", span_name)
 
             # Add tool parameters as span attributes
             _add_parameters_to_span(span, func, args, kwargs)
 
             # Add configured attributes from config
             config = get_config()
-            if config.otel.attributes:
-                _set_otel_attributes(span, config.otel.attributes)
+            if config.otel_attributes:
+                _set_otel_attributes(span, config.otel_attributes)
 
             return span
 
-        def _add_success_attribute(span: Span) -> None:
-            # Add success attribute
-            span.set_attribute("tool.success", True)
-
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            with _create_span_for_tool(name, args, kwargs) as span:
+            span = _create_span_for_tool(trace_name, trace_type, args, kwargs)
+            try:
                 result = await func(*args, **kwargs)
-                _add_success_attribute(span)
+                span.set_attribute(f"{trace_type}.success", True)
                 return result
+            except Exception as e:
+                span.set_attribute(f"{trace_type}.success", False)
+                span.record_exception(e)
+                raise e
+            finally:
+                span.end()
 
         @functools.wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-            with _create_span_for_tool(name, args, kwargs) as span:
+            span = _create_span_for_tool(trace_name, trace_type, args, kwargs)
+            try:
                 result = func(*args, **kwargs)
-                _add_success_attribute(span)
+                span.set_attribute(f"{trace_type}.success", True)
                 return result
+            except Exception as e:
+                span.set_attribute(f"{trace_type}.success", False)
+                span.record_exception(e)
+                raise e
+            finally:
+                span.end()
 
         # Use appropriate wrapper based on whether the function is async
         return async_wrapper if inspect.iscoroutinefunction(func) else sync_wrapper

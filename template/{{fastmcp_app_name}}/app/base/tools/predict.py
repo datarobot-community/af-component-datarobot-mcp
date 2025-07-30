@@ -13,23 +13,21 @@
 # limitations under the License.
 
 import json
+import logging
 import uuid
 
 import datarobot as dr
 from mcp.server.fastmcp.resources import HttpResource, ResourceManager
 
-from app.base.shared.common import (
+from app.base.core.common import (
     get_credentials,
     get_s3_bucket_info,
     get_sdk_client,
-    log_tool_execution,
-    setup_tool_logger,
 )
-from app.base.shared.mcp_instance import mcp
-from app.base.shared.telemetry import trace_tool
-from app.base.shared.utils import generate_presigned_url
+from app.base.core.mcp_instance import dr_mcp_tool
+from app.base.core.utils import generate_presigned_url
 
-logger = setup_tool_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _handle_prediction_resource(job, bucket, key, deployment_id, input_desc):
@@ -55,13 +53,16 @@ def get_or_create_s3_credential():
         if cred.name == "dr_mcp_server_temp_storage_s3_cred":
             return cred
 
-    cred = dr.Credential.create_s3(
-        name="dr_mcp_server_temp_storage_s3_cred",
-        aws_access_key_id=get_credentials().aws.access_key_id,
-        aws_secret_access_key=get_credentials().aws.secret_access_key,
-        aws_session_token=get_credentials().aws.session_token,
-    )
-    return cred
+    if get_credentials().has_aws_credentials():
+        cred = dr.Credential.create_s3(
+            name="dr_mcp_server_temp_storage_s3_cred",
+            aws_access_key_id=get_credentials().aws_access_key_id,
+            aws_secret_access_key=get_credentials().aws_secret_access_key,
+            aws_session_token=get_credentials().aws_session_token,
+        )
+        return cred
+
+    raise Exception("No AWS credentials found in your MCP deployment.")
 
 
 def make_output_settings(cred):
@@ -92,9 +93,7 @@ def wait_for_preds_and_cache_results(
     return _handle_prediction_resource(job, bucket, key, deployment_id, input_desc)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def predict_with_deployment_by_file_path(
     deployment_id: str,
     file_path: str,
@@ -124,9 +123,7 @@ async def predict_with_deployment_by_file_path(
     )
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def predict_with_deployment_by_ai_catalog(
     deployment_id: str,
     dataset_id: str,
@@ -155,9 +152,7 @@ async def predict_with_deployment_by_ai_catalog(
     )
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def predict_with_deployment_from_project_data(
     deployment_id: str,
     project_id: str,
@@ -198,9 +193,7 @@ async def predict_with_deployment_from_project_data(
     )
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_prediction_explanations(
     project_id: str,
     model_id: str,

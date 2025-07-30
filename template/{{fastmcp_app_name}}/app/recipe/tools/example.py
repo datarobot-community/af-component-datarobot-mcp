@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 
-from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
-from app.base.shared.mcp_instance import mcp
-from app.base.shared.telemetry import trace_tool
+from app.base.core.common import get_sdk_client
+from app.base.core.mcp_instance import dr_mcp_tool
 
-logger = setup_tool_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def tool_example_placeholder(argument1: str) -> str:
     """
     A recipe tool example as a placeholder.

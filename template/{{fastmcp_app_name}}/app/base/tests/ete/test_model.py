@@ -3,8 +3,113 @@ import inspect
 import pytest
 
 from .tool_base_ete import (
+    SHOULD_NOT_BE_EMPTY,
+    ETETestExpectations,
     ToolBaseE2E,
+    ToolCallTestExpectations,
 )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_best_model_success(
+    classification_project_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_best_model",
+                parameters={"project_id": classification_project_id},
+                # checking if the result has the correct keys
+                result="Best model: Keras Text Convolutional Neural Network Classifier",
+            ),
+            ToolCallTestExpectations(
+                name="list_models",
+                parameters={"project_id": classification_project_id},
+                # checking if the result has the correct keys
+                result={"id": "", "model_type": "", "metrics": {}},
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "Keras",
+            "AUC",
+            "Accuracy",
+            "Balanced Accuracy",
+            "FVE Multinomial",
+            "LogLoss",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_best_model_failure(
+    nonexistent_project_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_best_model",
+                parameters={"project_id": nonexistent_project_id},
+                result="Error executing tool get_best_model: Error in get_best_model: ClientError: 404 client error: {'message': 'Not Found'}",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "Project not found",
+            "not valid",
+            "does not exist",
+            "unable to",
+            "not found",
+            nonexistent_project_id,
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_score_dataset_with_model_success(
+    classification_project_id: str, model_id: str, dataset_url: str
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="score_dataset_with_model",
+                parameters={
+                    "project_id": classification_project_id,
+                    "model_id": model_id,
+                    "dataset_url": dataset_url,
+                },
+                result=SHOULD_NOT_BE_EMPTY,
+            ),
+        ],
+        llm_response_content_contains_expectations=["Scoring job started"],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_score_dataset_with_model_failure(
+    classification_project_id: str, nonexistent_model_id: str, dataset_url: str
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="score_dataset_with_model",
+                parameters={
+                    "project_id": classification_project_id,
+                    "model_id": nonexistent_model_id,
+                    "dataset_url": dataset_url,
+                },
+                result="Error executing tool score_dataset_with_model: Error in score_dataset_with_model: ClientError: 404 client error: {'message': 'Not Found'}",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "error",
+            "does not exist",
+            "not found",
+            nonexistent_model_id,
+            "issue",
+            "invalid",
+            "not valid",
+            "provide a valid model ID",
+        ],
+    )
 
 
 @pytest.mark.asyncio

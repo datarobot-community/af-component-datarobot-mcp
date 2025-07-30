@@ -11,17 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from mcp.server.fastmcp import FastMCP
-
-from .config import get_config
-
-mcp_server_configs = get_config()
-
-mcp = FastMCP(
-    name=mcp_server_configs.name,
-    port=mcp_server_configs.port,
-    log_level=mcp_server_configs.log_level,
-    host=mcp_server_configs.host,
-    stateless_http=True,
-)

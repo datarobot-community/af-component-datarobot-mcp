@@ -14,7 +14,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from app.base.shared import common
+from app.base.core import common
 
 
 def test_get_sdk_client_returns_dr():
@@ -22,8 +22,8 @@ def test_get_sdk_client_returns_dr():
     mock_creds.datarobot.api_token = "token"
     mock_creds.datarobot.endpoint = "url"
     with (
-        patch("app.base.shared.common.dr.Client") as mock_client,
-        patch("app.base.shared.common.get_credentials", return_value=mock_creds),
+        patch("app.base.core.common.dr.Client") as mock_client,
+        patch("app.base.core.common.get_credentials", return_value=mock_creds),
     ):
         result = common.get_sdk_client()
         mock_client.assert_called_once_with(token="token", endpoint="url")
@@ -32,8 +32,8 @@ def test_get_sdk_client_returns_dr():
 
 def test_get_s3_bucket_info():
     mock_creds = MagicMock()
-    mock_creds.aws.s3_bucket = "bucket"
-    mock_creds.aws.s3_prefix = "prefix"
-    with patch("app.base.shared.common.get_credentials", return_value=mock_creds):
+    mock_creds.aws_predictions_s3_bucket = "bucket"
+    mock_creds.aws_predictions_s3_prefix = "prefix"
+    with patch("app.base.core.common.get_credentials", return_value=mock_creds):
         result = common.get_s3_bucket_info()
         assert result == {"bucket": "bucket", "prefix": "prefix"}

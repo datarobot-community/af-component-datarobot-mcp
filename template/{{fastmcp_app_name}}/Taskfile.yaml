@@ -20,7 +20,7 @@ tasks:
   dev-background:
     desc: "🔨 Running MCP locally in background"
     vars:
-      PORT: '{{.CLI_ARGS | default "8082"}}'
+      PORT: 8082
     cmds:
       - echo "🔨 Starting development server"
       - echo "MCP Server running on port {{.PORT}}"

@@ -1,10 +1,10 @@
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import datarobot as dr
 import pytest
 
-from app.base.shared.common import MCPError
+from app.base.core.common import MCPError
 from app.base.tools import predict
 
 

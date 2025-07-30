@@ -13,17 +13,15 @@
 # limitations under the License.
 
 import json
+import logging
 
-from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
-from app.base.shared.mcp_instance import mcp
-from app.base.shared.telemetry import trace_tool
+from app.base.core.common import get_sdk_client
+from app.base.core.mcp_instance import dr_mcp_tool
 
-logger = setup_tool_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def list_projects() -> str:
     """
     List all DataRobot projects for the authenticated user.
@@ -38,9 +36,7 @@ async def list_projects() -> str:
     return "\n".join(f"{p.id}: {p.project_name}" for p in projects)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_project_dataset_by_name(project_id: str, dataset_name: str) -> str:
     """
     Get a dataset ID by name for a given project.

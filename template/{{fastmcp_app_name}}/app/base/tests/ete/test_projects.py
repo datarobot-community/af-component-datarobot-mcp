@@ -2,7 +2,115 @@ import inspect
 
 import pytest
 
-from .tool_base_ete import ToolBaseE2E
+from .tool_base_ete import (
+    ETETestExpectations,
+    ToolBaseE2E,
+    ToolCallTestExpectations,
+)
+
+
+@pytest.fixture(scope="session")
+def expectations_for_list_projects_success(
+    classification_project_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="list_projects",
+                parameters={},
+                result=f"{classification_project_id}: ",
+            ),
+        ],
+        llm_response_content_contains_expectations=[classification_project_id],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_project_dataset_by_name_success(
+    classification_project_id: str,
+    classification_dataset_name: str,
+    classification_dataset_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_project_dataset_by_name",
+                parameters={
+                    "project_id": classification_project_id,
+                    "dataset_name": classification_dataset_name,
+                },
+                result={
+                    "dataset_id": classification_dataset_id,
+                    "dataset_type": "source",
+                    "ui_panel": ["dataset"],
+                },
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            classification_dataset_name,
+            "source",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_project_dataset_by_name_failure(
+    classification_project_id: str, nonexistent_dataset_name: str
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_project_dataset_by_name",
+                parameters={
+                    "project_id": classification_project_id,
+                    "dataset_name": nonexistent_dataset_name,
+                },
+                result=f"Dataset with name containing '{nonexistent_dataset_name}' not found in project {classification_project_id}.",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "dataset exists in the project",
+            "not found",
+            nonexistent_dataset_name,
+            classification_project_id,
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_project_dataset_by_name_success_with_multiple_calls(
+    classification_project_name: str,
+    classification_dataset_name: str,
+    classification_project_id: str,
+    classification_dataset_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="list_projects",
+                parameters={},
+                result=f"{classification_project_id}: ",
+            ),
+            ToolCallTestExpectations(
+                name="get_project_dataset_by_name",
+                parameters={
+                    "project_id": classification_project_id,
+                    "dataset_name": classification_dataset_name,
+                },
+                result={
+                    "dataset_id": classification_dataset_id,
+                    "dataset_type": "source",
+                    "ui_panel": ["dataset"],
+                },
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            classification_project_name,
+            classification_dataset_name,
+            classification_dataset_id,
+            "Source",
+        ],
+    )
 
 
 @pytest.mark.asyncio

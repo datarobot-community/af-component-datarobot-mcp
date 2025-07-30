@@ -1,0 +1,9 @@
+name: runtime-params
+
+# This is a template for rendering application recipe metadata.
+
+runtimeParameterDefinitions:
+
+  - fieldName: recipe_name
+    type: string
+

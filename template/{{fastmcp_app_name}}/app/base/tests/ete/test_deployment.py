@@ -3,8 +3,70 @@ import inspect
 import pytest
 
 from .tool_base_ete import (
+    SHOULD_NOT_BE_EMPTY,
+    ETETestExpectations,
     ToolBaseE2E,
+    ToolCallTestExpectations,
 )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_list_deployments_success(
+    deployment_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="list_deployments",
+                parameters={},
+                result=f"{deployment_id}: ",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "list of deployments",
+            "deployments",
+            "deployment",
+        ],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_model_info_from_deployment_success(
+    deployment_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_model_info_from_deployment",
+                parameters={"deployment_id": deployment_id},
+                result=SHOULD_NOT_BE_EMPTY,
+            ),
+        ],
+        llm_response_content_contains_expectations=["model info", "model"],
+    )
+
+
+@pytest.fixture(scope="session")
+def expectations_for_get_model_info_from_deployment_failure(
+    nonexistent_deployment_id: str,
+) -> ETETestExpectations:
+    return ETETestExpectations(
+        tool_calls_expected=[
+            ToolCallTestExpectations(
+                name="get_model_info_from_deployment",
+                parameters={"deployment_id": nonexistent_deployment_id},
+                result="Error executing tool get_model_info_from_deployment: Error in get_model_info_from_deployment: ClientError: 404 client error: {'message': 'Not Found'}",
+            ),
+        ],
+        llm_response_content_contains_expectations=[
+            "Deployment with ID",
+            "Deployment not found",
+            "not found",
+            "does not exist",
+            "unable to",
+            nonexistent_deployment_id,
+        ],
+    )
 
 
 @pytest.mark.asyncio

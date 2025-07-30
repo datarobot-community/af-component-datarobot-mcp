@@ -3,13 +3,43 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import openai
 from mcp.client.session import ClientSession
-from mcp.types import CallToolResult, ListToolsResult, TextContent
+from mcp.types import (
+    CallToolResult,
+    GetPromptResult,
+    ListPromptsResult,
+    ListResourcesResult,
+    ListToolsResult,
+    PromptArgument,
+    ReadResourceResult,
+    TextContent,
+    TextResourceContents,
+)
 from openai import AzureOpenAI
 from openai.types.chat.chat_completion import ChatCompletion
 from pydantic import BaseModel
 
 from .common import save_response_to_file
 from .mcp_utils import get_dr_mcp_server_url
+
+
+def _serialize_prompt_arguments(arguments: List[PromptArgument]) -> Dict[str, Any]:
+    """Convert PromptArgument objects to OpenAI function parameters schema."""
+    properties = {}
+    required = []
+
+    for arg in arguments:
+        if arg.required:
+            required.append(arg.name)
+        properties[arg.name] = {
+            "type": "string",  # Default to string since PromptArgument doesn't specify type
+            "description": arg.description if arg.description else arg.name,
+        }
+
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": required,
+    }
 
 
 class ToolCall(BaseModel):
@@ -62,17 +92,18 @@ class LLMMCPClient:
         self.save_llm_responses = save_llm_responses
 
         self.available_tools: List[Dict[str, Any]] = []
+        self.available_prompts: List[Dict[str, Any]] = []
+        self.available_resources: List[Dict[str, Any]] = []
 
     def _add_mcp_as_a_tool_to_available_tools(self) -> None:
         """Add MCP as a tool to the available tools."""
         # see https://platform.openai.com/docs/guides/tools-remote-mcp
         # It's coming but it doesn't work yet (2025-06-16)
-        # openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'tools[0].function'.", 'type': 'invalid_request_error', 'param': 'tools[0].function', 'code': 'missing_required_parameter'}}
         self.available_tools = [
             {
                 "type": "mcp",
                 "server_label": "datarobot-mcp-server",
-                "server_url": get_dr_mcp_server_url(),
+                "server_url": str(get_dr_mcp_server_url()),
                 "require_approval": "never",
             }
         ]
@@ -84,14 +115,41 @@ class LLMMCPClient:
         tools_result: ListToolsResult = await mcp_session.list_tools()
         self.available_tools = [
             {
-                "type": "function",
-                "function": {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": tool.inputSchema,
-                },
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.inputSchema,
             }
             for tool in tools_result.tools
+        ]
+
+    async def _add_mcp_prompt_to_available_prompts(
+        self, mcp_session: ClientSession
+    ) -> None:
+        """Add a prompt to the available prompts."""
+        prompts_result: ListPromptsResult = await mcp_session.list_prompts()
+        self.available_prompts = [
+            {
+                "name": prompt.name,
+                "description": prompt.description,
+                "arguments": prompt.arguments,
+            }
+            for prompt in prompts_result.prompts
+        ]
+
+    async def _add_mcp_resource_to_available_resources(
+        self, mcp_session: ClientSession
+    ) -> None:
+        """Add a resource to the available resources."""
+        resources_result: ListResourcesResult = await mcp_session.list_resources()
+        self.available_resources = [
+            {
+                "name": resource.name,
+                "description": resource.description,
+                "uri": str(resource.uri),
+                "mimeType": resource.mimeType,
+                "size": resource.size,
+            }
+            for resource in resources_result.resources
         ]
 
     async def _call_mcp_tool(
@@ -104,6 +162,28 @@ class LLMMCPClient:
             if result.content and isinstance(result.content[0], TextContent)
             else str(result.content)
         )
+
+    async def _read_mcp_resource(
+        self, resource_uri: str, mcp_session: ClientSession
+    ) -> str:
+        """Read an MCP resource and return the result as a string."""
+        # TODO: handle multiple content types (blob) and array of content
+        result: ReadResourceResult = await mcp_session.read_resource(resource_uri)
+        return (
+            result.contents[0].text
+            if result.contents and isinstance(result.contents[0], TextResourceContents)
+            else str(result.contents)
+        )
+
+    async def _get_mcp_prompt(
+        self, prompt_name: str, arguments: Dict[str, Any], mcp_session: ClientSession
+    ) -> str:
+        """Get an MCP prompt and return the result as a string."""
+        # TODO: also handle role and array of messages
+        result: GetPromptResult = await mcp_session.get_prompt(
+            prompt_name, arguments=arguments
+        )
+        return result.messages[0].content.text
 
     async def _process_tool_calls(
         self,
@@ -134,9 +214,27 @@ class LLMMCPClient:
                 )
 
                 try:
-                    result_text = await self._call_mcp_tool(
-                        tool_name, parameters, mcp_session
-                    )
+                    matching_resources = [
+                        resource["uri"]
+                        for resource in self.available_resources
+                        if resource["name"] == tool_name
+                    ]
+                    resource_uri = matching_resources[0] if matching_resources else None
+
+                    if resource_uri:
+                        result_text = await self._read_mcp_resource(
+                            resource_uri, mcp_session
+                        )
+                    elif tool_name in [
+                        prompt["name"] for prompt in self.available_prompts
+                    ]:
+                        result_text = await self._get_mcp_prompt(
+                            tool_name, parameters, mcp_session
+                        )
+                    else:
+                        result_text = await self._call_mcp_tool(
+                            tool_name, parameters, mcp_session
+                        )
                     tool_results.append(result_text)
 
                     # Add tool result to messages
@@ -171,10 +269,53 @@ class LLMMCPClient:
             "messages": messages,
         }
 
-        if allow_tool_calls and self.available_tools:
+        if allow_tool_calls and (
+            self.available_tools or self.available_resources or self.available_prompts
+        ):
+            tools = []
+
+            if self.available_tools:
+                mcp_tools = [
+                    {
+                        "type": "function",
+                        "function": tool,
+                    }
+                    for tool in self.available_tools
+                ]
+                tools.extend(mcp_tools)
+            if self.available_prompts:
+                mcp_prompts = [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": prompt["name"],
+                            "description": prompt["description"],
+                            "parameters": _serialize_prompt_arguments(
+                                prompt["arguments"]
+                            ),
+                        },
+                    }
+                    for prompt in self.available_prompts
+                ]
+                tools.extend(mcp_prompts)
+            if self.available_resources:
+                mcp_resources = [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": resource["name"],
+                            "description": resource["description"],
+                            "parameters": {},
+                        },
+                    }
+                    for resource in self.available_resources
+                ]
+                tools.extend(mcp_resources)
+
+            print(f"\n\nTools count available for the LLM: {len(tools)}\n\n")
             kwargs.update(
                 {
-                    "tools": self.available_tools,
+                    "tools": tools,
                     "tool_choice": "auto",
                 }
             )
@@ -197,6 +338,10 @@ class LLMMCPClient:
         # Ensure available tools are set up
         if not self.available_tools:
             await self._add_mcp_tool_to_available_tools(mcp_session)
+        if not self.available_prompts:
+            await self._add_mcp_prompt_to_available_prompts(mcp_session)
+        if not self.available_resources:
+            await self._add_mcp_resource_to_available_resources(mcp_session)
 
         # Initialize conversation
         messages = [

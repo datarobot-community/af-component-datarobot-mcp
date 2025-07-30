@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from app.base.shared.common import MCPError
-from app.base.shared.constants import MAX_INLINE_SIZE
+from app.base.core.common import MCPError
+from app.base.core.constants import MAX_INLINE_SIZE
 from app.base.tools import predict_realtime
 
 
@@ -16,9 +16,9 @@ def patch_realtime_dependencies():
         patch("app.base.tools.predict_realtime.get_sdk_client") as mock_get_sdk_client,
         patch("app.base.tools.predict_realtime.pd.read_csv") as mock_read_csv,
         patch("app.base.tools.predict_realtime.dr_predict") as mock_dr_predict,
-        patch("app.base.shared.utils.boto3.client") as mock_boto3_client,
+        patch("app.base.core.utils.boto3.client") as mock_boto3_client,
         patch(
-            "app.base.shared.utils.generate_presigned_url",
+            "app.base.core.utils.generate_presigned_url",
             return_value="https://dummy-presigned-url",
         ),
     ):

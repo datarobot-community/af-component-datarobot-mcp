@@ -28,10 +28,11 @@ DATAROBOT_ENDPOINT=your_datarobot_endpoint
 # MCP_SERVER_PORT=optional_8080_optional
 # MCP_SERVER_LOG_LEVEL=optional_DEBUG_optional
 # MCP_SERVER_HOST=optional_127.0.0.1_optional
-# ROOT_LOGGER_LEVEL=optional_DEBUG_optional
+# APP_LOG_LEVEL=optional_DEBUG_optional
 # OTEL_COLLECTOR_BASE_URL=optional_OTEL_URL_optional
 # OTEL_ENABLED=optional_false_optional
 # OTEL_ENTITY_ID=optional_ID_optional
+# OTEL_ENABLED_HTTP_INSTRUMENTORS=optional_true_optional
 ```
 
 ## Running the Server
@@ -130,6 +131,9 @@ OTEL_ENTITY_ID=your-entity-id
 
 # Custom attributes as JSON (optional)
 OTEL_ATTRIBUTES='{"deployment": "prod"}'
+
+# Enable/disable HTTP instrumentors (default: false)
+OTEL_ENABLED_HTTP_INSTRUMENTORS=false
 ```
 
 ### Debugging

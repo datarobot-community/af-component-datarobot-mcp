@@ -19,8 +19,8 @@ import boto3
 from mcp.server.fastmcp.resources import HttpResource
 from pydantic import BaseModel
 
-from app.base.shared.constants import MAX_INLINE_SIZE
-from app.base.shared.mcp_instance import mcp
+from app.base.core.constants import MAX_INLINE_SIZE
+from app.base.core.mcp_instance import mcp
 
 
 def generate_presigned_url(bucket, key, expires_in=2592000):

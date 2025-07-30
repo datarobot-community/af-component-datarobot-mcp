@@ -12,15 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
-import logging
-import traceback
-from typing import Any, Callable, TypeVar
-
 import datarobot as dr
 from datarobot.context import Context as DRContext
 from mcp.server.fastmcp import Context  # Correct import for FastMCP Context
-from opentelemetry import trace
 
 from .credentials import get_credentials
 
@@ -65,65 +59,10 @@ def get_s3_bucket_info() -> dict[str, str]:
     """Get S3 bucket configuration."""
     credentials = get_credentials()
     return {
-        "bucket": credentials.aws.s3_bucket,
-        "prefix": credentials.aws.s3_prefix,
+        "bucket": credentials.aws_predictions_s3_bucket,
+        "prefix": credentials.aws_predictions_s3_prefix,
     }
-
-
-# Type variable for generic function type
-F = TypeVar("F", bound=Callable[..., Any])
 
 
 class MCPError(Exception):
     """Base class for MCP errors"""
-
-
-def setup_tool_logger(name: str) -> logging.Logger:
-    """Set up a logger for tools with consistent formatting"""
-    logger = logging.getLogger(name)
-    if not logger.handlers:  # Only add handler if none exists
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
-    return logger
-
-
-def log_tool_error(
-    logger: logging.Logger, func_name: str, error: Exception, **kwargs
-) -> str:
-    """Log tool errors in a consistent format"""
-    error_msg = f"{type(error).__name__}: {str(error)}"
-    logger.error(f"Error in {func_name}: {error_msg}")
-    logger.debug(f"Full traceback: {traceback.format_exc()}")
-    logger.debug(f"Function arguments: {kwargs}")
-    return f"Error in {func_name}: {error_msg}"
-
-
-def log_tool_execution(func: F) -> F:
-    """Decorator to log tool execution with error handling"""
-    logger = setup_tool_logger(func.__module__)
-
-    @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
-        try:
-            logger.info(f"Starting {func.__name__}")
-            logger.debug(f"Arguments: {args}, {kwargs}")
-            result = await func(*args, **kwargs)
-            logger.info(f"Completed {func.__name__}")
-            return result
-        except Exception as e:
-            error_msg = log_tool_error(
-                logger, func.__name__, e, args=args, kwargs=kwargs
-            )
-
-            if span := trace.get_current_span():
-                span.set_attribute("tool.success", False)
-                span.record_exception(e)
-
-            raise MCPError(error_msg)
-
-    return wrapper

@@ -15,17 +15,16 @@
 """Tools for analyzing datasets and suggesting ML use cases."""
 
 import json
+import logging
 from dataclasses import asdict, dataclass
 from typing import Dict, List, Optional
 
 import pandas as pd
-from datarobot.errors import ClientError
 
-from app.base.shared.common import get_sdk_client, log_tool_execution, setup_tool_logger
-from app.base.shared.mcp_instance import mcp
-from app.base.shared.telemetry import trace_tool
+from app.base.core.common import get_sdk_client
+from app.base.core.mcp_instance import dr_mcp_tool
 
-logger = setup_tool_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -54,9 +53,7 @@ class DatasetInsight:
     missing_data_summary: Dict[str, float]
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def analyze_dataset(dataset_id: str) -> str:
     """
     Analyze a dataset to understand its structure and potential use cases.
@@ -83,11 +80,9 @@ async def analyze_dataset(dataset_id: str) -> str:
     # Identify potential text columns (categorical with high cardinality)
     text_cols = []
     for col in categorical_cols:
-        if df[col].nunique() > 100 and df[col].str.len().mean() > 20:
+        if df[col].str.len().mean() > 20:  # Text detection
             text_cols.append(col)
-
-    # Remove text columns from categorical
-    categorical_cols = [col for col in categorical_cols if col not in text_cols]
+            categorical_cols.remove(col)  # Remove from categorical columns
 
     # Calculate missing data
     missing_data = {}
@@ -115,9 +110,7 @@ async def analyze_dataset(dataset_id: str) -> str:
     return json.dumps(asdict(insights), indent=2)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def suggest_use_cases(dataset_id: str) -> str:
     """
     Analyze a dataset and suggest potential machine learning use cases.
@@ -151,9 +144,7 @@ async def suggest_use_cases(dataset_id: str) -> str:
     return json.dumps(suggestions, indent=2)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_exploratory_insights(
     dataset_id: str, target_col: Optional[str] = None
 ) -> str:
@@ -382,15 +373,19 @@ def _analyze_target_for_use_cases(
                     reasoning=f"Column {target_col} has {unique_count} discrete values, suggesting classification",
                 )
             )
-        else:
-            # Regression
+
+        # Always suggest regression for numeric columns with more than 2 unique values
+        if unique_count > 2:
             suggestions.append(
                 UseCaseSuggestion(
                     name="Regression Modeling",
                     description=f"Predict the value of {target_col}",
                     suggested_target=target_col,
                     problem_type="Regression",
-                    confidence=0.6,
+                    confidence=0.6
+                    + (
+                        0.1 if unique_count > 10 else 0
+                    ),  # higher confidence for columns with more unique values for regression
                     reasoning=f"Column {target_col} is numerical with {unique_count} unique values, suggesting regression",
                 )
             )
@@ -472,9 +467,7 @@ def _analyze_target_for_use_cases(
     return suggestions
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def start_autopilot(
     target: str,
     project_id: Optional[str] = None,
@@ -548,9 +541,7 @@ async def start_autopilot(
         )
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_model_roc_curve(
     project_id: str, model_id: str, source: str = "validation"
 ) -> str:
@@ -607,9 +598,7 @@ async def get_model_roc_curve(
         return json.dumps({"error": f"Failed to get ROC curve: {str(e)}"}, indent=2)
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_model_feature_impact(project_id: str, model_id: str) -> str:
     """
     Get detailed feature impact for a specific model.
@@ -635,9 +624,7 @@ async def get_model_feature_impact(project_id: str, model_id: str) -> str:
     )
 
 
-@mcp.tool()
-@log_tool_execution
-@trace_tool()
+@dr_mcp_tool()
 async def get_model_lift_chart(
     project_id: str, model_id: str, source: str = "validation"
 ) -> str:

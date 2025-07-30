@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from app.base.core.dr_mcp_server import DataRobotMCPServer
-from app.base.core.mcp_instance import mcp
 
-if __name__ == "__main__":
-    server = DataRobotMCPServer(mcp)
-    server.run()
+MAX_INLINE_SIZE = 1024 * 1024  # 1MB
+DEFAULT_DATAROBOT_ENDPOINT = "https://app.datarobot.com/api/v2"
+RUNTIME_PARAM_ENV_VAR_NAME_PREFIX = "MLOPS_RUNTIME_PARAM_"
