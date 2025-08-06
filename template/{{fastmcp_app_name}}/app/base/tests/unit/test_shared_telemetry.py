@@ -107,7 +107,7 @@ async def test_trace_execution_async() -> None:
         mock_get_tracer.return_value = mock_tracer
 
         @telemetry.trace_execution("test_tool")
-                    async def test_async_function(param1: str, param2: int) -> str:
+        async def test_async_function(param1: str, param2: int) -> str:
             return f"{param1}-{param2}"
 
         result = await test_async_function("test", 123)
@@ -134,7 +134,7 @@ def test_trace_execution_sync() -> None:
         mock_get_tracer.return_value = mock_tracer
 
         @telemetry.trace_execution()
-                    def test_sync_function(param1: str) -> str:
+        def test_sync_function(param1: str) -> str:
             return f"result-{param1}"
 
         result = test_sync_function("test")

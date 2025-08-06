@@ -18,9 +18,9 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from app.base.core.dr_mcp_server import DataRobotMCPServer as DRMCPServer
-from app.base.core.tagged_mcp_instance import TaggedFastMCP, mcp
+from app.base.core.mcp_instance import TaggedFastMCP, mcp
 from app.base.core.telemetry import (
-    _get_trace_id,
+    get_trace_id,
     _set_otel_attributes,
     initialize_telemetry,
 )

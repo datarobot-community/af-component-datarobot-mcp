@@ -46,8 +46,7 @@ _exclude:
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/predict.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/project.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/training.py{% endif %}"
-  - "{% if not enable_tag_support %}{{fastmcp_app_name}}/app/base/core/tagged_mcp_instance.py{% endif %}"
-  - "{% if not enable_tag_support %}{{fastmcp_app_name}}/app/base/core/mcp_instance_tagged.py{% endif %}"
+
   - "{% if not enable_tag_support %}{{fastmcp_app_name}}/app/base/core/tool_filter.py{% endif %}"
   - "{% if not enable_tag_support %}{{fastmcp_app_name}}/app/base/tools/mcp_server_tools.py{% endif %}"
   - "{% if not enable_tag_support %}{{fastmcp_app_name}}/app/base/tests/unit/test_tagged_tools.py{% endif %}"

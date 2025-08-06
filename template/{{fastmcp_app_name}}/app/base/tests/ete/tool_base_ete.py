@@ -38,7 +38,11 @@ class ETETestExpectations(BaseModel):
 SHOULD_NOT_BE_EMPTY = "SHOULD_NOT_BE_EMPTY"
 
 
-def _check_dict_has_keys(expected: dict[str, str], actual: dict[str, str] | list[dict[str, str]], path: str = "") -> bool:
+def _check_dict_has_keys(
+    expected: dict[str, str],
+    actual: dict[str, str] | list[dict[str, str]],
+    path: str = "",
+) -> bool:
     """
     Recursively check if all keys in expected dict exist in actual dict or in each item of actual list.
     Returns True if all expected keys exist, False otherwise.

@@ -10,7 +10,7 @@ tasks:
     cmds:
       - echo "🔧 Rendering template"
       - rm -rf ./tmp/template
-      - uv run copier copy --defaults --overwrite . ./tmp/template
+      - uv run copier copy --defaults --overwrite . ../recipe-fastmcp-template/mcp_deployments
 
   lint:
     desc: 🧹 Lint the codebase
