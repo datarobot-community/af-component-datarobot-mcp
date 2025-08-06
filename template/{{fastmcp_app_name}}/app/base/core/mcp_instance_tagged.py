@@ -40,4 +40,4 @@ def dr_mcp_extras(type: str = "tool"):
     def decorator(func):
         return log_execution(trace_execution(trace_type=type)(func))
 
-    return decorator 
+    return decorator

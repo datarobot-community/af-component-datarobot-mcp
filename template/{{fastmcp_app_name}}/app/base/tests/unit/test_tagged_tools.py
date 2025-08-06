@@ -696,4 +696,4 @@ async def test_list_tools_by_tags_complex_scenario():
 
         assert "Tools with all of the tags: data, model" in result
         # Note: In a real scenario, only predict_data would be returned
-        # But with the mock returning all tools, we just verify the function works 
+        # But with the mock returning all tools, we just verify the function works

@@ -103,4 +103,4 @@ def get_tools_by_tag(
     Returns:
         List of tools with the specified tag
     """
-    return filter_tools_by_tags(tools, [tag]) 
+    return filter_tools_by_tags(tools, [tag])

@@ -10,21 +10,18 @@ from app.base.tools import predict
 
 @pytest.fixture()
 def patch_predict_dependencies():
-    with (
-        patch("app.base.tools.predict.get_or_create_s3_credential") as mock_cred,
-        patch(
-            "app.base.tools.predict.make_output_settings",
-            side_effect=lambda cred: {
-                "url": "s3://bucket/key",
-                "credential_id": "cid",
-                "type": "s3",
-            },
-        ),
-        patch("app.base.tools.predict.dr.BatchPredictionJob") as mock_batch_job,
-        patch(
-            "app.base.tools.predict.generate_presigned_url",
-            return_value="https://dummy-presigned-url",
-        ),
+    with patch(
+        "app.base.tools.predict.get_or_create_s3_credential"
+    ) as mock_cred, patch(
+        "app.base.tools.predict.make_output_settings",
+        side_effect=lambda cred: {
+            "url": "s3://bucket/key",
+            "credential_id": "cid",
+            "type": "s3",
+        },
+    ), patch("app.base.tools.predict.dr.BatchPredictionJob") as mock_batch_job, patch(
+        "app.base.tools.predict.generate_presigned_url",
+        return_value="https://dummy-presigned-url",
     ):
         yield {
             "mock_cred": mock_cred,

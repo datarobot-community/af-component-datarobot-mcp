@@ -40,17 +40,15 @@ def test_initialize_telemetry_enabled():
     mock_credentials = MagicMock()
     mock_credentials.datarobot.api_token = "test-token"
 
-    with (
-        patch("app.base.core.telemetry.get_config", return_value=mock_config),
-        patch("app.base.core.telemetry.get_credentials", return_value=mock_credentials),
-        patch("app.base.core.telemetry._setup_otel_exporter") as mock_exporter,
+    with patch("app.base.core.telemetry.get_config", return_value=mock_config), \
+         patch("app.base.core.telemetry.get_credentials", return_value=mock_credentials), \
+         patch("app.base.core.telemetry._setup_otel_exporter") as mock_exporter, \
         patch(
             "app.base.core.telemetry._setup_http_instrumentors"
         ) as mock_instrumentors,
         patch("opentelemetry.trace.get_tracer") as mock_get_tracer,
-        patch("opentelemetry.sdk.resources.Resource.create") as mock_resource_create,
-        patch.dict("os.environ", {}, clear=True),
-    ):
+         patch("opentelemetry.sdk.resources.Resource.create") as mock_resource_create, \
+         patch.dict("os.environ", {}, clear=True):
         mock_tracer = MagicMock()
         mock_span = MagicMock(spec=Span)
         mock_tracer.start_span.return_value = mock_span

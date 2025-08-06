@@ -21,9 +21,8 @@ def test_get_sdk_client_returns_dr():
     mock_creds = MagicMock()
     mock_creds.datarobot.api_token = "token"
     mock_creds.datarobot.endpoint = "url"
-    with (
-        patch("app.base.core.common.dr.Client") as mock_client,
-        patch("app.base.core.common.get_credentials", return_value=mock_creds),
+    with patch("app.base.core.common.dr.Client") as mock_client, patch(
+        "app.base.core.common.get_credentials", return_value=mock_creds
     ):
         result = common.get_sdk_client()
         mock_client.assert_called_once_with(token="token", endpoint="url")

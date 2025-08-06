@@ -1,0 +1,7 @@
+[project]
+name = "af-component-fastmcp-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = []

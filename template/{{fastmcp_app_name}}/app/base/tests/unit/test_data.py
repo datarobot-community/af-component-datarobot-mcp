@@ -7,9 +7,8 @@ from app.base.tools import data
 
 @pytest.mark.asyncio
 async def test_upload_dataset_to_ai_catalog_success():
-    with (
-        patch("app.base.tools.data.get_sdk_client") as mock_get_client,
-        patch("os.path.exists", return_value=True),
+    with patch("app.base.tools.data.get_sdk_client") as mock_get_client, patch(
+        "os.path.exists", return_value=True
     ):
         mock_client = MagicMock()
         mock_catalog_item = MagicMock()
@@ -24,9 +23,8 @@ async def test_upload_dataset_to_ai_catalog_success():
 
 @pytest.mark.asyncio
 async def test_upload_dataset_to_ai_catalog_file_not_found():
-    with (
-        patch("app.base.tools.data.get_sdk_client"),
-        patch("os.path.exists", return_value=False),
+    with patch("app.base.tools.data.get_sdk_client"), patch(
+        "os.path.exists", return_value=False
     ):
         result = await data.upload_dataset_to_ai_catalog("nofile.csv")
         assert "File not found: nofile.csv" in result
