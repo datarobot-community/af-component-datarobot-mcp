@@ -12,21 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mcp.server.fastmcp import FastMCP
-
-from .config import get_config
+from .tagged_mcp_instance import mcp
 from .logging import log_execution
 from .telemetry import trace_execution
-
-mcp_server_configs = get_config()
-
-mcp = FastMCP(
-    name=mcp_server_configs.mcp_server_name,
-    port=mcp_server_configs.mcp_server_port,
-    log_level=mcp_server_configs.mcp_server_log_level,
-    host=mcp_server_configs.mcp_server_host,
-    stateless_http=True,
-)
 
 
 def dr_mcp_tool(tags=None):
@@ -37,7 +25,7 @@ def dr_mcp_tool(tags=None):
     """
 
     def decorator(func):
-        return mcp.tool()(dr_mcp_extras()(func))
+        return mcp.tool(tags=tags)(dr_mcp_extras()(func))
 
     return decorator
 
@@ -52,4 +40,4 @@ def dr_mcp_extras(type: str = "tool"):
     def decorator(func):
         return log_execution(trace_execution(trace_type=type)(func))
 
-    return decorator
+    return decorator 

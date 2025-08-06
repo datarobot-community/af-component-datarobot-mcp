@@ -50,7 +50,7 @@ class ModelEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["model", "management", "info"])
 async def get_best_model(project_id: str, metric: Optional[str] = None) -> str:
     """
     Get the best model for a DataRobot project, optionally by a specific metric.
@@ -106,7 +106,7 @@ async def get_best_model(project_id: str, metric: Optional[str] = None) -> str:
     return f"Best model: {best_model.model_type}{metric_info}"
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["model", "prediction", "scoring"])
 async def score_dataset_with_model(
     project_id: str, model_id: str, dataset_url: str
 ) -> str:
@@ -129,7 +129,7 @@ async def score_dataset_with_model(
     return f"Scoring job started: {job.id}"
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["model", "management", "list"])
 async def list_models(project_id: str) -> str:
     """
     List all models in a project.

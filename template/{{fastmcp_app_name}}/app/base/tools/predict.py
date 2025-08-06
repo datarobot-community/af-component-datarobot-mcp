@@ -93,7 +93,7 @@ def wait_for_preds_and_cache_results(
     return _handle_prediction_resource(job, bucket, key, deployment_id, input_desc)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["prediction", "scoring", "batch"])
 async def predict_with_deployment_by_file_path(
     deployment_id: str,
     file_path: str,
@@ -123,7 +123,7 @@ async def predict_with_deployment_by_file_path(
     )
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["prediction", "scoring", "batch"])
 async def predict_with_deployment_by_ai_catalog(
     deployment_id: str,
     dataset_id: str,
@@ -152,7 +152,7 @@ async def predict_with_deployment_by_ai_catalog(
     )
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["prediction", "scoring", "batch"])
 async def predict_with_deployment_from_project_data(
     deployment_id: str,
     project_id: str,
@@ -193,7 +193,7 @@ async def predict_with_deployment_from_project_data(
     )
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["prediction", "explanations", "shap"])
 async def get_prediction_explanations(
     project_id: str,
     model_id: str,

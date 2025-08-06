@@ -27,7 +27,7 @@ from app.base.core.mcp_instance import dr_mcp_tool
 logger = logging.getLogger(__name__)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["deployment", "info", "metadata"])
 async def get_deployment_info(deployment_id: str) -> str:
     """
     Retrieve information about the deployment, including the list of
@@ -106,7 +106,7 @@ async def get_deployment_info(deployment_id: str) -> str:
     return json.dumps(result, indent=2)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["deployment", "template", "data"])
 async def generate_prediction_data_template(deployment_id: str, n_rows: int = 1) -> str:
     """
     Generate a template CSV with the correct structure for making predictions.
@@ -211,7 +211,7 @@ async def generate_prediction_data_template(deployment_id: str, n_rows: int = 1)
     return result
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["deployment", "validation", "data"])
 async def validate_prediction_data(
     deployment_id: str, file_path: str = None, csv_string: str = None
 ) -> str:
@@ -347,7 +347,7 @@ async def validate_prediction_data(
     return json.dumps(validation_report, indent=2)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["deployment", "features", "info"])
 async def get_deployment_features(deployment_id: str) -> str:
     """
     Retrieve only the features list for a deployment, as JSON string.

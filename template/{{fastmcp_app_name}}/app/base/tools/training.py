@@ -53,7 +53,7 @@ class DatasetInsight:
     missing_data_summary: Dict[str, float]
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["training", "analysis", "dataset"])
 async def analyze_dataset(dataset_id: str) -> str:
     """
     Analyze a dataset to understand its structure and potential use cases.
@@ -110,7 +110,7 @@ async def analyze_dataset(dataset_id: str) -> str:
     return json.dumps(asdict(insights), indent=2)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["training", "analysis", "usecase"])
 async def suggest_use_cases(dataset_id: str) -> str:
     """
     Analyze a dataset and suggest potential machine learning use cases.
@@ -144,7 +144,7 @@ async def suggest_use_cases(dataset_id: str) -> str:
     return json.dumps(suggestions, indent=2)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["training", "analysis", "eda"])
 async def get_exploratory_insights(
     dataset_id: str, target_col: Optional[str] = None
 ) -> str:
@@ -467,7 +467,7 @@ def _analyze_target_for_use_cases(
     return suggestions
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["training", "autopilot", "model"])
 async def start_autopilot(
     target: str,
     project_id: Optional[str] = None,
@@ -541,7 +541,7 @@ async def start_autopilot(
         )
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["training", "model", "evaluation"])
 async def get_model_roc_curve(
     project_id: str, model_id: str, source: str = "validation"
 ) -> str:
@@ -598,7 +598,7 @@ async def get_model_roc_curve(
         return json.dumps({"error": f"Failed to get ROC curve: {str(e)}"}, indent=2)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["training", "model", "evaluation"])
 async def get_model_feature_impact(project_id: str, model_id: str) -> str:
     """
     Get detailed feature impact for a specific model.
@@ -624,7 +624,7 @@ async def get_model_feature_impact(project_id: str, model_id: str) -> str:
     )
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["training", "model", "evaluation"])
 async def get_model_lift_chart(
     project_id: str, model_id: str, source: str = "validation"
 ) -> str:

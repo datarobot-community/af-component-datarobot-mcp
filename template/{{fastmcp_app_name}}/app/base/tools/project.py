@@ -21,7 +21,7 @@ from app.base.core.mcp_instance import dr_mcp_tool
 logger = logging.getLogger(__name__)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["project", "management", "list"])
 async def list_projects() -> str:
     """
     List all DataRobot projects for the authenticated user.
@@ -36,7 +36,7 @@ async def list_projects() -> str:
     return "\n".join(f"{p.id}: {p.project_name}" for p in projects)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["project", "data", "info"])
 async def get_project_dataset_by_name(project_id: str, dataset_name: str) -> str:
     """
     Get a dataset ID by name for a given project.
