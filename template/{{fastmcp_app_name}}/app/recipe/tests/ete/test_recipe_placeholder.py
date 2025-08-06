@@ -44,7 +44,7 @@ class TestRecipePlaceholder(ToolBaseE2E):
         ete_test_mcp_session,
         expectations_for_example_placeholder,
         prompt_template,
-    ):
+    ) -> None:
         prompt = prompt_template.format()
         async with ete_test_mcp_session as session:
             await self._run_test_with_expectations(

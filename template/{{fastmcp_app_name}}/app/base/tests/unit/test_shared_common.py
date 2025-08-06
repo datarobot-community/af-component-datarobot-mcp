@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 from app.base.core import common
 
 
-def test_get_sdk_client_returns_dr():
+def test_get_sdk_client_returns_dr() -> None:
     mock_creds = MagicMock()
     mock_creds.datarobot.api_token = "token"
     mock_creds.datarobot.endpoint = "url"
@@ -29,7 +29,7 @@ def test_get_sdk_client_returns_dr():
         assert result is common.dr
 
 
-def test_get_s3_bucket_info():
+def test_get_s3_bucket_info() -> None:
     mock_creds = MagicMock()
     mock_creds.aws_predictions_s3_bucket = "bucket"
     mock_creds.aws_predictions_s3_prefix = "prefix"

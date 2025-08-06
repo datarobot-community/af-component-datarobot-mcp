@@ -38,7 +38,7 @@ else:
     load_dotenv(dotenv_path=_root_env, verbose=True, override=True)
 
 
-def integration_test_mcp_server_params():
+def integration_test_mcp_server_params() -> StdioServerParameters:
     env = {
         "DATAROBOT_API_TOKEN": os.environ.get("DATAROBOT_API_TOKEN") or "test-token",
         "DATAROBOT_ENDPOINT": os.environ.get("DATAROBOT_ENDPOINT")

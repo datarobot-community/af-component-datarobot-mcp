@@ -21,7 +21,7 @@ from opentelemetry.trace import Span, SpanContext
 from app.base.core import telemetry
 
 
-def test_initialize_telemetry_disabled():
+def test_initialize_telemetry_disabled() -> None:
     mock_config = MagicMock()
     mock_config.otel_enabled = False
     with patch("app.base.core.telemetry.get_config", return_value=mock_config):
@@ -29,7 +29,7 @@ def test_initialize_telemetry_disabled():
         assert result is None
 
 
-def test_initialize_telemetry_enabled():
+def test_initialize_telemetry_enabled() -> None:
     mock_config = MagicMock()
     mock_config.mcp_server_name = "test-service"
     mock_config.otel_enabled = True
@@ -68,7 +68,7 @@ def test_initialize_telemetry_enabled():
         )
 
 
-def test_setup_otel_env_variables():
+def test_setup_otel_env_variables() -> None:
     mock_config = MagicMock()
     mock_config.otel_collector_base_url = "http://test-collector:4318"
     mock_config.otel_entity_id = "test-entity"
@@ -89,7 +89,7 @@ def test_setup_otel_env_variables():
 
 
 @pytest.mark.asyncio
-async def test_trace_execution_async():
+async def test_trace_execution_async() -> None:
     mock_config = MagicMock()
     mock_config.otel_attributes = {"custom.attr": "test-value"}
 
@@ -107,7 +107,7 @@ async def test_trace_execution_async():
         mock_get_tracer.return_value = mock_tracer
 
         @telemetry.trace_execution("test_tool")
-        async def test_async_function(param1: str, param2: int):
+                    async def test_async_function(param1: str, param2: int) -> str:
             return f"{param1}-{param2}"
 
         result = await test_async_function("test", 123)
@@ -121,7 +121,7 @@ async def test_trace_execution_async():
         mock_span.set_attribute.assert_any_call("tool.success", True)
 
 
-def test_trace_execution_sync():
+def test_trace_execution_sync() -> None:
     mock_config = MagicMock()
     mock_config.otel_attributes = {"custom.attr": "test-value"}
 
@@ -134,7 +134,7 @@ def test_trace_execution_sync():
         mock_get_tracer.return_value = mock_tracer
 
         @telemetry.trace_execution()
-        def test_sync_function(param1: str):
+                    def test_sync_function(param1: str) -> str:
             return f"result-{param1}"
 
         result = test_sync_function("test")
@@ -147,7 +147,7 @@ def test_trace_execution_sync():
         mock_span.set_attribute.assert_any_call("tool.success", True)
 
 
-def test_get_trace_id():
+def test_get_trace_id() -> None:
     mock_span = MagicMock(spec=Span)
     mock_span_context = MagicMock(spec=SpanContext)
     mock_span_context.is_valid = True
