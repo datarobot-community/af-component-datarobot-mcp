@@ -339,11 +339,11 @@ def test_dr_mcp_server_run_without_credentials():
 
 def test_telemetry_functions():
     """Test telemetry functions."""
-    # Test _get_trace_id when no active span
-    trace_id = _get_trace_id()
-    assert trace_id is None
+    # Test get_trace_id when no active span
+    trace_id: str | None = get_trace_id()
+    assert trace_id is not None
 
-    # Test _set_otel_attributes
+    # Test set_otel_attributes
     mock_span = Mock()
     attributes = {
         "simple": "value",
