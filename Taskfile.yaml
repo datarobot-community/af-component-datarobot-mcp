@@ -1,3 +1,4 @@
+---
 version: '3'
 
 env:
@@ -34,21 +35,23 @@ tasks:
   lint-check:
     desc: 🧹 Check whether the codebase is linted
     cmds:
-        - echo "🧹 Linting"
-        - uv run ruff format --check "$SRCDIR"
-        - uv run ruff check "$SRCDIR"
-        - uv run mypy --pretty "$SRCDIR"
+      - echo "🧹 Linting"
+      - uv run ruff format --check "$SRCDIR"
+      - uv run ruff check "$SRCDIR"
+      - uv run mypy --pretty "$SRCDIR"
 
   copyright:
     aliases: [license]
     desc: 📜 Apply license headers
     cmds:
       - echo "📜 Applying license headers"
-      - docker run  --rm -v $PWD:/github/workspace ghcr.io/apache/skywalking-eyes/license-eye:eb0e0b091ea41213f712f622797e37526ca1e5d6 -v info -c .licenserc.yaml header fix
+      - docker run  --rm -v $PWD:/github/workspace ghcr.io/apache/skywalking-eyes/license-eye:eb0e0b091ea41213f712f622797e37526ca1e5d6
+        -v info -c .licenserc.yaml header fix
 
   copyright-check:
     aliases: [license-check]
     desc: 📜 Checking for license headers
     cmds:
       - echo "📜 Checking license headers"
-      - docker run  --rm -v $PWD:/github/workspace ghcr.io/apache/skywalking-eyes/license-eye:eb0e0b091ea41213f712f622797e37526ca1e5d6 -v info -c .licenserc.yaml header check
+      - docker run  --rm -v $PWD:/github/workspace ghcr.io/apache/skywalking-eyes/license-eye:eb0e0b091ea41213f712f622797e37526ca1e5d6
+        -v info -c .licenserc.yaml header check
