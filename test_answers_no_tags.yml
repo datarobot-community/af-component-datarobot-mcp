@@ -1,5 +1,0 @@
-fastmcp_app_name: mcp_server
-mcp_template_framework: base_with_tools
-enable_tag_support: false
-fastmcp_local_port: 8000
-copyright_year: 2025 
