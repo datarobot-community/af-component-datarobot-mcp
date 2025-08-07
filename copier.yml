@@ -37,7 +37,6 @@ _exclude:
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/data.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/deployment_info.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/deployment.py{% endif %}"
-  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/mcp_server_tools.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/model.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/predict_realtime.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/predict.py{% endif %}"
@@ -72,6 +71,5 @@ _exclude:
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_predict.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_project.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_model.py{% endif %}"
-  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_tagged_tools.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/unit/test_training.py{% endif %}"
 
