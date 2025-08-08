@@ -15,12 +15,12 @@
 import logging
 from typing import List, Optional
 
-from app.base.core.mcp_instance import dr_mcp_tool, mcp
+from app.base.core.mcp_instance import dr_core_mcp_tool, mcp
 
 logger = logging.getLogger(__name__)
 
 
-@dr_mcp_tool(tags=["mcp_server_tools", "metadata"])
+@dr_core_mcp_tool(tags=["mcp_server_tools", "metadata"])
 async def get_all_available_tags() -> str:
     """
     List all unique tags from all registered tools.
@@ -35,7 +35,7 @@ async def get_all_available_tags() -> str:
     return "\n".join(sorted(tags))
 
 
-@dr_mcp_tool(tags=["mcp_server_tools", "metadata", "discovery"])
+@dr_core_mcp_tool(tags=["mcp_server_tools", "metadata", "discovery"])
 async def list_tools_by_tags(
     tags: Optional[List[str]] = None, match_all: bool = False
 ) -> str:
@@ -87,7 +87,7 @@ async def list_tools_by_tags(
     return "\n".join(result)
 
 
-@dr_mcp_tool(tags=["mcp_server_tools", "metadata", "discovery"])
+@dr_core_mcp_tool(tags=["mcp_server_tools", "metadata", "discovery"])
 async def get_tool_info_by_name(tool_name: str) -> str:
     """
     Get detailed information about a specific tool by name.

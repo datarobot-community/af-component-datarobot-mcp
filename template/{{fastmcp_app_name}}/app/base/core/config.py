@@ -86,7 +86,7 @@ class MCPServerConfig(BaseSettings):
         description="Base URL for the OpenTelemetry collector",
     )
     otel_entity_id: str = Field(
-        default="mcp-default",
+        default="",
         validation_alias=AliasChoices(
             RUNTIME_PARAM_ENV_VAR_NAME_PREFIX + "OTEL_ENTITY_ID",
             "OTEL_ENTITY_ID",

@@ -33,6 +33,8 @@ tasks:
       # Start server
       - |
         OTEL_ATTRIBUTES='{"environment":"test","service.instance.id":"ete-tests"}' \
+        OTEL_COLLECTOR_BASE_URL=http://localhost:4318 \
+        OTEL_ENTITY_ID=deployment-68924b8b51102f055bef861c \
         MCP_SERVER_PORT={{.PORT}} uv run app/main.py &
       # Wait for server to be ready
       - |
@@ -47,6 +49,13 @@ tasks:
           fi
           sleep 1
         done
+    silent: true
+
+  dev-otel-background:
+    desc: "🔨 Running MCP locally in background with OTEL"
+    cmds:
+      - echo "🔨 Starting development server with OTEL"
+      - docker run -d --name jaeger -p 16686:16686 -p 4318:4318 -e COLLECTOR_OTLP_ENABLED=true jaegertracing/all-in-one:1.54 || docker start jaeger || true
     silent: true
 
   lint:
@@ -95,12 +104,16 @@ tasks:
   ete:
     desc: "Run ETE tests"
     cmds:
+      # Start jaeger in background
+      - task: dev-otel-background
       # Start server with default port 8082
       - task: dev-background
       # Set up cleanup to run on exit
       - defer: |
           echo "Stopping MCP Server"
           lsof -i :8082 | grep LISTEN | awk '{print $2}' | xargs kill -9 2>/dev/null || true
+          echo "Stopping Jaeger"
+          docker stop jaeger || true
       # Run tests
       - echo "Running ETE tests"
       - uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/base/tests/ete/ app/recipe/tests/ete/{{end}} -s -vv

@@ -32,3 +32,31 @@ def mock_datarobot_token() -> None:
         },
     ):
         yield
+
+
+@pytest.fixture(autouse=True)
+def mock_all_telemetry(request):
+    """Mock all telemetry-related functionality for unit tests.
+
+    Skips mocking for test_shared_telemetry.py since those tests specifically test telemetry functionality.
+    """
+    # Skip for test_shared_telemetry.py tests
+    if request.module.__name__.endswith("test_shared_telemetry"):
+        yield
+        return
+
+    with (
+        patch("app.base.core.telemetry.initialize_telemetry", return_value=None),
+        patch("opentelemetry.trace.get_tracer"),
+        patch("opentelemetry.trace.get_tracer_provider"),
+        patch.dict(
+            "os.environ",
+            {
+                "OTEL_ENABLED": "false",
+                "OTEL_EXPORTER_OTLP_ENDPOINT": "",
+                "OTEL_EXPORTER_OTLP_HEADERS": "",
+            },
+            clear=False,
+        ),
+    ):
+        yield

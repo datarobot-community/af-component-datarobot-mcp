@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -23,8 +24,8 @@ class ToolCallTestExpectations(BaseModel):
     """Class to store tool call information."""
 
     name: str
-    parameters: dict[str, str]
-    result: str | dict[str, str]
+    parameters: dict[str, Any]
+    result: str | dict[str, Any]
 
 
 class ETETestExpectations(BaseModel):
@@ -39,8 +40,8 @@ SHOULD_NOT_BE_EMPTY = "SHOULD_NOT_BE_EMPTY"
 
 
 def _check_dict_has_keys(
-    expected: dict[str, str],
-    actual: dict[str, str] | list[dict[str, str]],
+    expected: dict[str, Any],
+    actual: dict[str, Any] | list[dict[str, Any]],
     path: str = "",
 ) -> bool:
     """

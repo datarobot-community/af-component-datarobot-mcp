@@ -44,7 +44,7 @@ def get_sdk_client(ctx: Context = None):
             token = auth_header[7:].strip()
     if not token:
         credentials = get_credentials()
-        token = credentials.datarobot.api_token
+        token = credentials.datarobot.application_api_token
         endpoint = credentials.datarobot.endpoint
     else:
         credentials = get_credentials()

@@ -19,29 +19,36 @@ from app.base.core import credentials
 
 def test_datarobot_credentials_default_endpoint() -> None:
     """Test DataRobot credentials with default endpoint."""
-    with patch.dict("os.environ", {}, clear=True):  # Clear all env vars
+    env_vars = {
+        "DATAROBOT_API_TOKEN": "test-token",
+    }
+    with patch.dict("os.environ", env_vars, clear=True):  # Clear all env vars
         creds = credentials.DataRobotCredentials()
-        assert creds.api_token == "test-token"
+        assert creds.application_api_token == "test-token"
+        assert creds.user_api_token == ""
         assert creds.endpoint == "https://app.datarobot.com/api/v2"
 
 
 def test_datarobot_credentials_custom_endpoint() -> None:
     """Test DataRobot credentials with custom endpoint."""
-    with patch.dict(
-        "os.environ",
-        {
-            "DATAROBOT_ENDPOINT": "https://custom.endpoint.com/api/v2",
-        },
-        clear=True,  # Clear all env vars first
-    ):
+    env_vars = {
+        "DATAROBOT_API_TOKEN": "test-token",
+        "USER_API_TOKEN": "test-user-token",
+        "DATAROBOT_ENDPOINT": "https://custom.endpoint.com/api/v2",
+    }
+    with patch.dict("os.environ", env_vars, clear=True):
         creds = credentials.DataRobotCredentials()
-        assert creds.api_token == "test-token"
+        assert creds.application_api_token == "test-token"
+        assert creds.user_api_token == "test-user-token"
         assert creds.endpoint == "https://custom.endpoint.com/api/v2"
 
 
 def test_mcp_server_credentials_aws_defaults() -> None:
     """Test AWS credentials with default values."""
-    with patch.dict("os.environ", {}, clear=True):  # Clear all env vars
+    env_vars = {
+        "DATAROBOT_API_TOKEN": "test-token",
+    }
+    with patch.dict("os.environ", env_vars, clear=True):  # Clear all env vars
         creds = credentials.MCPServerCredentials()
         assert creds.aws_access_key_id is None
         assert creds.aws_secret_access_key is None
@@ -53,13 +60,14 @@ def test_mcp_server_credentials_aws_defaults() -> None:
 def test_mcp_server_credentials_aws_custom_values() -> None:
     """Test AWS credentials with custom values."""
     env_vars = {
+        "DATAROBOT_API_TOKEN": "test-token",
         "AWS_ACCESS_KEY_ID": "test-key-id",
         "AWS_SECRET_ACCESS_KEY": "test-secret-key",
         "AWS_SESSION_TOKEN": "test-session-token",
         "AWS_PREDICTIONS_S3_BUCKET": "custom-bucket",
         "AWS_PREDICTIONS_S3_PREFIX": "custom/prefix/",
     }
-    with patch.dict("os.environ", env_vars, clear=True):  # Clear all env vars first
+    with patch.dict("os.environ", env_vars, clear=True):
         creds = credentials.MCPServerCredentials()
         assert creds.aws_access_key_id == "test-key-id"
         assert creds.aws_secret_access_key == "test-secret-key"
@@ -72,22 +80,29 @@ def test_mcp_server_credentials_has_aws_credentials() -> None:
     """Test MCPServerCredentials.has_aws_credentials method."""
     # Test with AWS credentials
     env_vars = {
+        "DATAROBOT_API_TOKEN": "test-token",
         "AWS_ACCESS_KEY_ID": "test-key-id",
         "AWS_SECRET_ACCESS_KEY": "test-secret-key",
     }
-    with patch.dict("os.environ", env_vars, clear=True):  # Clear all env vars first
+    with patch.dict("os.environ", env_vars, clear=True):
         creds = credentials.MCPServerCredentials()
         assert creds.has_aws_credentials() is True
 
     # Test without AWS credentials
-    with patch.dict("os.environ", {}, clear=True):  # Clear all env vars
+    env_vars = {
+        "DATAROBOT_API_TOKEN": "test-token",
+    }
+    with patch.dict("os.environ", env_vars, clear=True):
         creds = credentials.MCPServerCredentials()
         assert creds.has_aws_credentials() is False
 
 
 def test_get_credentials_singleton() -> None:
     """Test get_credentials returns singleton instance."""
-    with patch.dict("os.environ", {}, clear=True):  # Clear all env vars
+    env_vars = {
+        "DATAROBOT_API_TOKEN": "test-token",
+    }
+    with patch.dict("os.environ", env_vars, clear=True):
         # Reset the singleton instance
         credentials._credentials = None
 
@@ -98,3 +113,22 @@ def test_get_credentials_singleton() -> None:
         # Second call should return same instance
         creds2 = credentials.get_credentials()
         assert creds2 is creds1
+
+
+def test_has_datarobot_credentials():
+    """Test MCPServerCredentials.has_datarobot_credentials method."""
+    # Test with DataRobot credentials
+    env_vars = {
+        "DATAROBOT_API_TOKEN": "test-token",
+    }
+    with patch.dict("os.environ", env_vars, clear=True):
+        creds = credentials.MCPServerCredentials()
+        assert creds.has_datarobot_credentials() is True
+
+    # Test without DataRobot credentials
+    with patch.dict("os.environ", {}, clear=True):
+        try:
+            credentials.MCPServerCredentials()
+            assert False, "Should raise ValidationError"
+        except Exception:
+            assert True

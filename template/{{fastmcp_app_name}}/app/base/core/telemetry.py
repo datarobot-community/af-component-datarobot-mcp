@@ -50,15 +50,19 @@ def _setup_otel_env_variables() -> None:
         return
 
     credentials = get_credentials()
-    datarobot_api_token = credentials.datarobot.api_token
+    # currently there seem to be a problem with the custom application api token, so we are using the user api token
+    # curl -X POST -H "Authorization: Bearer ..." -H "Content-Type: application/json" -d '{"entitlements": [{"name": "ENABLE_ENHANCED_SAML_SSO"}]}' https://staging.datarobot.com/api/v2/entitlements/evaluate/
+    # {"message": "Invalid Authorization header"}
+    api_token = (
+        credentials.datarobot.user_api_token
+        or credentials.datarobot.application_api_token
+    )
 
     config = get_config()
     otlp_endpoint = config.otel_collector_base_url
     entity_id = config.otel_entity_id
 
-    otlp_headers = (
-        f"X-DataRobot-Api-Key={datarobot_api_token},X-DataRobot-Entity-Id={entity_id}"
-    )
+    otlp_headers = f"X-DataRobot-Api-Key={api_token},X-DataRobot-Entity-Id={entity_id}"
     os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = otlp_endpoint
     os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = otlp_headers
     root_logger.info(
@@ -133,6 +137,13 @@ def initialize_telemetry() -> Optional[Span]:
     # If OpenTelemetry is disabled, return None
     if not config.otel_enabled:
         root_logger.info("OpenTelemetry is disabled")
+        return None
+
+    # If OTEL_ENTITY_ID is not set, skip telemetry
+    if not config.otel_entity_id and not os.environ.get("OTEL_EXPORTER_OTLP_HEADERS"):
+        root_logger.info(
+            "Neither OTEL_ENTITY_ID nor OTEL_EXPORTER_OTLP_HEADERS is set, skipping telemetry"
+        )
         return None
 
     # Create resource with service name from config

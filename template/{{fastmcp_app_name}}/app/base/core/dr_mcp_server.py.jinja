@@ -19,7 +19,6 @@ import logging
 import os
 
 from mcp.server.fastmcp import FastMCP
-from starlette.responses import JSONResponse
 
 from app.recipe.core.recipe_config import get_recipe_config
 from app.recipe.core.recipe_credentials import get_recipe_credentials
@@ -27,6 +26,8 @@ from app.recipe.core.recipe_credentials import get_recipe_credentials
 from .config import get_config
 from .credentials import get_credentials
 from .logging import MCPLogging
+from .memory_management import MemoryManager
+from .routes import register_routes
 from .telemetry import initialize_telemetry
 
 
@@ -42,6 +43,10 @@ def _import_modules_from_dir(directory: str, package_prefix: str) -> None:
 
 # Dynamically import all modules from tools and prompts to register them with MCP
 app_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+_import_modules_from_dir(
+    os.path.join(app_dir, "base", "tools", "core"), "app.base.tools.core"
+)
 {% if mcp_template_framework == "base_with_tools" %}
 _import_modules_from_dir(os.path.join(app_dir, "base", "tools"), "app.base.tools")
 _import_modules_from_dir(os.path.join(app_dir, "base", "prompts"), "app.base.prompts")
@@ -79,38 +84,28 @@ class DataRobotMCPServer:
         self._mcp_transport = transport
         self._root_tracing_span = initialize_telemetry()
 
-        if transport == "streamable-http":
-            # Custom apps checks this route to see if the server is running
-            @self._mcp.custom_route("/", methods=["GET"])
-            async def handle_health(_):
-                return JSONResponse(
-                    status_code=200,
-                    content={
-                        "status": "healthy",
-                        "message": "DataRobot MCP Server is running",
-                    },
-                )
-
-        # Custom endpoint to get all tags
-        @self._mcp.custom_route("/tags", methods=["GET"])
-        async def handle_tags(_):
+        if get_credentials().has_aws_credentials():
+            self._logger.info("Initializing memory manager")
             try:
-                tags = await self._mcp.get_all_tags()
-                return JSONResponse(
-                    status_code=200,
-                    content={
-                        "tags": tags,
-                        "count": len(tags),
-                        "message": "All available tags retrieved successfully",
-                    },
-                )
+                self._memory_manager = MemoryManager.get_instance()
             except Exception as e:
-                return JSONResponse(
-                    status_code=500,
-                    content={
-                        "error": f"Failed to retrieve tags: {str(e)}",
-                    },
-                )
+                self._logger.error(f"Error initializing memory manager: {e}")
+                self._logger.info("Skipping memory manager initialization")
+                self._memory_manager = None
+        else:
+            self._logger.info(
+                "No AWS credentials found, skipping memory manager initialization"
+            )
+            self._memory_manager = None
+
+        if self._memory_manager:
+            _import_modules_from_dir(
+                os.path.join(app_dir, "base", "tools", "core", "memory_management"),
+                "app.base.tools.core.memory_management",
+            )
+
+        if transport == "streamable-http":
+            register_routes(self._mcp)
 
     def run(self) -> None:
         """Run the DataRobot MCP server synchronously."""
@@ -141,5 +136,6 @@ class DataRobotMCPServer:
 
         except Exception as e:
             self._logger.error(f"Server error: {e}")
-            self._root_tracing_span.record_exception(e)
+            if self._root_tracing_span:
+                self._root_tracing_span.record_exception(e)
             raise
