@@ -20,7 +20,7 @@ from app.base.core.dr_mcp_server import DataRobotMCPServer
 from app.base.core.mcp_instance import mcp
 
 
-def main():
+def main() -> None:
     """Run the integration test MCP server."""
 
     server = DataRobotMCPServer(mcp, transport="stdio")

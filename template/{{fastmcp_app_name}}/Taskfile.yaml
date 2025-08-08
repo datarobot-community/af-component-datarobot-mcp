@@ -109,11 +109,13 @@ tasks:
     desc: "Run integration tests"
     cmds:
       - echo "Running integration tests"
-      - uv sync --all-extras && uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/base/tests/integration/ app/recipe/tests/integration/{{end}} -s -vv
+      - uv sync --all-extras && uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/base/tests/integration/ app/recipe/tests/integration/{{end}}
+        -s -vv
     silent: true
   unit:
     desc: "Run unit tests"
     cmds:
       - echo "Running unit tests"
-      - uv sync --all-extras && uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/base/tests/unit/ app/recipe/tests/unit/{{end}} -s -vv
+      - uv sync --all-extras && uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/base/tests/unit/ app/recipe/tests/unit/{{end}}
+        -s -vv
     silent: true

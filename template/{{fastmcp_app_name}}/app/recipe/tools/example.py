@@ -20,7 +20,7 @@ from app.base.core.mcp_instance import dr_mcp_tool
 logger = logging.getLogger(__name__)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["recipe", "example", "placeholder"])
 async def tool_example_placeholder(argument1: str) -> str:
     """
     A recipe tool example as a placeholder.

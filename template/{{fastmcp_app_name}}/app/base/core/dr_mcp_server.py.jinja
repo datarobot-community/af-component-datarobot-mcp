@@ -91,6 +91,27 @@ class DataRobotMCPServer:
                     },
                 )
 
+        # Custom endpoint to get all tags
+        @self._mcp.custom_route("/tags", methods=["GET"])
+        async def handle_tags(_):
+            try:
+                tags = await self._mcp.get_all_tags()
+                return JSONResponse(
+                    status_code=200,
+                    content={
+                        "tags": tags,
+                        "count": len(tags),
+                        "message": "All available tags retrieved successfully",
+                    },
+                )
+            except Exception as e:
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "error": f"Failed to retrieve tags: {str(e)}",
+                    },
+                )
+
     def run(self) -> None:
         """Run the DataRobot MCP server synchronously."""
         try:

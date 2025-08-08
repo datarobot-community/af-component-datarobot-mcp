@@ -146,10 +146,9 @@ async def test_get_sdk_client_falls_back_to_env():
     ctx = MagicMock()
     ctx.request = MagicMock()
     ctx.request.headers = {}
-    with (
-        patch("datarobot.Client") as mock_client,
-        patch("app.base.core.common.get_credentials") as mock_get_creds,
-    ):
+    with patch("datarobot.Client") as mock_client, patch(
+        "app.base.core.common.get_credentials"
+    ) as mock_get_creds:
         mock_creds = MagicMock()
         mock_creds.datarobot.api_token = "env-token"
         mock_creds.datarobot.endpoint = "env-endpoint"
@@ -163,10 +162,9 @@ async def test_get_sdk_client_falls_back_to_env():
 @pytest.mark.asyncio
 async def test_get_sdk_client_no_ctx():
     # No context provided, should use environment token
-    with (
-        patch("datarobot.Client") as mock_client,
-        patch("app.base.core.common.get_credentials") as mock_get_creds,
-    ):
+    with patch("datarobot.Client") as mock_client, patch(
+        "app.base.core.common.get_credentials"
+    ) as mock_get_creds:
         mock_creds = MagicMock()
         mock_creds.datarobot.api_token = "env-token"
         mock_creds.datarobot.endpoint = "env-endpoint"

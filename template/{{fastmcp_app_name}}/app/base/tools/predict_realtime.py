@@ -45,7 +45,7 @@ def make_output_settings():
     return BucketInfo(bucket=bucket_info["bucket"], key=s3_key)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["prediction", "realtime", "scoring"])
 async def predict_with_deployment_by_ai_catalog_rt(
     deployment_id: str,
     dataset_id: str,
@@ -80,7 +80,7 @@ async def predict_with_deployment_by_ai_catalog_rt(
     )
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["prediction", "realtime", "scoring"])
 async def predict_realtime(
     deployment_id: str,
     file_path: str = None,

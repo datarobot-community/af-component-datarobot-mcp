@@ -18,7 +18,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def mock_datarobot_token():
+def mock_datarobot_token() -> None:
     """Fixture to provide mock DataRobot API token.
 
     This fixture is automatically used in all unit tests to ensure

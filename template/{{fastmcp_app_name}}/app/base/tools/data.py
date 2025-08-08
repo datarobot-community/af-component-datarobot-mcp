@@ -21,7 +21,7 @@ from app.base.core.mcp_instance import dr_mcp_tool
 logger = logging.getLogger(__name__)
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["data", "management", "upload"])
 async def upload_dataset_to_ai_catalog(file_path: str) -> str:
     """
     Upload a dataset to the DataRobot AI Catalog.
@@ -40,7 +40,7 @@ async def upload_dataset_to_ai_catalog(file_path: str) -> str:
     return f"AI Catalog ID: {catalog_item.id}"
 
 
-@dr_mcp_tool()
+@dr_mcp_tool(tags=["data", "management", "list"])
 async def list_ai_catalog_items() -> str:
     """
     List all AI Catalog items (datasets) for the authenticated user.

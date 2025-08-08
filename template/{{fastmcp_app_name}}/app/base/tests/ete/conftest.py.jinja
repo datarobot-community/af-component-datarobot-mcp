@@ -26,7 +26,7 @@ from .openai_llm_mcp_client import LLMMCPClient
 
 @pytest.fixture
 @asynccontextmanager
-async def ete_test_mcp_session(headers: dict[str, str] = None):
+async def ete_test_mcp_session(headers: dict[str, str] | None = None):
     """
     Create an MCP session for each test.
     """

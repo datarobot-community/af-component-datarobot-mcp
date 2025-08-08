@@ -20,7 +20,7 @@ from app.recipe.tools import example
 
 
 @pytest.mark.asyncio
-async def test_example():
+async def test_example() -> None:
     mock_client = MagicMock()
     with patch("app.recipe.tools.example.get_sdk_client", return_value=mock_client):
         result = await example.tool_example_placeholder("test")

@@ -12,15 +12,17 @@ from app.base.tools import predict_realtime
 
 @pytest.fixture()
 def patch_realtime_dependencies():
-    with (
-        patch("app.base.tools.predict_realtime.get_sdk_client") as mock_get_sdk_client,
-        patch("app.base.tools.predict_realtime.pd.read_csv") as mock_read_csv,
-        patch("app.base.tools.predict_realtime.dr_predict") as mock_dr_predict,
-        patch("app.base.core.utils.boto3.client") as mock_boto3_client,
-        patch(
-            "app.base.core.utils.generate_presigned_url",
-            return_value="https://dummy-presigned-url",
-        ),
+    with patch(
+        "app.base.tools.predict_realtime.get_sdk_client"
+    ) as mock_get_sdk_client, patch(
+        "app.base.tools.predict_realtime.pd.read_csv"
+    ) as mock_read_csv, patch(
+        "app.base.tools.predict_realtime.dr_predict"
+    ) as mock_dr_predict, patch(
+        "app.base.core.utils.boto3.client"
+    ) as mock_boto3_client, patch(
+        "app.base.core.utils.generate_presigned_url",
+        return_value="https://dummy-presigned-url",
     ):
         mock_client = MagicMock()
         mock_deployment = MagicMock()

@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from app.base.tests.conftest import *
+from app.base.tests.conftest import *  # noqa: F403:w

@@ -244,7 +244,7 @@ async def test_get_model_lift_chart():
 async def test_start_autopilot_validation():
     """Test validation of input parameters for start_autopilot."""
     # Test missing dataset info for new project
-    with patch("app.base.tools.training.get_sdk_client") as mock_get_client:
+    with patch("app.base.tools.training.get_sdk_client"):
         result = await training.start_autopilot(target="target")
         assert "Error: Either dataset_url or dataset_id must be provided" in result
 

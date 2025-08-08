@@ -17,7 +17,7 @@ from unittest.mock import patch
 from app.base.core import credentials
 
 
-def test_datarobot_credentials_default_endpoint():
+def test_datarobot_credentials_default_endpoint() -> None:
     """Test DataRobot credentials with default endpoint."""
     with patch.dict("os.environ", {}, clear=True):  # Clear all env vars
         creds = credentials.DataRobotCredentials()
@@ -25,7 +25,7 @@ def test_datarobot_credentials_default_endpoint():
         assert creds.endpoint == "https://app.datarobot.com/api/v2"
 
 
-def test_datarobot_credentials_custom_endpoint():
+def test_datarobot_credentials_custom_endpoint() -> None:
     """Test DataRobot credentials with custom endpoint."""
     with patch.dict(
         "os.environ",
@@ -39,7 +39,7 @@ def test_datarobot_credentials_custom_endpoint():
         assert creds.endpoint == "https://custom.endpoint.com/api/v2"
 
 
-def test_mcp_server_credentials_aws_defaults():
+def test_mcp_server_credentials_aws_defaults() -> None:
     """Test AWS credentials with default values."""
     with patch.dict("os.environ", {}, clear=True):  # Clear all env vars
         creds = credentials.MCPServerCredentials()
@@ -50,7 +50,7 @@ def test_mcp_server_credentials_aws_defaults():
         assert creds.aws_predictions_s3_prefix == "dev/mcp-temp-storage/predictions/"
 
 
-def test_mcp_server_credentials_aws_custom_values():
+def test_mcp_server_credentials_aws_custom_values() -> None:
     """Test AWS credentials with custom values."""
     env_vars = {
         "AWS_ACCESS_KEY_ID": "test-key-id",
@@ -68,7 +68,7 @@ def test_mcp_server_credentials_aws_custom_values():
         assert creds.aws_predictions_s3_prefix == "custom/prefix/"
 
 
-def test_mcp_server_credentials_has_aws_credentials():
+def test_mcp_server_credentials_has_aws_credentials() -> None:
     """Test MCPServerCredentials.has_aws_credentials method."""
     # Test with AWS credentials
     env_vars = {
@@ -85,7 +85,7 @@ def test_mcp_server_credentials_has_aws_credentials():
         assert creds.has_aws_credentials() is False
 
 
-def test_get_credentials_singleton():
+def test_get_credentials_singleton() -> None:
     """Test get_credentials returns singleton instance."""
     with patch.dict("os.environ", {}, clear=True):  # Clear all env vars
         # Reset the singleton instance
