@@ -347,7 +347,9 @@ class MemoryManager:
         """Delete a memory storage and its resources."""
         try:
             # Check if this is the active storage
-            active_storage_id = await self.get_active_storage_id_for_agent(agent_identifier)
+            active_storage_id = await self.get_active_storage_id_for_agent(
+                agent_identifier
+            )
 
             # List all objects with the storage ID prefix
             prefix = f"agents/{agent_identifier}/storages/{memory_storage_id}"
@@ -657,7 +659,8 @@ class MemoryManager:
             result = self.s3_config.client.get_object(
                 Bucket=self.s3_config.bucket_name, Key=data_key
             )
-            return result["Body"].read()
+            data = result["Body"].read()
+            return data if isinstance(data, bytes) else None
         except ClientError as e:
             MemoryManager._handle_s3_error("get_resource_data", e, resource_id)
             return None
@@ -786,7 +789,7 @@ class MemoryManager:
         if not agent_identifier:
             raise ValueError(f"Memory storage {memory_storage_id} not found")
 
-        return agent_identifier
+        return str(agent_identifier)
 
     async def set_storage_id_for_agent(
         self, agent_identifier: str, storage_id: str, label: str

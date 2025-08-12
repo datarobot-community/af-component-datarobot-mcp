@@ -67,5 +67,5 @@ class TestRecipePlaceholder(ToolBaseE2E):
                 expectations_for_example_placeholder,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_upload_dataset_to_ai_catalog_success",
             )

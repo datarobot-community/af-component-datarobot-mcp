@@ -103,23 +103,20 @@ class ToolBaseE2E:
         )
 
         # sometimes llm are too smart and doesn't call tools especially for the case when file doesn't exist
-        if (
-            test_expectations.potential_no_tool_calls
-            and len(response.tool_calls_made) == 0
-        ):
+        if test_expectations.potential_no_tool_calls and len(response.tool_calls) == 0:
             pass
         else:
             # Verify LLM decided to use tools
-            assert len(response.tool_calls_made) == len(
+            assert len(response.tool_calls) == len(
                 test_expectations.tool_calls_expected
             ), "LLM should have decided to call tools"
 
-        for i, tool_call in enumerate(response.tool_calls_made):
-            assert (
-                tool_call.tool_name == test_expectations.tool_calls_expected[i].name
-            ), (
-                f"Should have called {test_expectations.tool_calls_expected[i].name} tool, but got: {tool_call.tool_name}"
-            )
+            for i, tool_call in enumerate(response.tool_calls):
+                assert (
+                    tool_call.tool_name == test_expectations.tool_calls_expected[i].name
+                ), (
+                    f"Should have called {test_expectations.tool_calls_expected[i].name} tool, but got: {tool_call.tool_name}"
+                )
             assert (
                 tool_call.parameters
                 == test_expectations.tool_calls_expected[i].parameters
@@ -145,8 +142,8 @@ class ToolBaseE2E:
         # Verify LLM provided comprehensive response
         assert len(response.content) > 100, "LLM should provide detailed response"
         assert any(
-            expected_response.lower() in response.clean_content
+            expected_response.lower() in response.content
             for expected_response in test_expectations.llm_response_content_contains_expectations
         ), (
-            f"Response should mention {test_expectations.llm_response_content_contains_expectations}, but got: {response.clean_content}"
+            f"Response should mention {test_expectations.llm_response_content_contains_expectations}, but got: {response.content}"
         )

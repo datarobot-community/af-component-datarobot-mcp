@@ -27,7 +27,7 @@ logger = getLogger(__name__)
 def register_routes(mcp: FastMCP) -> None:
     """Register all routes with the MCP server."""
 
-    @mcp.custom_route("/", methods=["GET"])
+    @mcp.custom_route("/", methods=["GET"])  # type: ignore[misc]
     async def handle_health(_: Request) -> JSONResponse:
         return JSONResponse(
             status_code=200,
@@ -38,7 +38,7 @@ def register_routes(mcp: FastMCP) -> None:
         )
 
     # Custom endpoint to get all tags
-    @mcp.custom_route("/tags", methods=["GET"])
+    @mcp.custom_route("/tags", methods=["GET"])  # type: ignore[misc]
     async def handle_tags(_: Request) -> JSONResponse:
         try:
             # TaggedFastMCP extends FastMCP with get_all_tags
@@ -62,7 +62,7 @@ def register_routes(mcp: FastMCP) -> None:
     memory_manager = get_memory_manager()
     if memory_manager:
         # Route to initialize a new storage for an agent
-        @mcp.custom_route("/agent/{agent_id}/storage/{label}", methods=["POST"])
+        @mcp.custom_route("/agent/{agent_id}/storage/{label}", methods=["POST"])  # type: ignore[misc]
         async def initialize_agent_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             label = request.path_params["label"]
@@ -86,7 +86,7 @@ def register_routes(mcp: FastMCP) -> None:
             )
 
         # Route to list all storages for an agent
-        @mcp.custom_route("/agent/{agent_id}/storages", methods=["GET"])
+        @mcp.custom_route("/agent/{agent_id}/storages", methods=["GET"])  # type: ignore[misc]
         async def list_agent_storages(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             storages = await memory_manager.list_storages(agent_identifier=agent_id)
@@ -112,7 +112,7 @@ def register_routes(mcp: FastMCP) -> None:
             )
 
         # Route to get a specific storage by ID
-        @mcp.custom_route("/agent/{agent_id}/storages/{storage_id}", methods=["GET"])
+        @mcp.custom_route("/agent/{agent_id}/storages/{storage_id}", methods=["GET"])  # type: ignore[misc]
         async def get_agent_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             storage_id = request.path_params["storage_id"]
@@ -141,7 +141,7 @@ def register_routes(mcp: FastMCP) -> None:
             )
 
         # Route to delete a specific storage
-        @mcp.custom_route("/agent/{agent_id}/storages/{storage_id}", methods=["DELETE"])
+        @mcp.custom_route("/agent/{agent_id}/storages/{storage_id}", methods=["DELETE"])  # type: ignore[misc]
         async def delete_agent_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             storage_id = request.path_params["storage_id"]
@@ -164,7 +164,7 @@ def register_routes(mcp: FastMCP) -> None:
             )
 
         # Route to delete all storages for an agent
-        @mcp.custom_route("/agent/{agent_id}", methods=["DELETE"])
+        @mcp.custom_route("/agent/{agent_id}", methods=["DELETE"])  # type: ignore[misc]
         async def delete_agent(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
 
@@ -186,7 +186,7 @@ def register_routes(mcp: FastMCP) -> None:
         # Route to set active storage for an agent
         @mcp.custom_route(
             "/agent/{agent_id}/storages/{storage_id}/activate", methods=["POST"]
-        )
+        )  # type: ignore[misc]
         async def set_active_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             storage_id = request.path_params["storage_id"]
@@ -222,7 +222,7 @@ def register_routes(mcp: FastMCP) -> None:
             )
 
         # Route to get active storage for an agent
-        @mcp.custom_route("/agent/{agent_id}/active-storage", methods=["GET"])
+        @mcp.custom_route("/agent/{agent_id}/active-storage", methods=["GET"])  # type: ignore[misc]
         async def get_active_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
 
@@ -249,7 +249,7 @@ def register_routes(mcp: FastMCP) -> None:
             )
 
         # Route to clear active storage for an agent
-        @mcp.custom_route("/agent/{agent_id}/active-storage", methods=["DELETE"])
+        @mcp.custom_route("/agent/{agent_id}/active-storage", methods=["DELETE"])  # type: ignore[misc]
         async def clear_active_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
 

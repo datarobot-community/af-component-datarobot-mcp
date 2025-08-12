@@ -134,8 +134,7 @@ class DataRobotMCPServer:
 
             # Start the server
             self._logger.info("Starting MCP server...")
-            # type: ignore[arg-type] - transport is validated at runtime
-            self._mcp.run(transport=self._mcp_transport)
+            self._mcp.run(transport=self._mcp_transport)  # type: ignore[arg-type]
 
         except Exception as e:
             self._logger.error(f"Server error: {e}")

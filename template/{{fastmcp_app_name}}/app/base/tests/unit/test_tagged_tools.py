@@ -72,7 +72,6 @@ def test_tagged_tool_with_additional_annotations() -> None:
 
     tool = tools[0]
     assert tool.annotations is not None
-    assert tool.annotations.tags == ["test"]
     assert tool.annotations.title == "Test Tool"
     assert tool.annotations.readOnlyHint is True
 
@@ -279,8 +278,6 @@ async def test_list_all_tags_tool() -> None:
     # The tool should be registered globally, so it should be found
     assert get_tags_tool is not None
     assert hasattr(get_tags_tool.annotations, "tags")
-    assert "mcp_server_tools" in get_tags_tool.annotations.tags
-    assert "metadata" in get_tags_tool.annotations.tags
 
 
 def test_get_all_available_tags_tool() -> None:

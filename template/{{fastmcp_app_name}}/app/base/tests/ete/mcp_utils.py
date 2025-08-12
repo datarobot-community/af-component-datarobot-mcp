@@ -63,10 +63,16 @@ def get_openai_llm_client_config() -> Dict[str, str]:
             "Missing required environment variable: OPENAI_API_DEPLOYMENT_ID"
         )
 
-    return {
+    config: Dict[str, str] = {
         "openai_api_key": openai_api_key,
-        "openai_api_base": openai_api_base,
-        "openai_api_deployment_id": openai_api_deployment_id,
-        "openai_api_version": openai_api_version,
-        "save_llm_responses": save_llm_responses,
     }
+
+    if openai_api_base:
+        config["openai_api_base"] = openai_api_base
+    if openai_api_deployment_id:
+        config["openai_api_deployment_id"] = openai_api_deployment_id
+    if openai_api_version:
+        config["openai_api_version"] = openai_api_version
+    config["save_llm_responses"] = str(save_llm_responses)
+
+    return config

@@ -31,7 +31,7 @@ class TaggedFastMCP(FastMCP):
     Extended FastMCP that supports tags and other annotations directly in the tool decorator.
     """
 
-    def tool(
+    def tool(  # type: ignore[override]
         self,
         name: str | None = None,
         description: str | None = None,
@@ -91,7 +91,7 @@ class TaggedFastMCP(FastMCP):
         # Filter tools by tags
         filtered_tools = filter_tools_by_tags(list(all_tools), tags, match_all)
 
-        return filtered_tools
+        return filtered_tools  # type: ignore[return-value]
 
     async def get_all_tags(self) -> List[str]:
         """
@@ -110,13 +110,15 @@ mcp_server_configs = get_config()
 mcp = TaggedFastMCP(
     name=mcp_server_configs.mcp_server_name,
     port=mcp_server_configs.mcp_server_port,
-    log_level=str(mcp_server_configs.mcp_server_log_level),
+    log_level=str(mcp_server_configs.mcp_server_log_level),  # type: ignore[arg-type]
     host=mcp_server_configs.mcp_server_host,
     stateless_http=True,
 )
 
 
-def dr_core_mcp_tool(tags: Optional[List[str]] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def dr_core_mcp_tool(
+    tags: Optional[List[str]] = None,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Combined decorator that includes mcp.tool() and dr_mcp_extras()"""
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -125,7 +127,9 @@ def dr_core_mcp_tool(tags: Optional[List[str]] = None) -> Callable[[Callable[...
     return decorator
 
 
-def dr_mcp_tool(tags: Optional[List[str]] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def dr_mcp_tool(
+    tags: Optional[List[str]] = None,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Combined decorator that includes mcp.tool(), dr_mcp_extras(), and capture memory ids from the request headers if they exist
 
     Args:
@@ -142,7 +146,12 @@ def dr_mcp_tool(tags: Optional[List[str]] = None) -> Callable[[Callable[..., Any
 
             # Extract X-Agent-Id if context and headers exist
             agent_id = None
-            if ctx and ctx.request_context and ctx.request_context.request and hasattr(ctx.request_context.request, "headers"):
+            if (
+                ctx
+                and ctx.request_context
+                and ctx.request_context.request
+                and hasattr(ctx.request_context.request, "headers")
+            ):
                 headers = ctx.request_context.request.headers
                 agent_id = headers.get("x-agent-id")
 
@@ -165,7 +174,9 @@ def dr_mcp_tool(tags: Optional[List[str]] = None) -> Callable[[Callable[..., Any
     return decorator
 
 
-def dr_mcp_extras(type: str = "tool") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def dr_mcp_extras(
+    type: str = "tool",
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Combined decorator that includes log_execution and trace_execution()
 
     Args:

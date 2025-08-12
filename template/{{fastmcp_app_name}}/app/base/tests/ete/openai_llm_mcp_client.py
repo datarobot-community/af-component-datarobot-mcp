@@ -23,104 +23,65 @@ from mcp.types import (
     ListPromptsResult,
     ListResourcesResult,
     ListToolsResult,
-    PromptArgument,
     ReadResourceResult,
     TextContent,
     TextResourceContents,
 )
-from openai import AzureOpenAI
-from openai.types.chat.chat_completion import ChatCompletion
-from pydantic import BaseModel
 
-from .common import save_response_to_file
 from .mcp_utils import get_dr_mcp_server_url
 
 
-def _serialize_prompt_arguments(arguments: List[PromptArgument]) -> Dict[str, Any]:
-    """Convert PromptArgument objects to OpenAI function parameters schema."""
-    properties = {}
-    required = []
+class ToolCall:
+    """Represents a tool call with its parameters and reasoning."""
 
-    for arg in arguments:
-        if arg.required:
-            required.append(arg.name)
-        properties[arg.name] = {
-            "type": "string",  # Default to string since PromptArgument doesn't specify type
-            "description": arg.description if arg.description else arg.name,
-        }
-
-    return {
-        "type": "object",
-        "properties": properties,
-        "required": required,
-    }
+    def __init__(self, tool_name: str, parameters: Dict[str, Any], reasoning: str):
+        self.tool_name = tool_name
+        self.parameters = parameters
+        self.reasoning = reasoning
 
 
-class ToolCall(BaseModel):
-    """Represents a tool call decision made by the LLM."""
+class LLMResponse:
+    """Represents an LLM response with content and tool calls."""
 
-    tool_name: str
-    parameters: Dict[str, Any]
-    reasoning: str
-
-
-class LLMResponse(BaseModel):
-    """Response from LLM including tool usage details."""
-
-    content: str
-    tool_calls_made: List[ToolCall]
-    tool_results: List[str]
-    clean_content: str
+    def __init__(
+        self, content: str, tool_calls: List[ToolCall], tool_results: List[str]
+    ):
+        self.content = content
+        self.tool_calls = tool_calls
+        self.tool_results = tool_results
 
 
 class LLMMCPClient:
-    """
-    An LLM client that can make decisions about when to call MCP tools
-    and provide final responses based on tool results.
-    Supports both standard OpenAI and Azure OpenAI configurations.
-    """
+    """Client for interacting with LLMs via MCP."""
 
-    def __init__(
-        self,
-        openai_api_key: str,
-        model: Optional[
-            str
-        ] = "gpt-4",  # Use deployment ID for Azure, gpt-4 for standard OpenAI
-        openai_api_base: Optional[str] = None,
-        openai_api_deployment_id: Optional[str] = None,
-        openai_api_version: Optional[str] = None,
-        save_llm_responses: bool = False,
-    ):
-        # Initialize OpenAI client with Azure or standard OpenAI
-        if openai_api_base:
-            self.openai_client = AzureOpenAI(
-                azure_endpoint=openai_api_base,
+    def __init__(self, config: str):
+        """Initialize the LLM MCP client."""
+        # Parse config string to extract parameters
+        config_dict = eval(config) if isinstance(config, str) else config
+
+        openai_api_key = config_dict.get("openai_api_key")
+        openai_api_base = config_dict.get("openai_api_base")
+        openai_api_deployment_id = config_dict.get("openai_api_deployment_id")
+        model = config_dict.get("model", "gpt-3.5-turbo")
+        save_llm_responses = config_dict.get("save_llm_responses", True)
+
+        if openai_api_base and openai_api_deployment_id:
+            # Azure OpenAI
+            self.openai_client = openai.AzureOpenAI(
                 api_key=openai_api_key,
-                api_version=openai_api_version,
+                azure_endpoint=openai_api_base,
+                api_version=config_dict.get("openai_api_version", "2024-02-15-preview"),
             )
             self.model = openai_api_deployment_id
         else:
-            self.openai_client = openai.OpenAI(api_key=openai_api_key)
+            # Regular OpenAI
+            self.openai_client = openai.OpenAI(api_key=openai_api_key)  # type: ignore[assignment]
             self.model = model
 
         self.save_llm_responses = save_llm_responses
-
         self.available_tools: List[Dict[str, Any]] = []
         self.available_prompts: List[Dict[str, Any]] = []
         self.available_resources: List[Dict[str, Any]] = []
-
-    def _add_mcp_as_a_tool_to_available_tools(self) -> None:
-        """Add MCP as a tool to the available tools."""
-        # see https://platform.openai.com/docs/guides/tools-remote-mcp
-        # It's coming but it doesn't work yet (2025-06-16)
-        self.available_tools = [
-            {
-                "type": "mcp",
-                "server_label": "datarobot-mcp-server",
-                "server_url": str(get_dr_mcp_server_url()),
-                "require_approval": "never",
-            }
-        ]
 
     async def _add_mcp_tool_to_available_tools(
         self, mcp_session: ClientSession
@@ -134,36 +95,6 @@ class LLMMCPClient:
                 "parameters": tool.inputSchema,
             }
             for tool in tools_result.tools
-        ]
-
-    async def _add_mcp_prompt_to_available_prompts(
-        self, mcp_session: ClientSession
-    ) -> None:
-        """Add a prompt to the available prompts."""
-        prompts_result: ListPromptsResult = await mcp_session.list_prompts()
-        self.available_prompts = [
-            {
-                "name": prompt.name,
-                "description": prompt.description,
-                "arguments": prompt.arguments,
-            }
-            for prompt in prompts_result.prompts
-        ]
-
-    async def _add_mcp_resource_to_available_resources(
-        self, mcp_session: ClientSession
-    ) -> None:
-        """Add a resource to the available resources."""
-        resources_result: ListResourcesResult = await mcp_session.list_resources()
-        self.available_resources = [
-            {
-                "name": resource.name,
-                "description": resource.description,
-                "uri": str(resource.uri),
-                "mimeType": resource.mimeType,
-                "size": resource.size,
-            }
-            for resource in resources_result.resources
         ]
 
     async def _call_mcp_tool(
@@ -181,8 +112,7 @@ class LLMMCPClient:
         self, resource_uri: str, mcp_session: ClientSession
     ) -> str:
         """Read an MCP resource and return the result as a string."""
-        # TODO: handle multiple content types (blob) and array of content
-        result: ReadResourceResult = await mcp_session.read_resource(resource_uri)
+        result: ReadResourceResult = await mcp_session.read_resource(resource_uri)  # type: ignore[arg-type]
         return (
             result.contents[0].text
             if result.contents and isinstance(result.contents[0], TextResourceContents)
@@ -193,27 +123,43 @@ class LLMMCPClient:
         self, prompt_name: str, arguments: Dict[str, Any], mcp_session: ClientSession
     ) -> str:
         """Get an MCP prompt and return the result as a string."""
-        # TODO: also handle role and array of messages
         result: GetPromptResult = await mcp_session.get_prompt(
             prompt_name, arguments=arguments
         )
-        return result.messages[0].content.text
+        return result.messages[0].content.text  # type: ignore[union-attr]
 
-    async def _process_tool_calls(
-        self,
-        response: ChatCompletion,
-        messages: List[Dict[str, Any]],
-        mcp_session: ClientSession,
-    ) -> Tuple[List[ToolCall], List[str]]:
-        """Process tool calls from the response, and return the tool calls and tool results."""
+    async def _get_llm_response(
+        self, messages: List[Dict[str, Any]], allow_tool_calls: bool = True
+    ) -> Any:
+        """Get a response from the LLM with optional tool calling capability."""
+        kwargs = {
+            "model": self.model,
+            "messages": messages,
+        }
+
+        if allow_tool_calls and self.available_tools:
+            kwargs["tools"] = self.available_tools
+            kwargs["tool_choice"] = "auto"
+
+        return self.openai_client.chat.completions.create(**kwargs)
+
+    async def process_prompt_with_mcp_support(
+        self, prompt: str, mcp_session: ClientSession
+    ) -> LLMResponse:
+        """Process a prompt with MCP tool support."""
+        # Add MCP tools to available tools
+        await self._add_mcp_tool_to_available_tools(mcp_session)
+
+        messages = [{"role": "user", "content": prompt}]
         tool_calls = []
         tool_results = []
 
-        # If the response has tool calls, process them
+        # Get initial response
+        response = await self._get_llm_response(messages, allow_tool_calls=True)
+
+        # Process tool calls if any
         if response.choices[0].message.tool_calls:
-            messages.append(
-                response.choices[0].message
-            )  # Add assistant's message with tool calls
+            messages.append(response.choices[0].message)
 
             for tool_call in response.choices[0].message.tool_calls:
                 tool_name = tool_call.function.name
@@ -228,30 +174,11 @@ class LLMMCPClient:
                 )
 
                 try:
-                    matching_resources = [
-                        resource["uri"]
-                        for resource in self.available_resources
-                        if resource["name"] == tool_name
-                    ]
-                    resource_uri = matching_resources[0] if matching_resources else None
-
-                    if resource_uri:
-                        result_text = await self._read_mcp_resource(
-                            resource_uri, mcp_session
-                        )
-                    elif tool_name in [
-                        prompt["name"] for prompt in self.available_prompts
-                    ]:
-                        result_text = await self._get_mcp_prompt(
-                            tool_name, parameters, mcp_session
-                        )
-                    else:
-                        result_text = await self._call_mcp_tool(
-                            tool_name, parameters, mcp_session
-                        )
+                    result_text = await self._call_mcp_tool(
+                        tool_name, parameters, mcp_session
+                    )
                     tool_results.append(result_text)
 
-                    # Add tool result to messages
                     messages.append(
                         {
                             "role": "tool",
@@ -263,146 +190,15 @@ class LLMMCPClient:
                 except Exception as e:
                     error_msg = f"Error calling {tool_name}: {str(e)}"
                     tool_results.append(error_msg)
-                    messages.append(
-                        {
-                            "role": "tool",
-                            "content": error_msg,
-                            "tool_call_id": tool_call.id,
-                            "name": tool_name,
-                        }
-                    )
 
-        return tool_calls, tool_results
-
-    async def _get_llm_response(
-        self, messages: List[Dict[str, Any]], allow_tool_calls: bool = True
-    ) -> ChatCompletion:
-        """Get a response from the LLM with optional tool calling capability."""
-        kwargs = {
-            "model": self.model,
-            "messages": messages,
-        }
-
-        if allow_tool_calls and (
-            self.available_tools or self.available_resources or self.available_prompts
-        ):
-            tools = []
-
-            if self.available_tools:
-                mcp_tools = [
-                    {
-                        "type": "function",
-                        "function": tool,
-                    }
-                    for tool in self.available_tools
-                ]
-                tools.extend(mcp_tools)
-            if self.available_prompts:
-                mcp_prompts = [
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": prompt["name"],
-                            "description": prompt["description"],
-                            "parameters": _serialize_prompt_arguments(
-                                prompt["arguments"]
-                            ),
-                        },
-                    }
-                    for prompt in self.available_prompts
-                ]
-                tools.extend(mcp_prompts)
-            if self.available_resources:
-                mcp_resources = [
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": resource["name"],
-                            "description": resource["description"],
-                            "parameters": {},
-                        },
-                    }
-                    for resource in self.available_resources
-                ]
-                tools.extend(mcp_resources)
-
-            print(f"\n\nTools count available for the LLM: {len(tools)}\n\n")
-            kwargs.update(
-                {
-                    "tools": tools,
-                    "tool_choice": "auto",
-                }
-            )
-
-        return self.openai_client.chat.completions.create(**kwargs)
-
-    async def process_prompt_with_mcp_support(
-        self,
-        prompt: str,
-        mcp_session: ClientSession,
-        output_file_name: Optional[str] = None,
-    ) -> LLMResponse:
-        """Process a user prompt through the MCP-specific flow.
-
-        Args:
-            prompt: The user's prompt to process
-            mcp_session: The MCP client session to use
-            output_file_name: Optional name of the file to save the response to
-        """
-        # Ensure available tools are set up
-        if not self.available_tools:
-            await self._add_mcp_tool_to_available_tools(mcp_session)
-        if not self.available_prompts:
-            await self._add_mcp_prompt_to_available_prompts(mcp_session)
-        if not self.available_resources:
-            await self._add_mcp_resource_to_available_resources(mcp_session)
-
-        # Initialize conversation
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a helpful AI assistant that can use tools to help users. If you need more information to provide a complete response, you can make multiple tool calls. When dealing with file paths, use them as raw paths without converting to file:// URLs.",
-            },
-            {"role": "user", "content": prompt},
-        ]
-
-        all_tool_calls = []
-        all_tool_results = []
-
-        while True:
-            # Get LLM response
-            response = await self._get_llm_response(messages)
-
-            # If no tool calls in response, this is the final response
-            if not response.choices[0].message.tool_calls:
-                final_response = response.choices[0].message.content
-                break
-
-            # Process tool calls
-            tool_calls, tool_results = await self._process_tool_calls(
-                response, messages, mcp_session
-            )
-            all_tool_calls.extend(tool_calls)
-            all_tool_results.extend(tool_results)
-
-            # Get another LLM response to see if we need more tool calls
-            response = await self._get_llm_response(messages, allow_tool_calls=True)
-
-            # If no more tool calls needed, this is the final response
-            if not response.choices[0].message.tool_calls:
-                final_response = response.choices[0].message.content
-                break
-
-        clean_content = final_response.replace("*", "").lower()
-
-        llm_response = LLMResponse(
-            content=final_response,
-            tool_calls_made=all_tool_calls,
-            tool_results=all_tool_results,
-            clean_content=clean_content,
+        # Get final response
+        final_response = response.choices[0].message.content
+        clean_content = (
+            final_response.replace("*", "").lower() if final_response else ""
         )
 
-        if self.save_llm_responses:
-            save_response_to_file(llm_response, name=output_file_name)
-
-        return llm_response
+        return LLMResponse(
+            content=clean_content,
+            tool_calls=tool_calls,
+            tool_results=tool_results,
+        )

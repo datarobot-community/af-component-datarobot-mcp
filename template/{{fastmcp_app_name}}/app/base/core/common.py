@@ -21,7 +21,7 @@ from mcp.server.fastmcp import Context  # Correct import for FastMCP Context
 from .credentials import get_credentials
 
 
-def get_sdk_client(ctx: Context | None = None) -> Any:
+def get_sdk_client(ctx: Any | None = None) -> Any:
     """
     Get a DataRobot SDK client, using the user's Bearer token from the request if available.
     Args:

@@ -51,7 +51,7 @@ def openai_llm_client() -> LLMMCPClient:
     """
     try:
         config = get_openai_llm_client_config()
-        return LLMMCPClient(config)
+        return LLMMCPClient(str(config))
     except ValueError as e:
         raise ValueError(f"Missing required OpenAI environment variables: {e}") from e
     except Exception as e:
