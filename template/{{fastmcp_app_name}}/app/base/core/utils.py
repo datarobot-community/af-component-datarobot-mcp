@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 import boto3
 from mcp.server.fastmcp.resources import HttpResource
@@ -23,7 +23,7 @@ from app.base.core.constants import MAX_INLINE_SIZE
 from app.base.core.mcp_instance import mcp
 
 
-def generate_presigned_url(bucket, key, expires_in=2592000):
+def generate_presigned_url(bucket: str, key: str, expires_in: int = 2592000) -> str:
     """
     Generate a presigned S3 URL for the given bucket and key.
     Args:
@@ -47,8 +47,8 @@ class PredictionResponse(BaseModel):
 
 
 def predictions_result_response(
-    df, bucket, key, resource_name, show_explanations=False
-):
+    df: Any, bucket: str, key: str, resource_name: str, show_explanations: bool = False
+) -> PredictionResponse:
     csv_str = df.to_csv(index=False)
     if len(csv_str.encode("utf-8")) < MAX_INLINE_SIZE:
         return PredictionResponse(type="inline", data=csv_str)
@@ -63,8 +63,8 @@ def predictions_result_response(
 
 
 def save_df_to_s3_and_register_resource(
-    df, bucket, key, resource_name, mime_type="text/csv"
-):
+    df: Any, bucket: str, key: str, resource_name: str, mime_type: str = "text/csv"
+) -> HttpResource:
     """
     Save a DataFrame to a temp CSV, upload to S3, register as a resource, and return the presigned URL.
     Args:

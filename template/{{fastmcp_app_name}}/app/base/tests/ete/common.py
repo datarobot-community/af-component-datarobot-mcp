@@ -16,13 +16,13 @@ import datetime
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from .openai_llm_mcp_client import LLMResponse
 
 
-def format_tool_call(tool_call: dict) -> str:
+def format_tool_call(tool_call: dict[str, Any]) -> str:
     """Format a single tool call in a readable way."""
     return (
         f"Tool: {tool_call['tool_name']}\n"

@@ -35,7 +35,7 @@ def mock_datarobot_token() -> None:
 
 
 @pytest.fixture(autouse=True)
-def mock_all_telemetry(request):
+def mock_all_telemetry(request: pytest.FixtureRequest) -> None:
     """Mock all telemetry-related functionality for unit tests.
 
     Skips mocking for test_shared_telemetry.py since those tests specifically test telemetry functionality.

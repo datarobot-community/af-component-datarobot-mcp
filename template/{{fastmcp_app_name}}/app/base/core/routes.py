@@ -41,7 +41,8 @@ def register_routes(mcp: FastMCP) -> None:
     @mcp.custom_route("/tags", methods=["GET"])
     async def handle_tags(_: Request) -> JSONResponse:
         try:
-            tags = await mcp.get_all_tags()
+            # TaggedFastMCP extends FastMCP with get_all_tags
+            tags = await mcp.get_all_tags()  # type: ignore[attr-defined]
             return JSONResponse(
                 status_code=200,
                 content={

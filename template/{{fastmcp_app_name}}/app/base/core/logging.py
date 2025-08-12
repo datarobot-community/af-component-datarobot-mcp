@@ -98,4 +98,4 @@ def log_execution(func: F) -> F:
             error_msg = _log_error(logger, func.__name__, e, args=args, kwargs=kwargs)
             raise MCPError(error_msg)
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]
