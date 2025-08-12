@@ -156,6 +156,13 @@ def test_get_or_create_s3_credential_create(monkeypatch):
     mock_cred = MagicMock()
     monkeypatch.setattr(predict.dr.Credential, "list", lambda: [])
     monkeypatch.setattr(predict.dr.Credential, "create_s3", lambda **kwargs: mock_cred)
+    # Mock get_credentials to return credentials with AWS creds
+    mock_credentials = MagicMock()
+    mock_credentials.has_aws_credentials.return_value = True
+    mock_credentials.aws_access_key_id = "test-key"
+    mock_credentials.aws_secret_access_key = "test-secret"
+    mock_credentials.aws_session_token = None
+    monkeypatch.setattr(predict, "get_credentials", lambda: mock_credentials)
     cred = predict.get_or_create_s3_credential()
     assert cred is mock_cred
 

@@ -15,6 +15,7 @@
 from logging import getLogger
 
 from botocore.exceptions import ClientError
+from mcp.server.fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -23,11 +24,11 @@ from .memory_management import get_memory_manager
 logger = getLogger(__name__)
 
 
-def register_routes(mcp):
+def register_routes(mcp: FastMCP) -> None:
     """Register all routes with the MCP server."""
 
     @mcp.custom_route("/", methods=["GET"])
-    async def handle_health(_):
+    async def handle_health(_: Request) -> JSONResponse:
         return JSONResponse(
             status_code=200,
             content={
@@ -38,7 +39,7 @@ def register_routes(mcp):
 
     # Custom endpoint to get all tags
     @mcp.custom_route("/tags", methods=["GET"])
-    async def handle_tags(_):
+    async def handle_tags(_: Request) -> JSONResponse:
         try:
             tags = await mcp.get_all_tags()
             return JSONResponse(
@@ -61,7 +62,7 @@ def register_routes(mcp):
     if memory_manager:
         # Route to initialize a new storage for an agent
         @mcp.custom_route("/agent/{agent_id}/storage/{label}", methods=["POST"])
-        async def initialize_agent_storage(request: Request):
+        async def initialize_agent_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             label = request.path_params["label"]
 
@@ -85,7 +86,7 @@ def register_routes(mcp):
 
         # Route to list all storages for an agent
         @mcp.custom_route("/agent/{agent_id}/storages", methods=["GET"])
-        async def list_agent_storages(request: Request):
+        async def list_agent_storages(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             storages = await memory_manager.list_storages(agent_identifier=agent_id)
 
@@ -111,7 +112,7 @@ def register_routes(mcp):
 
         # Route to get a specific storage by ID
         @mcp.custom_route("/agent/{agent_id}/storages/{storage_id}", methods=["GET"])
-        async def get_agent_storage(request: Request):
+        async def get_agent_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             storage_id = request.path_params["storage_id"]
 
@@ -140,7 +141,7 @@ def register_routes(mcp):
 
         # Route to delete a specific storage
         @mcp.custom_route("/agent/{agent_id}/storages/{storage_id}", methods=["DELETE"])
-        async def delete_agent_storage(request: Request):
+        async def delete_agent_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             storage_id = request.path_params["storage_id"]
 
@@ -163,7 +164,7 @@ def register_routes(mcp):
 
         # Route to delete all storages for an agent
         @mcp.custom_route("/agent/{agent_id}", methods=["DELETE"])
-        async def delete_agent(request: Request):
+        async def delete_agent(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
 
             success = await memory_manager.delete_agent(agent_identifier=agent_id)
@@ -185,7 +186,7 @@ def register_routes(mcp):
         @mcp.custom_route(
             "/agent/{agent_id}/storages/{storage_id}/activate", methods=["POST"]
         )
-        async def set_active_storage(request: Request):
+        async def set_active_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
             storage_id = request.path_params["storage_id"]
 
@@ -221,7 +222,7 @@ def register_routes(mcp):
 
         # Route to get active storage for an agent
         @mcp.custom_route("/agent/{agent_id}/active-storage", methods=["GET"])
-        async def get_active_storage(request: Request):
+        async def get_active_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
 
             try:
@@ -248,7 +249,7 @@ def register_routes(mcp):
 
         # Route to clear active storage for an agent
         @mcp.custom_route("/agent/{agent_id}/active-storage", methods=["DELETE"])
-        async def clear_active_storage(request: Request):
+        async def clear_active_storage(request: Request) -> JSONResponse:
             agent_id = request.path_params["agent_id"]
 
             # Clear active storage

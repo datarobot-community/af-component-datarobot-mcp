@@ -15,6 +15,7 @@
 import json
 import logging
 import uuid
+from typing import Any
 
 import datarobot as dr
 from mcp.server.fastmcp.resources import HttpResource, ResourceManager
@@ -47,7 +48,7 @@ def _handle_prediction_resource(job, bucket, key, deployment_id, input_desc):
     )
 
 
-def get_or_create_s3_credential():
+def get_or_create_s3_credential() -> Any:
     existing_creds = dr.Credential.list()
     for cred in existing_creds:
         if cred.name == "dr_mcp_server_temp_storage_s3_cred":
@@ -65,7 +66,7 @@ def get_or_create_s3_credential():
     raise Exception("No AWS credentials found in your MCP deployment.")
 
 
-def make_output_settings(cred):
+def make_output_settings(cred: Any) -> tuple[dict, str, str]:
     bucket_info = get_s3_bucket_info()
     s3_bucket = bucket_info["bucket"]
     s3_prefix = bucket_info["prefix"]

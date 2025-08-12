@@ -74,7 +74,10 @@ def _setup_otel_exporter() -> None:
     """Setup OpenTelemetry exporter with SimpleSpanProcessor."""
     otlp_exporter = OTLPSpanExporter()
     span_processor = SimpleSpanProcessor(otlp_exporter)
-    trace.get_tracer_provider().add_span_processor(span_processor)
+    provider = trace.get_tracer_provider()
+    # mypy: TracerProvider has add_span_processor at runtime; typing may lag
+    if hasattr(provider, "add_span_processor"):
+        provider.add_span_processor(span_processor)  # type: ignore[attr-defined]
 
 
 def _setup_http_instrumentors() -> None:

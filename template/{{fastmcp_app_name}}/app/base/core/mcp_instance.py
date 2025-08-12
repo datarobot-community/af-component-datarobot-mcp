@@ -36,8 +36,8 @@ class TaggedFastMCP(FastMCP):
         name: str | None = None,
         description: str | None = None,
         tags: Optional[List[str]] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """
         Extended tool decorator that supports tags and other annotations.
 
@@ -48,7 +48,7 @@ class TaggedFastMCP(FastMCP):
             **kwargs: Additional annotations to pass to ToolAnnotations
         """
 
-        def decorator(func: Callable[..., Any]):
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             # Create annotations with tags and any additional kwargs
             annotations_dict = kwargs.copy()
             if tags:
@@ -116,25 +116,25 @@ mcp = TaggedFastMCP(
 )
 
 
-def dr_core_mcp_tool(tags=None):
+def dr_core_mcp_tool(tags: Optional[List[str]] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Combined decorator that includes mcp.tool() and dr_mcp_extras()"""
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         return mcp.tool(tags=tags)(dr_mcp_extras()(func))
 
     return decorator
 
 
-def dr_mcp_tool(tags=None):
+def dr_mcp_tool(tags: Optional[List[str]] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Combined decorator that includes mcp.tool(), dr_mcp_extras(), and capture memory ids from the request headers if they exist
 
     Args:
         tags: Optional list of tags to apply to the tool
     """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Find the context argument if it exists
             ctx = next(
                 (arg for arg in args if isinstance(arg, Context)), kwargs.get("ctx")
@@ -163,14 +163,14 @@ def dr_mcp_tool(tags=None):
     return decorator
 
 
-def dr_mcp_extras(type: str = "tool"):
+def dr_mcp_extras(type: str = "tool") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Combined decorator that includes log_execution and trace_execution()
 
     Args:
         type: default is "tool", other options are "prompt", "resource"
     """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         return log_execution(trace_execution(trace_type=type)(func))
 
     return decorator

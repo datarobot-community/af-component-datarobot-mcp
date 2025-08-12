@@ -54,6 +54,7 @@ class DataRobotCredentials(BaseSettings):
         env_file=".env",
         case_sensitive=False,
         env_file_encoding="utf-8",
+        extra="ignore",
     )
 
 
@@ -109,6 +110,7 @@ class MCPServerCredentials(BaseSettings):
         env_file=".env",
         case_sensitive=False,
         env_file_encoding="utf-8",
+        extra="ignore",
     )
 
     def has_aws_credentials(self) -> bool:
