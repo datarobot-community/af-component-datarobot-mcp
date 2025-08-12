@@ -16,7 +16,7 @@ import asyncio
 import contextlib
 import os
 from pathlib import Path
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 from dotenv import load_dotenv
 from mcp.client.session import ClientSession
@@ -65,7 +65,7 @@ def integration_test_mcp_server_params() -> StdioServerParameters:
 @contextlib.asynccontextmanager
 async def integration_test_mcp_session(
     server_params: Optional[StdioServerParameters] = None,
-):
+) -> AsyncGenerator[ClientSession, None]:
     """
     Create and connect a client for the MCP server as a context manager.
 

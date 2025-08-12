@@ -75,8 +75,8 @@ class ToolBaseE2E:
         self,
         prompt: str,
         test_expectations: ETETestExpectations,
-        openai_llm_client,
-        mcp_session,
+        openai_llm_client: Any,
+        mcp_session: Any,
         test_name: str,
     ) -> None:
         """

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+from typing import Any
 
 import pytest
 
@@ -54,11 +55,11 @@ class TestRecipePlaceholder(ToolBaseE2E):
     )
     async def test_upload_dataset_to_ai_catalog_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_example_placeholder,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_example_placeholder: ETETestExpectations,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format()
         async with ete_test_mcp_session as session:
             await self._run_test_with_expectations(

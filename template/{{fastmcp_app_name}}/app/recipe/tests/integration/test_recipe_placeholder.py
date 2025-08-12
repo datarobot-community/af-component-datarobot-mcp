@@ -22,7 +22,7 @@ from app.base.tests.integration.mcp_utils import integration_test_mcp_session
 class TestMCPToolsIntegration:
     """Integration tests for MCP tools."""
 
-    async def test_example(self):
+    async def test_example(self) -> None:
         """Complete integration test for RecipePlaceholder through MCP"""
 
         async with integration_test_mcp_session() as session:

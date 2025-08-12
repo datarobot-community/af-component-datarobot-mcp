@@ -21,7 +21,7 @@ from app.base.core.dr_mcp_server import DataRobotMCPServer
 
 
 @pytest.fixture
-def mock_mcp():
+def mock_mcp() -> MagicMock:
     """Create a mock FastMCP instance."""
     mock = MagicMock(spec=FastMCP)
     mock.list_tools = AsyncMock(
@@ -31,7 +31,7 @@ def mock_mcp():
 
 
 @pytest.fixture
-def mock_config():
+def mock_config() -> MagicMock:
     """Create a mock configuration."""
     mock = MagicMock()
     mock.has.return_value = True
@@ -42,20 +42,20 @@ def mock_config():
 class TestDataRobotMCPServer:
     """Test suite for DataRobotMCPServer class."""
 
-    def test_initialization(self, mock_mcp):
+    def test_initialization(self, mock_mcp: MagicMock) -> None:
         """Test server initialization with default transport."""
         server = DataRobotMCPServer(mock_mcp)
         assert server._mcp == mock_mcp
         assert server._mcp_transport == "streamable-http"
 
-    def test_initialization_stdio_transport(self, mock_mcp):
+    def test_initialization_stdio_transport(self, mock_mcp: MagicMock) -> None:
         """Test server initialization with stdio transport."""
         server = DataRobotMCPServer(mock_mcp, transport="stdio")
         assert server._mcp == mock_mcp
         assert server._mcp_transport == "stdio"
 
     @patch("app.base.core.dr_mcp_server.get_credentials")
-    def test_run_missing_config(self, mock_get_credentials, mock_mcp):
+    def test_run_missing_config(self, mock_get_credentials: MagicMock, mock_mcp: MagicMock) -> None:
         """Test server run with missing configuration."""
         mock_creds = MagicMock()
         mock_creds.has_datarobot_credentials.return_value = False
@@ -66,7 +66,7 @@ class TestDataRobotMCPServer:
             server.run()
 
     @patch("app.base.core.dr_mcp_server.get_config")
-    def test_run_success(self, mock_get_config, mock_mcp, mock_config):
+    def test_run_success(self, mock_get_config: MagicMock, mock_mcp: MagicMock, mock_config: MagicMock) -> None:
         """Test successful server run."""
         mock_get_config.return_value = mock_config
 
@@ -80,7 +80,7 @@ class TestDataRobotMCPServer:
         mock_mcp.list_tools.assert_called_once()
 
     @patch("app.base.core.dr_mcp_server.get_config")
-    def test_run_server_error(self, mock_get_config, mock_mcp, mock_config):
+    def test_run_server_error(self, mock_get_config: MagicMock, mock_mcp: MagicMock, mock_config: MagicMock) -> None:
         """Test server run with MCP error."""
         mock_get_config.return_value = mock_config
         mock_mcp.run.side_effect = Exception("Server failed to start")
@@ -90,7 +90,7 @@ class TestDataRobotMCPServer:
             server.run()
 
     @patch("app.base.core.dr_mcp_server.get_config")
-    def test_run_lists_tools(self, mock_get_config, mock_mcp, mock_config):
+    def test_run_lists_tools(self, mock_get_config: MagicMock, mock_mcp: MagicMock, mock_config: MagicMock) -> None:
         """Test that tools are listed before server start."""
         mock_get_config.return_value = mock_config
         mock_tools = [MagicMock(name="tool1"), MagicMock(name="tool2")]
