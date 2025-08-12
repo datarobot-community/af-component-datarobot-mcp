@@ -38,17 +38,20 @@ def test_initialize_telemetry_enabled() -> None:
     mock_config.otel_attributes = {"custom.attr": "test-value"}
 
     mock_credentials = MagicMock()
-    mock_credentials.datarobot.api_token = "test-token"
+    mock_credentials.datarobot.user_api_token = "test-token"
+    mock_credentials.datarobot.application_api_token = "test-app-token"
 
-    with patch("app.base.core.telemetry.get_config", return_value=mock_config), patch(
-        "app.base.core.telemetry.get_credentials", return_value=mock_credentials
-    ), patch("app.base.core.telemetry._setup_otel_exporter") as mock_exporter, patch(
-        "app.base.core.telemetry._setup_http_instrumentors"
-    ) as mock_instrumentors, patch(
-        "opentelemetry.trace.get_tracer"
-    ) as mock_get_tracer, patch(
-        "opentelemetry.sdk.resources.Resource.create"
-    ) as mock_resource_create, patch.dict("os.environ", {}, clear=True):
+    with (
+        patch("app.base.core.telemetry.get_config", return_value=mock_config),
+        patch("app.base.core.telemetry.get_credentials", return_value=mock_credentials),
+        patch("app.base.core.telemetry._setup_otel_exporter") as mock_exporter,
+        patch(
+            "app.base.core.telemetry._setup_http_instrumentors"
+        ) as mock_instrumentors,
+        patch("opentelemetry.trace.get_tracer") as mock_get_tracer,
+        patch("opentelemetry.sdk.resources.Resource.create") as mock_resource_create,
+        patch.dict("os.environ", {}, clear=True),
+    ):
         mock_tracer = MagicMock()
         mock_span = MagicMock(spec=Span)
         mock_tracer.start_span.return_value = mock_span
@@ -74,11 +77,14 @@ def test_setup_otel_env_variables() -> None:
     mock_config.otel_entity_id = "test-entity"
 
     mock_credentials = MagicMock()
-    mock_credentials.datarobot.api_token = "test-token"
+    mock_credentials.datarobot.user_api_token = "test-token"
+    mock_credentials.datarobot.application_api_token = "test-app-token"
 
-    with patch("app.base.core.telemetry.get_config", return_value=mock_config), patch(
-        "app.base.core.telemetry.get_credentials", return_value=mock_credentials
-    ), patch.dict("os.environ", {}, clear=True):
+    with (
+        patch("app.base.core.telemetry.get_config", return_value=mock_config),
+        patch("app.base.core.telemetry.get_credentials", return_value=mock_credentials),
+        patch.dict("os.environ", {}, clear=True),
+    ):
         telemetry._setup_otel_env_variables()
 
         assert os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] == "http://test-collector:4318"
@@ -99,8 +105,9 @@ async def test_trace_execution_async() -> None:
     mock_span_context.trace_id = 123456
     mock_span.get_span_context.return_value = mock_span_context
 
-    with patch("opentelemetry.trace.get_tracer") as mock_get_tracer, patch(
-        "app.base.core.telemetry.get_config", return_value=mock_config
+    with (
+        patch("opentelemetry.trace.get_tracer") as mock_get_tracer,
+        patch("app.base.core.telemetry.get_config", return_value=mock_config),
     ):
         mock_tracer = MagicMock()
         mock_tracer.start_span.return_value = mock_span
@@ -126,8 +133,9 @@ def test_trace_execution_sync() -> None:
     mock_config.otel_attributes = {"custom.attr": "test-value"}
 
     mock_span = MagicMock(spec=Span)
-    with patch("opentelemetry.trace.get_tracer") as mock_get_tracer, patch(
-        "app.base.core.telemetry.get_config", return_value=mock_config
+    with (
+        patch("opentelemetry.trace.get_tracer") as mock_get_tracer,
+        patch("app.base.core.telemetry.get_config", return_value=mock_config),
     ):
         mock_tracer = MagicMock()
         mock_tracer.start_span.return_value = mock_span

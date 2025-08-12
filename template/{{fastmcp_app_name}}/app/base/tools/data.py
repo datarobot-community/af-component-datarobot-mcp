@@ -56,3 +56,38 @@ async def list_ai_catalog_items() -> str:
     result = "\n".join(f"{ds.id}: {ds.name}" for ds in datasets)
     logger.info(f"Found {len(datasets)} AI Catalog items")
     return result
+
+
+# from mcp.server.fastmcp import Context
+
+# from app.base.core.memory_management import MemoryManager, get_memory_manager
+
+
+# @dr_mcp_tool()
+# async def list_ai_catalog_items(
+#     ctx: Context, agent_id: str = None, storage_id: str = None
+# ) -> str:
+#     """
+#     List all AI Catalog items (datasets) for the authenticated user.
+
+#     Returns:
+#         a resource id that can be used to retrieve the list of AI Catalog items using the get_resource tool
+#     """
+#     client = get_sdk_client()
+#     datasets = client.Dataset.list()
+#     if not datasets:
+#         logger.info("No AI Catalog items found")
+#         return "No AI Catalog items found."
+#     result = "\n".join(f"{ds.id}: {ds.name}" for ds in datasets)
+
+#     if MemoryManager.is_initialized():
+#         resource_id = await get_memory_manager().store_resource(
+#             data=result,
+#             memory_storage_id=storage_id,
+#             agent_identifier=agent_id,
+#         )
+#     else:
+#         raise ValueError("MemoryManager is not initialized")
+
+#     logger.info(f"Found {len(datasets)} AI Catalog items")
+#     return resource_id

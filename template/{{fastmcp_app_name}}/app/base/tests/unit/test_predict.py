@@ -1,3 +1,17 @@
+# Copyright 2025 DataRobot, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from unittest.mock import MagicMock, patch
 
@@ -10,18 +24,21 @@ from app.base.tools import predict
 
 @pytest.fixture()
 def patch_predict_dependencies():
-    with patch(
-        "app.base.tools.predict.get_or_create_s3_credential"
-    ) as mock_cred, patch(
-        "app.base.tools.predict.make_output_settings",
-        side_effect=lambda cred: {
-            "url": "s3://bucket/key",
-            "credential_id": "cid",
-            "type": "s3",
-        },
-    ), patch("app.base.tools.predict.dr.BatchPredictionJob") as mock_batch_job, patch(
-        "app.base.tools.predict.generate_presigned_url",
-        return_value="https://dummy-presigned-url",
+    with (
+        patch("app.base.tools.predict.get_or_create_s3_credential") as mock_cred,
+        patch(
+            "app.base.tools.predict.make_output_settings",
+            side_effect=lambda cred: {
+                "url": "s3://bucket/key",
+                "credential_id": "cid",
+                "type": "s3",
+            },
+        ),
+        patch("app.base.tools.predict.dr.BatchPredictionJob") as mock_batch_job,
+        patch(
+            "app.base.tools.predict.generate_presigned_url",
+            return_value="https://dummy-presigned-url",
+        ),
     ):
         yield {
             "mock_cred": mock_cred,

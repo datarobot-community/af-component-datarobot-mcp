@@ -16,9 +16,15 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 2. Create a `.env` file in the root directory from `.env.sample` with the following variables:
+
+Note: 
+DATAROBOT_API_TOKEN is required for deploying an app but it gets replaced by the custom app api key once deployed
+USER_API_TOKEN has same value but its is optional, used as a work around to solve the otel bug for now until the otel authentication issue is resolved
+
 ```bash
 DATAROBOT_API_TOKEN=your_api_token
 DATAROBOT_ENDPOINT=your_datarobot_endpoint
+# USER_API_TOKEN=your_api_token
 # AWS_ACCESS_KEY_ID=your_aws_access_key
 # AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 # AWS_SESSION_TOKEN=your_aws_session_token
@@ -126,8 +132,8 @@ OTEL_COLLECTOR_BASE_URL=https://otel-collector.example.com
 # Enable/disable OpenTelemetry (default: true)
 OTEL_ENABLED=true
 
-# Entity ID for tracing (default: "fastmcp-default")
-OTEL_ENTITY_ID=your-entity-id
+# Entity ID for tracing is required when enabling otel
+OTEL_ENTITY_ID=deployment-<id>
 
 # Custom attributes as JSON (optional)
 OTEL_ATTRIBUTES='{"deployment": "prod"}'

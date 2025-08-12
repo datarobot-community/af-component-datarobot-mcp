@@ -1,3 +1,17 @@
+# Copyright 2025 DataRobot, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from unittest.mock import MagicMock, patch
 
@@ -146,11 +160,12 @@ async def test_get_sdk_client_falls_back_to_env():
     ctx = MagicMock()
     ctx.request = MagicMock()
     ctx.request.headers = {}
-    with patch("datarobot.Client") as mock_client, patch(
-        "app.base.core.common.get_credentials"
-    ) as mock_get_creds:
+    with (
+        patch("datarobot.Client") as mock_client,
+        patch("app.base.core.common.get_credentials") as mock_get_creds,
+    ):
         mock_creds = MagicMock()
-        mock_creds.datarobot.api_token = "env-token"
+        mock_creds.datarobot.application_api_token = "env-token"
         mock_creds.datarobot.endpoint = "env-endpoint"
         mock_get_creds.return_value = mock_creds
         common.get_sdk_client(ctx)
@@ -162,11 +177,12 @@ async def test_get_sdk_client_falls_back_to_env():
 @pytest.mark.asyncio
 async def test_get_sdk_client_no_ctx():
     # No context provided, should use environment token
-    with patch("datarobot.Client") as mock_client, patch(
-        "app.base.core.common.get_credentials"
-    ) as mock_get_creds:
+    with (
+        patch("datarobot.Client") as mock_client,
+        patch("app.base.core.common.get_credentials") as mock_get_creds,
+    ):
         mock_creds = MagicMock()
-        mock_creds.datarobot.api_token = "env-token"
+        mock_creds.datarobot.application_api_token = "env-token"
         mock_creds.datarobot.endpoint = "env-endpoint"
         mock_get_creds.return_value = mock_creds
         common.get_sdk_client()

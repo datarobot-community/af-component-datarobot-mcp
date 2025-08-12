@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from functools import wraps
 from typing import Any, Callable, List, Optional
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import Tool as MCPTool
 from mcp.types import ToolAnnotations
 
 from .config import get_config
 from .logging import log_execution
+from .memory_management import MemoryManager, get_memory_manager
 from .telemetry import trace_execution
 from .tool_filter import filter_tools_by_tags, list_all_tags
 
@@ -114,15 +116,49 @@ mcp = TaggedFastMCP(
 )
 
 
+def dr_core_mcp_tool(tags=None):
+    """Combined decorator that includes mcp.tool() and dr_mcp_extras()"""
+
+    def decorator(func):
+        return mcp.tool(tags=tags)(dr_mcp_extras()(func))
+
+    return decorator
+
+
 def dr_mcp_tool(tags=None):
-    """Combined decorator that includes mcp.tool(), dr_mcp_extras()
+    """Combined decorator that includes mcp.tool(), dr_mcp_extras(), and capture memory ids from the request headers if they exist
 
     Args:
         tags: Optional list of tags to apply to the tool
     """
 
     def decorator(func):
-        return mcp.tool(tags=tags)(dr_mcp_extras()(func))
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            # Find the context argument if it exists
+            ctx = next(
+                (arg for arg in args if isinstance(arg, Context)), kwargs.get("ctx")
+            )
+
+            # Extract X-Agent-Id if context and headers exist
+            agent_id = None
+            if ctx and hasattr(ctx.request_context.request, "headers"):
+                headers = ctx.request_context.request.headers
+                agent_id = headers.get("x-agent-id")
+
+            # If agent_id was found, get the active storage_id and add them to the kwargs
+            if agent_id and MemoryManager.is_initialized():
+                storage_id = await get_memory_manager().get_active_storage_id_for_agent(
+                    agent_id
+                )
+                kwargs["agent_id"] = agent_id
+                kwargs["storage_id"] = storage_id
+
+            # Call the original function
+            return await func(*args, **kwargs)
+
+        # Apply the MCP decorators
+        return mcp.tool(tags=tags)(dr_mcp_extras()(wrapper))
 
     return decorator
 

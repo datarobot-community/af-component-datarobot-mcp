@@ -77,35 +77,6 @@ def _prep_metadata_yaml(
     )
     if not runtime_parameter_specs:
         runtime_parameter_specs = "    []"
-    with open({{fastmcp_app_name}}_application_path / "metadata.yaml.jinja") as f:
-        template = Environment(loader=BaseLoader()).from_string(f.read())
-    ({{fastmcp_app_name}}_application_path / "metadata.yaml").write_text(
-        template.render(
-            additional_params=runtime_parameter_specs,
-        )
-    )
-
-def _prep_metadata_yaml(
-    runtime_parameter_values: Sequence[
-        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs
-        | pulumi_datarobot.CustomModelRuntimeParameterValueArgs
-    ],
-) -> None:
-    from jinja2 import BaseLoader, Environment
-
-    runtime_parameter_specs = "\n".join(
-        [
-            textwrap.dedent(
-                f"""\
-            - fieldName: {param.key}
-              type: {param.type}
-        """
-            )
-            for param in runtime_parameter_values
-        ]
-    )
-    if not runtime_parameter_specs:
-        runtime_parameter_specs = "    []"
 
     # Read both templates
     with open({{fastmcp_app_name}}_application_path / "metadata.yaml.jinja") as f:
@@ -202,11 +173,6 @@ def get_{{fastmcp_app_name}}_app_files(
         key="app_log_level", type="string", value=os.getenv("APP_LOG_LEVEL", "INFO")
     ),
     pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
-        key="otel_entity_id",
-        type="string",
-        value=os.getenv("OTEL_ENTITY_ID", "mcp-default"),
-    ),
-    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
         key="otel_attributes", type="string", value=os.getenv("OTEL_ATTRIBUTES", "{}")
     ),
     pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
@@ -226,6 +192,26 @@ if otel_collector_base_url := os.getenv("OTEL_COLLECTOR_BASE_URL"):
     {{fastmcp_app_name}}_app_runtime_parameters.append(
         pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
             key="otel_collector_base_url", type="string", value=otel_collector_base_url
+        )
+    )
+
+# Only add user_api_token if it is provided
+if user_api_token := os.getenv("USER_API_TOKEN"):
+    {{fastmcp_app_name}}_app_runtime_parameters.append(
+        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+            key="user_api_token",
+            type="string",
+            value=user_api_token,
+        )
+    )
+
+# Only add otel_entity_id if it is provided
+if otel_entity_id := os.getenv("OTEL_ENTITY_ID"):
+    {{fastmcp_app_name}}_app_runtime_parameters.append(
+        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+            key="otel_entity_id",
+            type="string",
+            value=otel_entity_id,
         )
     )
 

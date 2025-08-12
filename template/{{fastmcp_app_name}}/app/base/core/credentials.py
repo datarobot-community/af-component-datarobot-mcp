@@ -26,13 +26,20 @@ from app.base.core.constants import (
 class DataRobotCredentials(BaseSettings):
     """DataRobot API credentials."""
 
-    api_token: str = Field(
-        default="test-token",  # For testing
+    application_api_token: str = Field(
         validation_alias=AliasChoices(
             RUNTIME_PARAM_ENV_VAR_NAME_PREFIX + "DATAROBOT_API_TOKEN",
             "DATAROBOT_API_TOKEN",
         ),
         description="DataRobot API token",
+    )
+    user_api_token: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            RUNTIME_PARAM_ENV_VAR_NAME_PREFIX + "USER_API_TOKEN",
+            "USER_API_TOKEN",
+        ),
+        description="DataRobot user API token",
     )
     endpoint: str = Field(
         default=DEFAULT_DATAROBOT_ENDPOINT,
@@ -110,7 +117,7 @@ class MCPServerCredentials(BaseSettings):
 
     def has_datarobot_credentials(self) -> bool:
         """Check if DataRobot credentials are configured."""
-        return bool(self.datarobot.api_token)
+        return bool(self.datarobot.application_api_token)
 
 
 # Global credentials instance
