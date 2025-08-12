@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+from typing import Sequence
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -111,18 +112,18 @@ def test_filter_tools_by_tags() -> None:
     tools = [tool1, tool2, tool3]
 
     # Test filtering by single tag
-    deployment_tools = filter_tools_by_tags(tools, ["deployment"])
+    deployment_tools = filter_tools_by_tags(list(tools), ["deployment"])
     assert len(deployment_tools) == 2
     assert tool1 in deployment_tools
     assert tool3 in deployment_tools
 
     # Test filtering by multiple tags (any match)
-    model_tools = filter_tools_by_tags(tools, ["model", "management"])
+    model_tools = filter_tools_by_tags(list(tools), ["model", "management"])
     assert len(model_tools) == 3  # All tools match at least one tag
 
     # Test filtering by multiple tags (all match)
     deployment_model_tools = filter_tools_by_tags(
-        tools, ["deployment", "model"], match_all=True
+        list(tools), ["deployment", "model"], match_all=True
     )
     assert len(deployment_model_tools) == 1
     assert tool3 in deployment_model_tools
@@ -163,7 +164,7 @@ def test_list_all_tags() -> None:
 
     tools = [tool1, tool2, tool3]
 
-    all_tags = list_all_tags(tools)
+    all_tags = list_all_tags(list(tools))
     expected_tags = ["deployment", "info", "management", "model"]
     assert all_tags == expected_tags
 
@@ -184,7 +185,7 @@ def test_get_tools_by_tag() -> None:
 
     tools = [tool1, tool2, tool3]
 
-    deployment_tools = get_tools_by_tag(tools, "deployment")
+    deployment_tools = get_tools_by_tag(list(tools), "deployment")
     assert len(deployment_tools) == 2
     assert tool1 in deployment_tools
     assert tool3 in deployment_tools

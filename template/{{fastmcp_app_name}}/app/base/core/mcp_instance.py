@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from functools import wraps
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Sequence
 
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import Tool as MCPTool
@@ -89,7 +89,7 @@ class TaggedFastMCP(FastMCP):
             return all_tools
 
         # Filter tools by tags
-        filtered_tools = filter_tools_by_tags(all_tools, tags, match_all)
+        filtered_tools = filter_tools_by_tags(list(all_tools), tags, match_all)
 
         return filtered_tools
 
@@ -101,7 +101,7 @@ class TaggedFastMCP(FastMCP):
             List of all unique tags sorted alphabetically.
         """
         all_tools = await self.list_tools()
-        return list_all_tags(all_tools)
+        return list_all_tags(list(all_tools))
 
 
 # Create the tagged MCP instance
@@ -110,7 +110,7 @@ mcp_server_configs = get_config()
 mcp = TaggedFastMCP(
     name=mcp_server_configs.mcp_server_name,
     port=mcp_server_configs.mcp_server_port,
-    log_level=mcp_server_configs.mcp_server_log_level,
+    log_level=str(mcp_server_configs.mcp_server_log_level),
     host=mcp_server_configs.mcp_server_host,
     stateless_http=True,
 )
@@ -142,17 +142,19 @@ def dr_mcp_tool(tags: Optional[List[str]] = None) -> Callable[[Callable[..., Any
 
             # Extract X-Agent-Id if context and headers exist
             agent_id = None
-            if ctx and hasattr(ctx.request_context.request, "headers"):
+            if ctx and ctx.request_context and ctx.request_context.request and hasattr(ctx.request_context.request, "headers"):
                 headers = ctx.request_context.request.headers
                 agent_id = headers.get("x-agent-id")
 
             # If agent_id was found, get the active storage_id and add them to the kwargs
             if agent_id and MemoryManager.is_initialized():
-                storage_id = await get_memory_manager().get_active_storage_id_for_agent(
-                    agent_id
-                )
-                kwargs["agent_id"] = agent_id
-                kwargs["storage_id"] = storage_id
+                memory_manager = get_memory_manager()
+                if memory_manager:
+                    storage_id = await memory_manager.get_active_storage_id_for_agent(
+                        agent_id
+                    )
+                    kwargs["agent_id"] = agent_id
+                    kwargs["storage_id"] = storage_id
 
             # Call the original function
             return await func(*args, **kwargs)

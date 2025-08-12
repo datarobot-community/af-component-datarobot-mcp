@@ -176,7 +176,7 @@ class MemoryManager:
 
     _instance: Optional["MemoryManager"] = None
     _initialized = False
-    s3_config: Optional[S3Config] = None
+    s3_config: S3Config
 
     def __new__(cls) -> "MemoryManager":
         if cls._instance is None:
@@ -339,6 +339,7 @@ class MemoryManager:
             return memory_storage_id
         except ClientError as e:
             MemoryManager._handle_s3_error("initialize_storage", e, memory_storage_id)
+            return ""
 
     async def delete_storage(
         self, memory_storage_id: str, agent_identifier: str
@@ -346,7 +347,7 @@ class MemoryManager:
         """Delete a memory storage and its resources."""
         try:
             # Check if this is the active storage
-            active_storage_id = await self.get_storage_id_for_agent(agent_identifier)
+            active_storage_id = await self.get_active_storage_id_for_agent(agent_identifier)
 
             # List all objects with the storage ID prefix
             prefix = f"agents/{agent_identifier}/storages/{memory_storage_id}"

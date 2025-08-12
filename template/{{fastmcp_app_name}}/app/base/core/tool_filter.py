@@ -68,7 +68,8 @@ def get_tool_tags(tool: Union[Tool, MCPTool]) -> List[str]:
         List of tags for the tool
     """
     if tool.annotations and hasattr(tool.annotations, "tags"):
-        return tool.annotations.tags  # type: ignore[attr-defined]
+        tags = getattr(tool.annotations, "tags", [])
+        return tags if isinstance(tags, list) else []
     return []
 
 
