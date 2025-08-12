@@ -217,18 +217,19 @@ if otel_entity_id := os.getenv("OTEL_ENTITY_ID"):
 
 # Only add AWS credentials if they are provided
 if aws_access_key_id := os.getenv("AWS_ACCESS_KEY_ID"):
-    {{fastmcp_app_name}}_app_runtime_parameters.extend(
-        [
-            pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
-                key="aws_access_key_id", type="string", value=aws_access_key_id
-            ),
-            pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
-                key="aws_secret_access_key",
-                type="string",
-                value=os.getenv("AWS_SECRET_ACCESS_KEY"),
-            ),
-        ]
-    )
+    if aws_secret_access_key := os.getenv("AWS_SECRET_ACCESS_KEY"):
+        {{fastmcp_app_name}}_app_runtime_parameters.extend(
+            [
+                pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+                    key="aws_access_key_id", type="string", value=aws_access_key_id
+                ),
+                pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+                    key="aws_secret_access_key",
+                    type="string",
+                    value=aws_secret_access_key,
+                ),
+            ]
+        )
 
 # Only add optional AWS parameters if they have values
 if aws_session_token := os.getenv("AWS_SESSION_TOKEN"):
