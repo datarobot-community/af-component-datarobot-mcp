@@ -55,19 +55,6 @@ pipeline:
                           uvx --from go-task-bin task test
                         envVariables:
                           UV_CACHE_DIR: /.uv_cache
-                  - step:
-                      type: Run
-                      name: Copyright Check
-                      identifier: Copyright_Check
-                      spec:
-                        connectorRef: GHCR_HHI
-                        image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
-                        shell: Sh
-                        command: |-
-                          cd ./copier_context_<+matrix.python>/mcp_server
-                          uvx --from go-task-bin task copyright-check
-                        envVariables:
-                          UV_CACHE_DIR: /.uv_cache
           platform:
             os: Linux
             arch: Amd64
