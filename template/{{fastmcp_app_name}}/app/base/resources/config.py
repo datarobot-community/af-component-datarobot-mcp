@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+from typing import Any
 
 from app.base.core.config import get_config
 from app.base.core.mcp_instance import dr_mcp_extras, mcp
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 @mcp.resource("config://server", mime_type="application/json")
 @dr_mcp_extras(type="resource")
-async def get_server_config() -> dict:
+async def get_server_config() -> dict[str, Any]:
     """Provides the server's configuration."""
     config = get_config()
     return config.model_dump(mode="json")

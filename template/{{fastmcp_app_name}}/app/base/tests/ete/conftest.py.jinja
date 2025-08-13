@@ -14,7 +14,7 @@
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 {% if mcp_template_framework == "base_with_tools" %}from pathlib import Path
 {% endif %}
 import pytest
@@ -71,7 +71,7 @@ def nonexistent_file_path() -> str:
 
 
 @pytest.fixture(scope="session")
-def deployment_id(classification_project: dict) -> str:
+def deployment_id(classification_project: dict[str, Any]) -> str:
     return classification_project["deployment_id"]
 
 
@@ -81,7 +81,7 @@ def nonexistent_deployment_id() -> str:
 
 
 @pytest.fixture(scope="session")
-def classification_project_id(classification_project: dict) -> str:
+def classification_project_id(classification_project: dict[str, Any]) -> str:
     return classification_project["project"].id
 
 
@@ -91,7 +91,7 @@ def nonexistent_project_id() -> str:
 
 
 @pytest.fixture(scope="session")
-def model_id(classification_project: dict) -> str:
+def model_id(classification_project: dict[str, Any]) -> str:
     return classification_project["model"].id
 
 
@@ -106,7 +106,7 @@ def nonexistent_model_id() -> str:
 
 
 @pytest.fixture(scope="session")
-def classification_dataset_id(classification_project: dict) -> str:
+def classification_dataset_id(classification_project: dict[str, Any]) -> str:
     return classification_project["source_dataset_id"]
 
 

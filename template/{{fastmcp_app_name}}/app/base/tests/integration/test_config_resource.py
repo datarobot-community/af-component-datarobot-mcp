@@ -22,7 +22,7 @@ from .mcp_utils import integration_test_mcp_session
 class TestMCPConfigResourceIntegration:
     """Integration tests for MCP config resource."""
 
-    async def test_config_resource(self):
+    async def test_config_resource(self) -> None:
         """Complete integration test for MCP config resource"""
 
         async with integration_test_mcp_session() as session:
@@ -34,7 +34,7 @@ class TestMCPConfigResourceIntegration:
 
             # 2 Test getting server config
             result: ReadResourceResult = await session.read_resource(
-                "config://server",
+                "config://server",  # type: ignore[arg-type]
             )
 
             assert len(result.contents) > 0

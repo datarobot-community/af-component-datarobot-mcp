@@ -18,6 +18,7 @@ import io
 import json
 import logging
 from datetime import datetime, timedelta
+from typing import Any, Optional
 
 import pandas as pd
 
@@ -208,12 +209,12 @@ async def generate_prediction_data_template(deployment_id: str, n_rows: int = 1)
     result += f"# Total Features: {features_info['total_features']}\n"
     result += df.to_csv(index=False)
 
-    return result
+    return str(result)
 
 
 @dr_mcp_tool(tags=["deployment", "validation", "data"])
 async def validate_prediction_data(
-    deployment_id: str, file_path: str = None, csv_string: str = None
+            deployment_id: str, file_path: Optional[str] = None, csv_string: Optional[str] = None
 ) -> str:
     """
     Validate if a CSV file is suitable for making predictions with a deployment.
@@ -250,7 +251,7 @@ async def validate_prediction_data(
     features_json = await get_deployment_features(deployment_id)
     features_info = json.loads(features_json)
 
-    validation_report = {
+    validation_report: dict[str, Any] = {
         "status": "valid",
         "errors": [],
         "warnings": [],

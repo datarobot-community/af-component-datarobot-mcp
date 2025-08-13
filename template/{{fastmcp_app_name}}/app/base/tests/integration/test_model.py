@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
+
 import pytest
 from mcp.types import CallToolResult, ListToolsResult, TextContent
 
@@ -22,7 +24,7 @@ from .mcp_utils import integration_test_mcp_session
 class TestMCPToolsIntegration:
     """Integration tests for MCP tools."""
 
-    async def test_model_tools(self, classification_project):
+    async def test_model_tools(self, classification_project: dict[str, Any]) -> None:
         """Complete integration test for ModelTools through MCP"""
 
         async with integration_test_mcp_session() as session:
@@ -46,7 +48,7 @@ class TestMCPToolsIntegration:
             assert len(result.content) > 0
             assert isinstance(result.content[0], TextContent)
 
-            result_text = result.content[0].text
+            result_text = result.content[0].text  # type: ignore[union-attr]
             assert "Best model:" in result_text, f"Result text: {result_text}"
             assert (
                 "Keras Text Convolutional Neural Network Classifier" in result_text
@@ -91,7 +93,7 @@ class TestMCPToolsIntegration:
                 },
             )
 
-            result_text = result.content[0].text
+            result_text = result.content[0].text  # type: ignore[union-attr]
             assert "Best model:" in result_text, f"Result text: {result_text}"
             assert (
                 "Keras Text Convolutional Neural Network Classifier" in result_text

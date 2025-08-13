@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
+
 import pytest
 from mcp.types import TextContent
 
@@ -22,7 +24,7 @@ from .mcp_utils import integration_test_mcp_session
 class TestMCPDeploymentInfoIntegration:
     """Integration tests for MCP deployment info tools (multiclass project)."""
 
-    async def test_get_deployment_features_and_template(self, classification_project):
+    async def test_get_deployment_features_and_template(self, classification_project: dict[str, Any]) -> None:
         """Integration test for get_deployment_features and generate_prediction_data_template on a multiclass deployment."""
         async with integration_test_mcp_session() as session:
             deployment_id = classification_project["deployment_id"]
@@ -32,7 +34,7 @@ class TestMCPDeploymentInfoIntegration:
                 {"deployment_id": deployment_id},
             )
             assert not result.isError, (
-                f"get_deployment_features failed: {result.content[0].text}"
+                f"get_deployment_features failed: {result.content[0].text}"  # type: ignore[union-attr]
             )
             result_content = result.content[0]
             assert isinstance(result_content, TextContent)
@@ -44,7 +46,7 @@ class TestMCPDeploymentInfoIntegration:
                 {"deployment_id": deployment_id, "n_rows": 3},
             )
             assert not result.isError, (
-                f"generate_prediction_data_template failed: {result.content[0].text}"
+                f"generate_prediction_data_template failed: {result.content[0].text}"  # type: ignore[union-attr]
             )
             result_content = result.content[0]
             assert isinstance(result_content, TextContent)
