@@ -730,7 +730,7 @@ class MemoryManager:
         older_than = datetime.now(timezone.utc) - timedelta(days=older_than_by_days)
 
         try:
-            prefix = f"resources/"
+            prefix = "resources/"
             response = self.s3_config.client.list_objects_v2(
                 Bucket=self.s3_config.bucket_name, Prefix=prefix
             )
@@ -751,7 +751,7 @@ class MemoryManager:
     async def list_temp_resources(self) -> List[MemoryResource]:
         """List all temp resources."""
 
-        prefix = f"resources/"
+        prefix = "resources/"
         response = self.s3_config.client.list_objects_v2(
             Bucket=self.s3_config.bucket_name, Prefix=prefix
         )
@@ -771,7 +771,7 @@ class MemoryManager:
 
     async def find_agent_identifier_for_storage(self, memory_storage_id: str) -> str:
         """Helper method to find agent identifier from storage ID."""
-        prefix = f"agents/"
+        prefix = "agents/"
         response = self.s3_config.client.list_objects_v2(
             Bucket=self.s3_config.bucket_name, Prefix=prefix
         )

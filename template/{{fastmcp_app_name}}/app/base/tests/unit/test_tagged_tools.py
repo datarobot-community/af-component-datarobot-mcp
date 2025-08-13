@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import asyncio
-from typing import Sequence
+
+# Sequence import removed as it's not used
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest

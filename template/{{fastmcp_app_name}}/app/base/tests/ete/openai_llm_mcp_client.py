@@ -13,22 +13,20 @@
 # limitations under the License.
 
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 import openai
 from mcp.client.session import ClientSession
 from mcp.types import (
     CallToolResult,
     GetPromptResult,
-    ListPromptsResult,
-    ListResourcesResult,
     ListToolsResult,
     ReadResourceResult,
     TextContent,
     TextResourceContents,
 )
 
-from .mcp_utils import get_dr_mcp_server_url
+# get_dr_mcp_server_url import removed as it's not used
 
 
 class ToolCall:

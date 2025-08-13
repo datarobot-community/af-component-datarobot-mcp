@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from functools import wraps
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, List, Optional
 
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import Tool as MCPTool

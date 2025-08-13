@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import inspect
+# inspect import removed as it's not used
 from typing import Any
 
 import pytest
