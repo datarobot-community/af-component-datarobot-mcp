@@ -4,87 +4,82 @@ pipeline:
   projectIdentifier: afcomponentfastmcpbackend
   orgIdentifier: buzok
   stages:
-      - stage:
-          name: Test FastMCP
-          identifier: Test_Component_FastMCP
-          description: ""
-          type: CI
-          spec:
-            cloneCodebase: true
-            execution:
-              steps:
-                - step:
-                    type: Run
-                    name: Copy with copier and install dependencies
-                    identifier: Install_dependencies_and_copy_with_copier
-                    spec:
-                      connectorRef: GHCR_HHI
-                      image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
-                      shell: Sh
-                      command: |-
-                        apt -o Acquire::Check-Valid-Until=false update && apt install -y git g++
-                        uvx copier copy . ./copier_context \
-                          --data fastmcp_app_name=mcp_server \
-                          --data mcp_template_framework=base_with_tools \
-                          --data port=8000 \
-                          --data year=2025 \
-                          --data base_answers_file=.datarobot/answers/base.yml
-                        cd ./copier_context/mcp_server_with_tools
-                        uvx --from go-task-bin task install
-                      envVariables:
-                        UV_CACHE_DIR: /.uv_cache
-                - parallel:
-                    - step:
-                        type: Run
-                        name: Linter
-                        identifier: Linter
-                        spec:
-                          connectorRef: GHCR_HHI
-                          image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
-                          shell: Sh
-                          command: |-
-                            cd ./copier_context/mcp_server
-                            uvx --from go-task-bin task lint-check
-                          envVariables:
-                            UV_CACHE_DIR: /.uv_cache
-                    - step:
-                        type: Run
-                        name: Unit Tests
-                        identifier: Unit_Tests
-                        spec:
-                          connectorRef: GHCR_HHI
-                          image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
-                          shell: Sh
-                          command: |-
-                            cd ./copier_context/mcp_server
-                            uvx --from go-task-bin task test
-                          envVariables:
-                            UV_CACHE_DIR: /.uv_cache
-            platform:
-              os: Linux
-              arch: Amd64
-            runtime:
-              type: Cloud
-              spec: {}
-            caching:
-              enabled: true
-              paths:
-                - /.uv_cache
-                - /var/cache/apt/archives
-                - /var/lib/apt/lists
-            buildIntelligence:
-              enabled: true
-            sharedPaths:
+    - stage:
+        name: Test FastMCP
+        identifier: Test_Component_FastMCP
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Copy with copier and install dependencies
+                  identifier: Install_dependencies_and_copy_with_copier
+                  spec:
+                    connectorRef: GHCR_HHI
+                    image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
+                    shell: Sh
+                    command: |-
+                      apt -o Acquire::Check-Valid-Until=false update && apt install -y git g++
+                      uvx copier copy . ./copier_context --defaults
+                      cd ./copier_context
+                      uvx --from go-task-bin task install
+                    envVariables:
+                      UV_CACHE_DIR: /.uv_cache
+              - parallel:
+                  - step:
+                      type: Run
+                      name: Linter
+                      identifier: Linter
+                      spec:
+                        connectorRef: GHCR_HHI
+                        image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
+                        shell: Sh
+                        command: |-
+                          cd ./copier_context/mcp_server
+                          uvx --from go-task-bin task lint-check
+                        envVariables:
+                          UV_CACHE_DIR: /.uv_cache
+                  - step:
+                      type: Run
+                      name: Unit Tests
+                      identifier: Unit_Tests
+                      spec:
+                        connectorRef: GHCR_HHI
+                        image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
+                        shell: Sh
+                        command: |-
+                          cd ./copier_context/mcp_server
+                          uvx --from go-task-bin task test
+                        envVariables:
+                          UV_CACHE_DIR: /.uv_cache
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          caching:
+            enabled: true
+            paths:
               - /.uv_cache
               - /var/cache/apt/archives
               - /var/lib/apt/lists
-          strategy:
-            matrix:
-              python:
-                - python3.10
-                - python3.11
-                - python3.12
-              nodeName: <+matrix.python>
+          buildIntelligence:
+            enabled: true
+          sharedPaths:
+            - /.uv_cache
+            - /var/cache/apt/archives
+            - /var/lib/apt/lists
+        strategy:
+          matrix:
+            python:
+              - python3.10
+              - python3.11
+              - python3.12
+            nodeName: <+matrix.python>
   properties:
     ci:
       codebase:
