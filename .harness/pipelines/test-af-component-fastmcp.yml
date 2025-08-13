@@ -120,7 +120,7 @@ pipeline:
                           name: Linter
                           identifier: Linter
                           spec:
-                            connectorRef: GHCR_HHI
+                            connectorRef: account.GHCR
                             image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
                             shell: Sh
                             command: |-
@@ -135,7 +135,7 @@ pipeline:
                           name: Unit Tests
                           identifier: Unit_Tests
                           spec:
-                            connectorRef: GHCR_HHI
+                            connectorRef: account.GHCR
                             image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
                             shell: Sh
                             command: |-
