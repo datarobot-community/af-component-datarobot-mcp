@@ -60,6 +60,8 @@ pipeline:
                       name: Copyright Check
                       identifier: Copyright_Check
                       spec:
+                        connectorRef: GHCR_HHI
+                        image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
                         shell: Sh
                         command: |-
                           cd ./copier_context/mcp_server
