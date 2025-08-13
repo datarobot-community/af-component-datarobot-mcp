@@ -1,6 +1,6 @@
 inputSet:
   name: Test FastMCP Component Input Set
-  identifier: Test_afcomponentfastmcpbackend_Input_Set
+  identifier: Test_FastMCP_Component_Input_Set
   orgIdentifier: buzok
   projectIdentifier: afcomponentfastmcpbackend
   pipeline:
