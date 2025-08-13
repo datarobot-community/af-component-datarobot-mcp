@@ -31,13 +31,13 @@ class TaggedFastMCP(FastMCP):
     Extended FastMCP that supports tags and other annotations directly in the tool decorator.
     """
 
-    def tool(
+    def tool(  # type: ignore[override]
         self,
         name: str | None = None,
         description: str | None = None,
         tags: Optional[List[str]] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """
         Extended tool decorator that supports tags and other annotations.
 
@@ -48,7 +48,7 @@ class TaggedFastMCP(FastMCP):
             **kwargs: Additional annotations to pass to ToolAnnotations
         """
 
-        def decorator(func: Callable[..., Any]):
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             # Create annotations with tags and any additional kwargs
             annotations_dict = kwargs.copy()
             if tags:
@@ -89,9 +89,9 @@ class TaggedFastMCP(FastMCP):
             return all_tools
 
         # Filter tools by tags
-        filtered_tools = filter_tools_by_tags(all_tools, tags, match_all)
+        filtered_tools = filter_tools_by_tags(list(all_tools), tags, match_all)
 
-        return filtered_tools
+        return filtered_tools  # type: ignore[return-value]
 
     async def get_all_tags(self) -> List[str]:
         """
@@ -101,7 +101,7 @@ class TaggedFastMCP(FastMCP):
             List of all unique tags sorted alphabetically.
         """
         all_tools = await self.list_tools()
-        return list_all_tags(all_tools)
+        return list_all_tags(list(all_tools))
 
 
 # Create the tagged MCP instance
@@ -110,31 +110,35 @@ mcp_server_configs = get_config()
 mcp = TaggedFastMCP(
     name=mcp_server_configs.mcp_server_name,
     port=mcp_server_configs.mcp_server_port,
-    log_level=mcp_server_configs.mcp_server_log_level,
+    log_level=str(mcp_server_configs.mcp_server_log_level),  # type: ignore[arg-type]
     host=mcp_server_configs.mcp_server_host,
     stateless_http=True,
 )
 
 
-def dr_core_mcp_tool(tags=None):
+def dr_core_mcp_tool(
+    tags: Optional[List[str]] = None,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Combined decorator that includes mcp.tool() and dr_mcp_extras()"""
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         return mcp.tool(tags=tags)(dr_mcp_extras()(func))
 
     return decorator
 
 
-def dr_mcp_tool(tags=None):
+def dr_mcp_tool(
+    tags: Optional[List[str]] = None,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Combined decorator that includes mcp.tool(), dr_mcp_extras(), and capture memory ids from the request headers if they exist
 
     Args:
         tags: Optional list of tags to apply to the tool
     """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Find the context argument if it exists
             ctx = next(
                 (arg for arg in args if isinstance(arg, Context)), kwargs.get("ctx")
@@ -142,17 +146,24 @@ def dr_mcp_tool(tags=None):
 
             # Extract X-Agent-Id if context and headers exist
             agent_id = None
-            if ctx and hasattr(ctx.request_context.request, "headers"):
+            if (
+                ctx
+                and ctx.request_context
+                and ctx.request_context.request
+                and hasattr(ctx.request_context.request, "headers")
+            ):
                 headers = ctx.request_context.request.headers
                 agent_id = headers.get("x-agent-id")
 
             # If agent_id was found, get the active storage_id and add them to the kwargs
             if agent_id and MemoryManager.is_initialized():
-                storage_id = await get_memory_manager().get_active_storage_id_for_agent(
-                    agent_id
-                )
-                kwargs["agent_id"] = agent_id
-                kwargs["storage_id"] = storage_id
+                memory_manager = get_memory_manager()
+                if memory_manager:
+                    storage_id = await memory_manager.get_active_storage_id_for_agent(
+                        agent_id
+                    )
+                    kwargs["agent_id"] = agent_id
+                    kwargs["storage_id"] = storage_id
 
             # Call the original function
             return await func(*args, **kwargs)
@@ -163,14 +174,16 @@ def dr_mcp_tool(tags=None):
     return decorator
 
 
-def dr_mcp_extras(type: str = "tool"):
+def dr_mcp_extras(
+    type: str = "tool",
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Combined decorator that includes log_execution and trace_execution()
 
     Args:
         type: default is "tool", other options are "prompt", "resource"
     """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         return log_execution(trace_execution(trace_type=type)(func))
 
     return decorator

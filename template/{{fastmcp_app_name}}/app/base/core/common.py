@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
+
 import datarobot as dr
 from datarobot.context import Context as DRContext
-from mcp.server.fastmcp import Context  # Correct import for FastMCP Context
+# Context import removed as it's not used
 
 from .credentials import get_credentials
 
 
-def get_sdk_client(ctx: Context = None):
+def get_sdk_client(ctx: Any | None = None) -> Any:
     """
     Get a DataRobot SDK client, using the user's Bearer token from the request if available.
     Args:

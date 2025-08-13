@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import inspect
+# inspect import removed as it's not used
+from typing import Any
 
 import pytest
 
@@ -54,11 +55,11 @@ class TestRecipePlaceholder(ToolBaseE2E):
     )
     async def test_upload_dataset_to_ai_catalog_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_example_placeholder,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_example_placeholder: ETETestExpectations,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format()
         async with ete_test_mcp_session as session:
             await self._run_test_with_expectations(
@@ -66,5 +67,5 @@ class TestRecipePlaceholder(ToolBaseE2E):
                 expectations_for_example_placeholder,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_upload_dataset_to_ai_catalog_success",
             )

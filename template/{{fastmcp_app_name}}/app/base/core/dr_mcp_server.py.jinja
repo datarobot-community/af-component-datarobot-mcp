@@ -17,6 +17,7 @@ import glob
 import importlib
 import logging
 import os
+from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
@@ -83,6 +84,7 @@ class DataRobotMCPServer:
         self._mcp = mcp
         self._mcp_transport = transport
         self._root_tracing_span = initialize_telemetry()
+        self._memory_manager: Optional[MemoryManager] = None
 
         if get_credentials().has_aws_credentials():
             self._logger.info("Initializing memory manager")
@@ -132,7 +134,7 @@ class DataRobotMCPServer:
 
             # Start the server
             self._logger.info("Starting MCP server...")
-            self._mcp.run(transport=self._mcp_transport)
+            self._mcp.run(transport=self._mcp_transport)  # type: ignore[arg-type]
 
         except Exception as e:
             self._logger.error(f"Server error: {e}")

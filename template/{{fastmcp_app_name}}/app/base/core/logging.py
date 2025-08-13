@@ -31,7 +31,7 @@ SECRET_PATTERNS = [
 class SecretRedactingFormatter(logging.Formatter):
     """Custom formatter that redacts sensitive information from logs."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         msg = super().format(record)
         return self._redact_secrets(msg)
 
@@ -47,12 +47,12 @@ class MCPLogging:
     MCP Logging class.
     """
 
-    def __init__(self, level: str = "INFO"):
+    def __init__(self, level: str = "INFO") -> None:
         """Initialize the MCP logging."""
         self._level = level
         self._setup_logging()
 
-    def _setup_logging(self):
+    def _setup_logging(self) -> None:
         """Configure logging with secret redaction and set log level."""
 
         # Remove all existing handlers
@@ -72,7 +72,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def _log_error(
-    logger: logging.Logger, func_name: str, error: Exception, **kwargs
+    logger: logging.Logger, func_name: str, error: Exception, **kwargs: Any
 ) -> str:
     """Log errors in a consistent format"""
     error_msg = f"{type(error).__name__}: {str(error)}"
@@ -87,7 +87,7 @@ def log_execution(func: F) -> F:
     logger = logging.getLogger(func.__module__)
 
     @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             logger.info(f"Starting {func.__name__}")
             logger.debug(f"Arguments: {args}, {kwargs}")
@@ -98,4 +98,4 @@ def log_execution(func: F) -> F:
             error_msg = _log_error(logger, func.__name__, e, args=args, kwargs=kwargs)
             raise MCPError(error_msg)
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]

@@ -15,8 +15,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
-{% if mcp_template_framework == "base_with_tools" %}from pathlib import Path
-{% endif %}
+
 import pytest
 from mcp.client.session import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
@@ -27,7 +26,9 @@ from .openai_llm_mcp_client import LLMMCPClient
 
 @pytest.fixture
 @asynccontextmanager
-async def ete_test_mcp_session(headers: dict[str, str] | None = None) -> AsyncGenerator[ClientSession, None]:
+async def ete_test_mcp_session(
+    headers: dict[str, str] | None = None,
+) -> AsyncGenerator[ClientSession, None]:
     """
     Create an MCP session for each test.
     """
@@ -56,61 +57,3 @@ def openai_llm_client() -> LLMMCPClient:
         raise ValueError(f"Missing required OpenAI environment variables: {e}") from e
     except Exception as e:
         raise ConnectionError(f"Failed to create LLM MCP client: {str(e)}") from e
-
-
-{% if mcp_template_framework == "base_with_tools" %}@pytest.fixture(scope="session")
-def diabetes_scoring_small_file_path() -> Path:
-    return (
-        Path(__file__).parent.parent.parent / "data" / "10k_diabetes_scoring_small.csv"
-    )
-
-
-@pytest.fixture(scope="session")
-def nonexistent_file_path() -> str:
-    return "nonexistent_file_path"
-
-
-@pytest.fixture(scope="session")
-def deployment_id(classification_project: dict) -> str:
-    return classification_project["deployment_id"]
-
-
-@pytest.fixture(scope="session")
-def nonexistent_deployment_id() -> str:
-    return "nonexistent_deployment_id"
-
-
-@pytest.fixture(scope="session")
-def classification_project_id(classification_project: dict) -> str:
-    return classification_project["project"].id
-
-
-@pytest.fixture(scope="session")
-def nonexistent_project_id() -> str:
-    return "nonexistent_project_id"
-
-
-@pytest.fixture(scope="session")
-def model_id(classification_project: dict) -> str:
-    return classification_project["model"].id
-
-
-@pytest.fixture(scope="session")
-def dataset_url() -> str:
-    return "https://s3.amazonaws.com/datarobot_public_datasets/10k_diabetes_scoring_small.csv"
-
-
-@pytest.fixture(scope="session")
-def nonexistent_model_id() -> str:
-    return "nonexistent_model_id"
-
-
-@pytest.fixture(scope="session")
-def classification_dataset_id(classification_project: dict) -> str:
-    return classification_project["source_dataset_id"]
-
-
-@pytest.fixture(scope="session")
-def nonexistent_dataset_name() -> str:
-    return "nonexistent_dataset_name"
-{% endif %}

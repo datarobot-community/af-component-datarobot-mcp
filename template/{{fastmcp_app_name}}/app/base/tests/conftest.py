@@ -12,4 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from app.base.tests.ete.conftest import *  # noqa: F403
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from app.base.core.common import get_sdk_client
+
+
+@pytest.fixture(scope="session")
+def test_data_dir() -> Path:
+    """Path to the test data directory."""
+    return Path(__file__).parent / "data"
+
+
+# Only used for fixtures, the tests use the MCP session directly
+@pytest.fixture(scope="session")
+def dr_client() -> Any:
+    """Get DataRobot client for integration tests."""
+    return get_sdk_client()

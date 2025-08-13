@@ -47,7 +47,7 @@ class S3ConfigError(MemoryError):
 
 
 class S3Config:
-    def __init__(self):
+    def __init__(self) -> None:
         credentials = get_credentials()
         self.bucket_name = credentials.aws_predictions_s3_bucket
 
@@ -174,16 +174,16 @@ def get_memory_manager() -> Optional["MemoryManager"]:
 class MemoryManager:
     """Manages memory operations."""
 
-    _instance = None
+    _instance: Optional["MemoryManager"] = None
     _initialized = False
-    s3_config: S3Config = None
+    s3_config: S3Config
 
-    def __new__(cls):
+    def __new__(cls) -> "MemoryManager":
         if cls._instance is None:
             cls._instance = super(MemoryManager, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not MemoryManager._initialized:
             self.s3_config = self._initialize()
             MemoryManager._initialized = True
@@ -200,7 +200,7 @@ class MemoryManager:
         """Check if the MemoryManager is initialized."""
         return cls._initialized
 
-    def _initialize(self):
+    def _initialize(self) -> S3Config:
         """Initialize the MemoryManager with S3 configuration."""
         s3_config = initialize_s3()
         logger.info("MemoryManager initialized successfully")
@@ -301,7 +301,7 @@ class MemoryManager:
         self,
         agent_identifier: str,
         label: str,
-        storage_config: Optional[Dict] = None,
+        storage_config: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Initialize a new memory storage instance."""
 
@@ -339,6 +339,7 @@ class MemoryManager:
             return memory_storage_id
         except ClientError as e:
             MemoryManager._handle_s3_error("initialize_storage", e, memory_storage_id)
+            return ""
 
     async def delete_storage(
         self, memory_storage_id: str, agent_identifier: str
@@ -346,7 +347,9 @@ class MemoryManager:
         """Delete a memory storage and its resources."""
         try:
             # Check if this is the active storage
-            active_storage_id = await self.get_storage_id_for_agent(agent_identifier)
+            active_storage_id = await self.get_active_storage_id_for_agent(
+                agent_identifier
+            )
 
             # List all objects with the storage ID prefix
             prefix = f"agents/{agent_identifier}/storages/{memory_storage_id}"
@@ -370,6 +373,7 @@ class MemoryManager:
 
         except ClientError as e:
             MemoryManager._handle_s3_error("delete_storage", e, memory_storage_id)
+            return False
 
     async def delete_agent(self, agent_identifier: str) -> bool:
         """Delete an agent and all its memory storages."""
@@ -396,6 +400,7 @@ class MemoryManager:
             return True
         except ClientError as e:
             MemoryManager._handle_s3_error("delete_agent", e, agent_identifier)
+            return False
 
     async def list_storages(
         self,
@@ -429,6 +434,7 @@ class MemoryManager:
 
         except ClientError as e:
             MemoryManager._handle_s3_error("list_storages", e)
+            return []
 
     async def get_storage(
         self,
@@ -449,6 +455,7 @@ class MemoryManager:
             return MemoryStorage.model_validate_json(json.dumps(storage_data))
         except ClientError as e:
             MemoryManager._handle_s3_error("get_storage", e, memory_storage_id)
+            return None
 
     async def store_resource(
         self,
@@ -522,6 +529,7 @@ class MemoryManager:
 
         except ClientError as e:
             MemoryManager._handle_s3_error("store_resource", e, resource_id)
+            return ""
 
     async def get_resource(
         self,
@@ -564,6 +572,7 @@ class MemoryManager:
             return MemoryResource.model_validate_json(json.dumps(resource_data))
         except ClientError as e:
             MemoryManager._handle_s3_error("get_resource", e, resource_id)
+            return None
 
     async def list_resources(
         self, agent_identifier: str, memory_storage_id: Optional[str] = None
@@ -611,6 +620,7 @@ class MemoryManager:
 
         except ClientError as e:
             MemoryManager._handle_s3_error("list_resources", e)
+            return []
 
     async def get_resource_data(
         self,
@@ -649,9 +659,11 @@ class MemoryManager:
             result = self.s3_config.client.get_object(
                 Bucket=self.s3_config.bucket_name, Key=data_key
             )
-            return result["Body"].read()
+            data = result["Body"].read()
+            return data if isinstance(data, bytes) else None
         except ClientError as e:
             MemoryManager._handle_s3_error("get_resource_data", e, resource_id)
+            return None
 
     async def delete_resource(
         self,
@@ -706,6 +718,7 @@ class MemoryManager:
 
         except ClientError as e:
             MemoryManager._handle_s3_error("delete_resource", e, resource_id)
+            return False
 
     async def clear_all_temp_resources(self, older_than_by_days: int = 1) -> bool:
         """Clear all temp resources older than a given number of days.
@@ -717,7 +730,7 @@ class MemoryManager:
         older_than = datetime.now(timezone.utc) - timedelta(days=older_than_by_days)
 
         try:
-            prefix = f"resources/"
+            prefix = "resources/"
             response = self.s3_config.client.list_objects_v2(
                 Bucket=self.s3_config.bucket_name, Prefix=prefix
             )
@@ -733,11 +746,12 @@ class MemoryManager:
             return True
         except ClientError as e:
             MemoryManager._handle_s3_error("clear_all_temp_resources", e)
+            return False
 
     async def list_temp_resources(self) -> List[MemoryResource]:
         """List all temp resources."""
 
-        prefix = f"resources/"
+        prefix = "resources/"
         response = self.s3_config.client.list_objects_v2(
             Bucket=self.s3_config.bucket_name, Prefix=prefix
         )
@@ -757,7 +771,7 @@ class MemoryManager:
 
     async def find_agent_identifier_for_storage(self, memory_storage_id: str) -> str:
         """Helper method to find agent identifier from storage ID."""
-        prefix = f"agents/"
+        prefix = "agents/"
         response = self.s3_config.client.list_objects_v2(
             Bucket=self.s3_config.bucket_name, Prefix=prefix
         )
@@ -775,18 +789,18 @@ class MemoryManager:
         if not agent_identifier:
             raise ValueError(f"Memory storage {memory_storage_id} not found")
 
-        return agent_identifier
+        return str(agent_identifier)
 
     async def set_storage_id_for_agent(
         self, agent_identifier: str, storage_id: str, label: str
-    ):
+    ) -> None:
         """Set the active storage ID for an agent in S3."""
         try:
             mapping = ActiveStorageMapping(
                 agent_identifier=agent_identifier,
                 storage_id=storage_id,
                 label=label,
-                updated_at=datetime.now(datetime.UTC),
+                updated_at=datetime.now(timezone.utc),
             )
 
             key = self._get_active_storage_mapping_key(agent_identifier)
@@ -814,8 +828,9 @@ class MemoryManager:
             if e.response["Error"]["Code"] == "404":
                 return None
             MemoryManager._handle_s3_error("get_active_storage_id_for_agent", e)
+            return None
 
-    async def clear_storage_id_for_agent(self, agent_identifier: str):
+    async def clear_storage_id_for_agent(self, agent_identifier: str) -> None:
         """Clear the active storage ID for an agent from S3."""
         try:
             key = self._get_active_storage_mapping_key(agent_identifier)

@@ -74,7 +74,10 @@ def _setup_otel_exporter() -> None:
     """Setup OpenTelemetry exporter with SimpleSpanProcessor."""
     otlp_exporter = OTLPSpanExporter()
     span_processor = SimpleSpanProcessor(otlp_exporter)
-    trace.get_tracer_provider().add_span_processor(span_processor)
+    provider = trace.get_tracer_provider()
+    # mypy: TracerProvider has add_span_processor at runtime; typing may lag
+    if hasattr(provider, "add_span_processor"):
+        provider.add_span_processor(span_processor)
 
 
 def _setup_http_instrumentors() -> None:
@@ -309,6 +312,6 @@ def trace_execution(
                 span.end()
 
         # Use appropriate wrapper based on whether the function is async
-        return async_wrapper if inspect.iscoroutinefunction(func) else sync_wrapper
+        return async_wrapper if inspect.iscoroutinefunction(func) else sync_wrapper  # type: ignore[return-value]
 
     return decorator

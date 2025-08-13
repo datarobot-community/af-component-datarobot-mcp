@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Generator
 from unittest.mock import patch
 
 import pytest
 
 
 @pytest.fixture(autouse=True)
-def mock_datarobot_token() -> None:
+def mock_datarobot_token() -> Generator[None, None, None]:
     """Fixture to provide mock DataRobot API token.
 
     This fixture is automatically used in all unit tests to ensure
@@ -35,7 +36,7 @@ def mock_datarobot_token() -> None:
 
 
 @pytest.fixture(autouse=True)
-def mock_all_telemetry(request):
+def mock_all_telemetry(request: pytest.FixtureRequest) -> Generator[None, None, None]:
     """Mock all telemetry-related functionality for unit tests.
 
     Skips mocking for test_shared_telemetry.py since those tests specifically test telemetry functionality.

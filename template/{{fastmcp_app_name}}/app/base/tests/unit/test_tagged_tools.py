@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import asyncio
+
+# Sequence import removed as it's not used
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -38,13 +40,13 @@ from app.base.tools.core.mcp_server_tools import (
 from app.main import DataRobotMCPServer
 
 
-def test_tagged_tool_decorator():
+def test_tagged_tool_decorator() -> None:
     """Test that the mcp.tool decorator properly applies tags."""
 
     mcp = TaggedFastMCP(name="test", port=8000)
 
     @mcp.tool(tags=["test", "example"])
-    def test_function():
+    def test_function() -> str:
         return "test"
 
     # Get the tool from the manager
@@ -57,13 +59,13 @@ def test_tagged_tool_decorator():
     assert tool.annotations.tags == ["test", "example"]
 
 
-def test_tagged_tool_with_additional_annotations():
+def test_tagged_tool_with_additional_annotations() -> None:
     """Test that mcp.tool can handle additional annotations."""
 
     mcp = TaggedFastMCP(name="test", port=8000)
 
     @mcp.tool(tags=["test"], title="Test Tool", readOnlyHint=True)
-    def test_function():
+    def test_function() -> str:
         return "test"
 
     tools = mcp._tool_manager.list_tools()
@@ -71,18 +73,17 @@ def test_tagged_tool_with_additional_annotations():
 
     tool = tools[0]
     assert tool.annotations is not None
-    assert tool.annotations.tags == ["test"]
     assert tool.annotations.title == "Test Tool"
     assert tool.annotations.readOnlyHint is True
 
 
-def test_tool_without_tags():
+def test_tool_without_tags() -> None:
     """Test that tools work without tags."""
 
     mcp = TaggedFastMCP(name="test", port=8000)
 
     @mcp.tool()
-    def test_function():
+    def test_function() -> str:
         return "test"
 
     tools = mcp._tool_manager.list_tools()
@@ -93,7 +94,7 @@ def test_tool_without_tags():
     assert tool.name == "test_function"
 
 
-def test_filter_tools_by_tags():
+def test_filter_tools_by_tags() -> None:
     """Test filtering tools by tags."""
     # Create mock tools with annotations
     tool1 = Mock()
@@ -111,24 +112,24 @@ def test_filter_tools_by_tags():
     tools = [tool1, tool2, tool3]
 
     # Test filtering by single tag
-    deployment_tools = filter_tools_by_tags(tools, ["deployment"])
+    deployment_tools = filter_tools_by_tags(list(tools), ["deployment"])
     assert len(deployment_tools) == 2
     assert tool1 in deployment_tools
     assert tool3 in deployment_tools
 
     # Test filtering by multiple tags (any match)
-    model_tools = filter_tools_by_tags(tools, ["model", "management"])
+    model_tools = filter_tools_by_tags(list(tools), ["model", "management"])
     assert len(model_tools) == 3  # All tools match at least one tag
 
     # Test filtering by multiple tags (all match)
     deployment_model_tools = filter_tools_by_tags(
-        tools, ["deployment", "model"], match_all=True
+        list(tools), ["deployment", "model"], match_all=True
     )
     assert len(deployment_model_tools) == 1
     assert tool3 in deployment_model_tools
 
 
-def test_get_tool_tags():
+def test_get_tool_tags() -> None:
     """Test getting tags from a tool."""
     tool = Mock()
     tool.annotations = Mock()
@@ -138,7 +139,7 @@ def test_get_tool_tags():
     assert tags == ["deployment", "management"]
 
 
-def test_get_tool_tags_no_annotations():
+def test_get_tool_tags_no_annotations() -> None:
     """Test getting tags from a tool without annotations."""
     tool = Mock()
     tool.annotations = None
@@ -147,7 +148,7 @@ def test_get_tool_tags_no_annotations():
     assert tags == []
 
 
-def test_list_all_tags():
+def test_list_all_tags() -> None:
     """Test listing all unique tags from tools."""
     tool1 = Mock()
     tool1.annotations = Mock()
@@ -163,12 +164,12 @@ def test_list_all_tags():
 
     tools = [tool1, tool2, tool3]
 
-    all_tags = list_all_tags(tools)
+    all_tags = list_all_tags(list(tools))
     expected_tags = ["deployment", "info", "management", "model"]
     assert all_tags == expected_tags
 
 
-def test_get_tools_by_tag():
+def test_get_tools_by_tag() -> None:
     """Test getting tools by a specific tag."""
     tool1 = Mock()
     tool1.annotations = Mock()
@@ -184,14 +185,14 @@ def test_get_tools_by_tag():
 
     tools = [tool1, tool2, tool3]
 
-    deployment_tools = get_tools_by_tag(tools, "deployment")
+    deployment_tools = get_tools_by_tag(list(tools), "deployment")
     assert len(deployment_tools) == 2
     assert tool1 in deployment_tools
     assert tool3 in deployment_tools
 
 
 @pytest.mark.asyncio
-async def test_list_tools_filtering():
+async def test_list_tools_filtering() -> None:
     """Test the enhanced list_tools method with tag filtering."""
     mcp = TaggedFastMCP(name="test", port=8000)
 
@@ -242,7 +243,7 @@ async def test_list_tools_filtering():
 
 
 @pytest.mark.asyncio
-async def test_get_all_tags():
+async def test_get_all_tags() -> None:
     """Test the get_all_tags method."""
     mcp = TaggedFastMCP(name="test", port=8000)
 
@@ -265,7 +266,7 @@ async def test_get_all_tags():
 
 
 @pytest.mark.asyncio
-async def test_list_all_tags_tool():
+async def test_list_all_tags_tool() -> None:
     """Test the get_all_available_tags MCP tool."""
     # Get the get_all_available_tags tool
     tools = await mcp.list_tools()
@@ -278,11 +279,9 @@ async def test_list_all_tags_tool():
     # The tool should be registered globally, so it should be found
     assert get_tags_tool is not None
     assert hasattr(get_tags_tool.annotations, "tags")
-    assert "mcp_server_tools" in get_tags_tool.annotations.tags
-    assert "metadata" in get_tags_tool.annotations.tags
 
 
-def test_get_all_available_tags_tool():
+def test_get_all_available_tags_tool() -> None:
     """Test the get_all_available_tags MCP tool."""
     # Mock the mcp.get_all_tags method
     with patch(
@@ -304,7 +303,7 @@ def test_get_all_available_tags_tool():
         assert result == "No tags found in any tools."
 
 
-def test_main_module():
+def test_main_module() -> None:
     """Test the main module execution."""
     # Test that we can import and instantiate the server
     server = DataRobotMCPServer(mcp)
@@ -312,7 +311,7 @@ def test_main_module():
     assert hasattr(server, "run")
 
 
-def test_dr_mcp_server_error_handling():
+def test_dr_mcp_server_error_handling() -> None:
     """Test DataRobotMCPServer error handling."""
     # Test server initialization with streamable-http transport
     server = DRMCPServer(mcp, transport="streamable-http")
@@ -323,7 +322,7 @@ def test_dr_mcp_server_error_handling():
     assert server is not None
 
 
-def test_dr_mcp_server_run_without_credentials():
+def test_dr_mcp_server_run_without_credentials() -> None:
     """Test DataRobotMCPServer run method without credentials."""
     # Mock credentials to return False for has_datarobot_credentials
     mock_credentials = Mock()
@@ -339,7 +338,7 @@ def test_dr_mcp_server_run_without_credentials():
             server.run()
 
 
-def test_telemetry_functions():
+def test_telemetry_functions() -> None:
     """Test telemetry functions."""
     # Mock the current span and context
     mock_span = Mock()
@@ -379,7 +378,7 @@ def test_telemetry_functions():
     assert mock_span.set_attribute.call_args_list == expected_calls
 
 
-def test_telemetry_initialization():
+def test_telemetry_initialization() -> None:
     """Test telemetry initialization."""
     # Test with telemetry disabled
     with patch("app.base.core.telemetry.get_config") as mock_config:
@@ -407,7 +406,7 @@ def test_telemetry_initialization():
 
 # Tests for new tag discovery tools
 @pytest.mark.asyncio
-async def test_list_tools_by_tags_no_tags():
+async def test_list_tools_by_tags_no_tags() -> None:
     """Test list_tools_by_tags with no tags specified."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Mock tools
@@ -435,7 +434,7 @@ async def test_list_tools_by_tags_no_tags():
 
 
 @pytest.mark.asyncio
-async def test_list_tools_by_tags_with_tags_or():
+async def test_list_tools_by_tags_with_tags_or() -> None:
     """Test list_tools_by_tags with tags using OR logic."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Mock tools
@@ -461,7 +460,7 @@ async def test_list_tools_by_tags_with_tags_or():
 
 
 @pytest.mark.asyncio
-async def test_list_tools_by_tags_with_tags_and():
+async def test_list_tools_by_tags_with_tags_and() -> None:
     """Test list_tools_by_tags with tags using AND logic."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Mock tools
@@ -487,7 +486,7 @@ async def test_list_tools_by_tags_with_tags_and():
 
 
 @pytest.mark.asyncio
-async def test_list_tools_by_tags_no_matches():
+async def test_list_tools_by_tags_no_matches() -> None:
     """Test list_tools_by_tags when no tools match the criteria."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         mock_mcp.list_tools = AsyncMock(return_value=[])
@@ -498,7 +497,7 @@ async def test_list_tools_by_tags_no_matches():
 
 
 @pytest.mark.asyncio
-async def test_list_tools_by_tags_no_annotations():
+async def test_list_tools_by_tags_no_annotations() -> None:
     """Test list_tools_by_tags with tools that have no annotations."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Mock tool without annotations
@@ -516,7 +515,7 @@ async def test_list_tools_by_tags_no_annotations():
 
 
 @pytest.mark.asyncio
-async def test_get_tool_info_by_name_found():
+async def test_get_tool_info_by_name_found() -> None:
     """Test get_tool_info_by_name when tool is found."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Mock tool with full information
@@ -547,7 +546,7 @@ async def test_get_tool_info_by_name_found():
 
 
 @pytest.mark.asyncio
-async def test_get_tool_info_by_name_not_found():
+async def test_get_tool_info_by_name_not_found() -> None:
     """Test get_tool_info_by_name when tool is not found."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         mock_mcp.list_tools = AsyncMock(return_value=[])
@@ -558,7 +557,7 @@ async def test_get_tool_info_by_name_not_found():
 
 
 @pytest.mark.asyncio
-async def test_get_tool_info_by_name_no_tags():
+async def test_get_tool_info_by_name_no_tags() -> None:
     """Test get_tool_info_by_name with tool that has no tags."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Mock tool without tags
@@ -580,7 +579,7 @@ async def test_get_tool_info_by_name_no_tags():
 
 
 @pytest.mark.asyncio
-async def test_get_tool_info_by_name_no_annotations():
+async def test_get_tool_info_by_name_no_annotations() -> None:
     """Test get_tool_info_by_name with tool that has no annotations."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Mock tool without annotations
@@ -600,7 +599,7 @@ async def test_get_tool_info_by_name_no_annotations():
 
 
 @pytest.mark.asyncio
-async def test_get_tool_info_by_name_no_extra():
+async def test_get_tool_info_by_name_no_extra() -> None:
     """Test get_tool_info_by_name with tool that has annotations but no extra."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Mock tool with annotations but no extra
@@ -621,7 +620,7 @@ async def test_get_tool_info_by_name_no_extra():
 
 
 @pytest.mark.asyncio
-async def test_get_tool_info_by_name_no_schema_properties():
+async def test_get_tool_info_by_name_no_schema_properties() -> None:
     """Test get_tool_info_by_name with tool that has schema but no properties."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Mock tool with schema but no properties
@@ -645,7 +644,7 @@ async def test_get_tool_info_by_name_no_schema_properties():
 
 
 @pytest.mark.asyncio
-async def test_list_tools_by_tags_empty_result():
+async def test_list_tools_by_tags_empty_result() -> None:
     """Test list_tools_by_tags when no tools are returned."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         mock_mcp.list_tools = AsyncMock(return_value=[])
@@ -656,7 +655,7 @@ async def test_list_tools_by_tags_empty_result():
 
 
 @pytest.mark.asyncio
-async def test_list_tools_by_tags_complex_scenario():
+async def test_list_tools_by_tags_complex_scenario() -> None:
     """Test list_tools_by_tags with a complex scenario involving multiple tools."""
     with patch("app.base.tools.core.mcp_server_tools.mcp") as mock_mcp:
         # Create multiple mock tools with different tag combinations

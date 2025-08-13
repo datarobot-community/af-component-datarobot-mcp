@@ -48,7 +48,11 @@ async def store_resource(
     if tool_name and tool_parameters:
         tool_context = ToolContext(name=tool_name, parameters=tool_parameters)
 
-    resource_id = await get_memory_manager().store_resource(
+    memory_manager = get_memory_manager()
+    if not memory_manager:
+        return "Memory manager not initialized"
+
+    resource_id = await memory_manager.store_resource(
         data=data,
         memory_storage_id=memory_storage_id,
         agent_identifier=agent_identifier,
@@ -78,7 +82,11 @@ async def get_resource(
     Returns:
         str: JSON string containing the resource metadata and optionally its data
     """
-    resource = await get_memory_manager().get_resource(
+    memory_manager = get_memory_manager()
+    if not memory_manager:
+        return "Memory manager not initialized"
+
+    resource = await memory_manager.get_resource(
         resource_id=resource_id,
         memory_storage_id=memory_storage_id,
         agent_identifier=agent_identifier,
@@ -99,7 +107,7 @@ async def get_resource(
     }
 
     if include_data:
-        data = await get_memory_manager().get_resource_data(
+        data = await memory_manager.get_resource_data(
             resource_id=resource_id,
             memory_storage_id=memory_storage_id,
             agent_identifier=agent_identifier,
@@ -110,7 +118,7 @@ async def get_resource(
                 result["data"] = data.decode("utf-8")
             except UnicodeDecodeError:
                 # If binary data, return as is
-                result["data"] = data
+                result["data"] = data  # type: ignore[assignment]
         else:
             result["data"] = data
 
@@ -131,7 +139,11 @@ async def list_resources(
     Returns:
         str: JSON string containing a list of resources
     """
-    resources = await get_memory_manager().list_resources(
+    memory_manager = get_memory_manager()
+    if not memory_manager:
+        return "Memory manager not initialized"
+
+    resources = await memory_manager.list_resources(
         agent_identifier=agent_identifier, memory_storage_id=memory_storage_id
     )
 
@@ -172,7 +184,11 @@ async def delete_resource(
     Returns:
         str: Success or error message
     """
-    success = await get_memory_manager().delete_resource(
+    memory_manager = get_memory_manager()
+    if not memory_manager:
+        return "Memory manager not initialized"
+
+    success = await memory_manager.delete_resource(
         resource_id=resource_id,
         memory_storage_id=memory_storage_id,
         agent_identifier=agent_identifier,

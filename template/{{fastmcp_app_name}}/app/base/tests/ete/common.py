@@ -16,13 +16,13 @@ import datetime
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from .openai_llm_mcp_client import LLMResponse
 
 
-def format_tool_call(tool_call: dict) -> str:
+def format_tool_call(tool_call: dict[str, Any]) -> str:
     """Format a single tool call in a readable way."""
     return (
         f"Tool: {tool_call['tool_name']}\n"
@@ -40,11 +40,19 @@ def format_response(response: "LLMResponse") -> str:
     formatted_parts.append(response.content)
 
     # Format tool calls if any
-    if response.tool_calls_made:
+    if response.tool_calls:
         formatted_parts.append("\n=== Tools Used ===")
-        for i, tool_call in enumerate(response.tool_calls_made, 1):
+        for i, tool_call in enumerate(response.tool_calls, 1):
             formatted_parts.append(f"\nTool Call #{i}:")
-            formatted_parts.append(format_tool_call(tool_call.dict()))
+            formatted_parts.append(
+                format_tool_call(
+                    {
+                        "tool_name": tool_call.tool_name,
+                        "parameters": tool_call.parameters,
+                        "reasoning": tool_call.reasoning,
+                    }
+                )
+            )
 
     # Format tool results if any
     if response.tool_results:

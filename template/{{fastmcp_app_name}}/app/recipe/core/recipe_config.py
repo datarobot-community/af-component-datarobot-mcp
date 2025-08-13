@@ -37,6 +37,7 @@ class RecipeAppConfig(BaseSettings):
         env_file=".env",
         case_sensitive=False,
         env_file_encoding="utf-8",
+        extra="ignore",
     )
 
 

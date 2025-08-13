@@ -69,6 +69,7 @@ class MCPServerConfig(BaseSettings):
         description="App log level",
     )
 
+    @staticmethod
     def _get_default_otel_endpoint() -> str:
         """Get the default OpenTelemetry endpoint e.g. https://app.datarobot.com/otel."""
         parsed_url = urlparse(
