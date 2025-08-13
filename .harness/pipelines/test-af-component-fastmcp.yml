@@ -19,7 +19,7 @@ pipeline:
                       name: Copy with copier and install dependencies
                       identifier: Install_dependencies_and_copy_with_copier
                       spec:
-                        connectorRef: account.GHCR
+                        connectorRef: GHCR_HHI
                         image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
                         shell: Sh
                         command: |-
@@ -40,7 +40,7 @@ pipeline:
                           name: Linter
                           identifier: Linter
                           spec:
-                            connectorRef: account.GHCR
+                            connectorRef: GHCR_HHI
                             image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
                             shell: Sh
                             command: |-
@@ -53,7 +53,7 @@ pipeline:
                           name: Unit Tests
                           identifier: Unit_Tests
                           spec:
-                            connectorRef: account.GHCR
+                            connectorRef: GHCR_HHI
                             image: ghcr.io/astral-sh/uv:<+matrix.python>-bookworm-slim
                             shell: Sh
                             command: |-
@@ -100,7 +100,7 @@ pipeline:
                       name: Copy with copier and install dependencies
                       identifier: Install_dependencies_and_copy_with_copier
                       spec:
-                        connectorRef: account.GHCR
+                        connectorRef: GHCR_HHI
                         image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
                         shell: Sh
                         command: |-
@@ -120,7 +120,7 @@ pipeline:
                           name: Linter
                           identifier: Linter
                           spec:
-                            connectorRef: account.GHCR
+                            connectorRef: GHCR_HHI
                             image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
                             shell: Sh
                             command: |-
@@ -135,7 +135,7 @@ pipeline:
                           name: Unit Tests
                           identifier: Unit_Tests
                           spec:
-                            connectorRef: account.GHCR
+                            connectorRef: GHCR_HHI
                             image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
                             shell: Sh
                             command: |-
