@@ -30,7 +30,7 @@ from app.base.tools.deployment_info import (
 
 @patch("app.base.tools.deployment_info.get_sdk_client")
 @pytest.mark.asyncio
-async def test_get_deployment_info_success(mock_get_sdk_client):
+async def test_get_deployment_info_success(mock_get_sdk_client) -> None:
     """Test successful retrieval of deployment features."""
     # Setup mocks
     mock_client = MagicMock()
@@ -107,7 +107,7 @@ async def test_get_deployment_info_success(mock_get_sdk_client):
 @pytest.mark.asyncio
 async def test_generate_prediction_data_template(
     mock_get_sdk_client, mock_get_features
-):
+) -> None:
     """Test generating prediction data template."""
     # Setup mocks
     mock_client = MagicMock()
@@ -188,7 +188,7 @@ async def test_generate_prediction_data_template(
 @pytest.mark.asyncio
 async def test_validate_prediction_data_valid(
     mock_get_sdk_client, mock_get_features, tmp_path
-):
+) -> None:
     """Test validating valid prediction data."""
     # Setup mocks
     mock_client = MagicMock()
@@ -254,7 +254,7 @@ async def test_validate_prediction_data_valid(
 @pytest.mark.asyncio
 async def test_validate_prediction_data_missing_important_feature(
     mock_get_sdk_client, mock_get_features, tmp_path
-):
+) -> None:
     features_info = {
         "features": [
             {"name": "imp", "feature_type": "numeric", "importance": 0.9},

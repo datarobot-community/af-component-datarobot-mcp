@@ -48,7 +48,7 @@ class TestMCPToolsIntegration:
             assert len(result.content) > 0
             assert isinstance(result.content[0], TextContent)
 
-            result_text = result.content[0].text  # type: ignore[union-attr]
+            result_text = result.content[0].text
             assert "Best model:" in result_text, f"Result text: {result_text}"
             assert (
                 "Keras Text Convolutional Neural Network Classifier" in result_text
@@ -93,7 +93,7 @@ class TestMCPToolsIntegration:
                 },
             )
 
-            result_text = result.content[0].text  # type: ignore[union-attr]
+            result_text = result.content[0].text
             assert "Best model:" in result_text, f"Result text: {result_text}"
             assert (
                 "Keras Text Convolutional Neural Network Classifier" in result_text

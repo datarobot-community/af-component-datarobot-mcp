@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+from typing import Any
 
 import pytest
 
@@ -142,12 +143,12 @@ class TestModelE2E(ToolBaseE2E):
     )
     async def test_get_best_model_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_get_best_model_success,
-        classification_project_id,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_get_best_model_success: Any,
+        classification_project_id: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(project_id=classification_project_id)
 
         async with ete_test_mcp_session as session:
@@ -156,7 +157,7 @@ class TestModelE2E(ToolBaseE2E):
                 expectations_for_get_best_model_success,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_get_best_model_success",
             )
 
     @pytest.mark.parametrize(
@@ -171,12 +172,12 @@ class TestModelE2E(ToolBaseE2E):
     )
     async def test_get_best_model_failure(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_get_best_model_failure,
-        nonexistent_project_id,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_get_best_model_failure: Any,
+        nonexistent_project_id: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(project_id=nonexistent_project_id)
 
         async with ete_test_mcp_session as session:
@@ -185,7 +186,7 @@ class TestModelE2E(ToolBaseE2E):
                 expectations_for_get_best_model_failure,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_get_best_model_failure",
             )
 
     @pytest.mark.skip(
@@ -202,14 +203,14 @@ class TestModelE2E(ToolBaseE2E):
     )
     async def test_score_dataset_with_model_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_score_dataset_with_model_success,
-        classification_project_id,
-        model_id,
-        dataset_url,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_score_dataset_with_model_success: Any,
+        classification_project_id: str,
+        model_id: str,
+        dataset_url: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(
             project_id=classification_project_id,
             model_id=model_id,
@@ -222,7 +223,7 @@ class TestModelE2E(ToolBaseE2E):
                 expectations_for_score_dataset_with_model_success,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_score_dataset_with_model_success",
             )
 
     @pytest.mark.parametrize(
@@ -236,14 +237,14 @@ class TestModelE2E(ToolBaseE2E):
     )
     async def test_score_dataset_with_model_failure(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_score_dataset_with_model_failure,
-        classification_project_id,
-        nonexistent_model_id,
-        dataset_url,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_score_dataset_with_model_failure: Any,
+        classification_project_id: str,
+        nonexistent_model_id: str,
+        dataset_url: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(
             project_id=classification_project_id,
             model_id=nonexistent_model_id,
@@ -256,5 +257,5 @@ class TestModelE2E(ToolBaseE2E):
                 expectations_for_score_dataset_with_model_failure,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_score_dataset_with_model_failure",
             )

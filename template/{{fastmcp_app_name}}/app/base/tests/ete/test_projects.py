@@ -197,13 +197,13 @@ class TestProjectsE2E(ToolBaseE2E):
     )
     async def test_get_project_dataset_by_name_failure(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_get_project_dataset_by_name_failure,
-        classification_project_id,
-        nonexistent_dataset_name,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_get_project_dataset_by_name_failure: Any,
+        classification_project_id: str,
+        nonexistent_dataset_name: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(
             project_id=classification_project_id, dataset_name=nonexistent_dataset_name
         )
@@ -214,7 +214,7 @@ class TestProjectsE2E(ToolBaseE2E):
                 expectations_for_get_project_dataset_by_name_failure,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_get_project_dataset_by_name_failure",
             )
 
     @pytest.mark.parametrize(
@@ -227,13 +227,13 @@ class TestProjectsE2E(ToolBaseE2E):
     )
     async def test_get_project_dataset_by_name_success_with_multiple_calls(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_get_project_dataset_by_name_success_with_multiple_calls,
-        classification_project_name,
-        classification_dataset_name,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_get_project_dataset_by_name_success_with_multiple_calls: Any,
+        classification_project_name: str,
+        classification_dataset_name: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(
             project_name=classification_project_name,
             dataset_name=classification_dataset_name,
@@ -245,5 +245,5 @@ class TestProjectsE2E(ToolBaseE2E):
                 expectations_for_get_project_dataset_by_name_success_with_multiple_calls,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_get_project_dataset_by_name_success_with_multiple_calls",
             )

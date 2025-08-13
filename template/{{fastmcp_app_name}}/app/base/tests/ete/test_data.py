@@ -14,6 +14,7 @@
 
 import inspect
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -102,12 +103,12 @@ class TestDataE2E(ToolBaseE2E):
     )
     async def test_upload_dataset_to_ai_catalog_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_upload_dataset_to_ai_catalog_success,
-        prompt_template,
-        diabetes_scoring_small_file_path,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_upload_dataset_to_ai_catalog_success: Any,
+        prompt_template: str,
+        diabetes_scoring_small_file_path: Any,
+    ) -> None:
         prompt = prompt_template.format(file_path=diabetes_scoring_small_file_path)
         async with ete_test_mcp_session as session:
             await self._run_test_with_expectations(
@@ -115,7 +116,7 @@ class TestDataE2E(ToolBaseE2E):
                 expectations_for_upload_dataset_to_ai_catalog_success,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_upload_dataset_to_ai_catalog_success",
             )
 
     @pytest.mark.parametrize(
@@ -129,12 +130,12 @@ class TestDataE2E(ToolBaseE2E):
     )
     async def test_upload_dataset_to_ai_catalog_failure(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_upload_dataset_to_ai_catalog_failure,
-        prompt_template,
-        nonexistent_file_path,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_upload_dataset_to_ai_catalog_failure: Any,
+        prompt_template: str,
+        nonexistent_file_path: str,
+    ) -> None:
         prompt = prompt_template.format(file_path=nonexistent_file_path)
         async with ete_test_mcp_session as session:
             await self._run_test_with_expectations(
@@ -142,7 +143,7 @@ class TestDataE2E(ToolBaseE2E):
                 expectations_for_upload_dataset_to_ai_catalog_failure,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_upload_dataset_to_ai_catalog_failure",
             )
 
     @pytest.mark.parametrize(
@@ -156,16 +157,16 @@ class TestDataE2E(ToolBaseE2E):
     )
     async def test_list_ai_catalog_items_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_list_ai_catalog_items_success,
-        prompt,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_list_ai_catalog_items_success: Any,
+        prompt: str,
+    ) -> None:
         async with ete_test_mcp_session as session:
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_list_ai_catalog_items_success,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_list_ai_catalog_items_success",
             )

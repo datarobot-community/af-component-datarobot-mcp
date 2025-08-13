@@ -13,8 +13,9 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Generator
 
+import datarobot as dr
 import pytest
 
 from app.base.core.common import get_sdk_client
@@ -31,3 +32,352 @@ def test_data_dir() -> Path:
 def dr_client() -> Any:
     """Get DataRobot client for integration tests."""
     return get_sdk_client()
+
+
+@pytest.fixture(scope="session")
+def timeseries_regression_dataset_name() -> str:
+    return "timeseries_regression_train.csv"
+
+
+@pytest.fixture(scope="session")
+def timeseries_regression_project_name() -> str:
+    return "MCP Test TS Regression Project"
+
+
+@pytest.fixture(scope="session")
+def timeseries_regression_project(
+    dr_client,
+    test_data_dir,
+    timeseries_regression_dataset_name,
+    timeseries_regression_project_name,
+) -> Generator[Dict[str, Any], None, None]:
+    """Create a time series regression project and return the best model deployment."""
+    deployment_label = "MCP Test TS Regression Deployment"
+
+    # First, check if deployment already exists
+    try:
+        deployments = dr.Deployment.list()
+        for deployment in deployments:
+            if deployment.label and deployment.label.startswith(deployment_label):
+                print(f"Reusing existing deployment: {deployment.id}")
+                # Get the model and project info
+                if deployment.model:
+                    model = dr.Model.get(
+                        project=deployment.model["project_id"],
+                        model_id=deployment.model["id"],
+                    )
+                    project = dr.Project.get(deployment.model["project_id"])
+
+                    yield {
+                        "project": project,
+                        "model": model,
+                        "deployment": deployment,
+                        "deployment_id": deployment.id,
+                        "source_dataset_id": project.catalog_id,
+                    }
+                    return  # Exit early, don't clean up existing deployment
+    except Exception as e:
+        print(f"Error checking for existing deployments: {e}")
+
+    # If no existing deployment found, create new one
+    train_file = test_data_dir / timeseries_regression_dataset_name
+    dataset: Any = dr.Dataset.create_from_file(file_path=train_file)
+
+    # Create project
+    project = dr.Project.create_from_dataset(
+        dataset.id, project_name=timeseries_regression_project_name
+    )
+
+    # Set up time series partitioning
+    datetime_spec = dr.DatetimePartitioningSpecification(
+        datetime_partition_column="date",
+        use_time_series=True,
+        forecast_window_start=1,
+        forecast_window_end=7,
+    )
+
+    # Start modeling with time series configuration
+    project.analyze_and_model(
+        target="sales",
+        partitioning_method=datetime_spec,
+        mode=dr.enums.AUTOPILOT_MODE.MANUAL,
+    )
+
+    # Train just one model instead of full autopilot
+    blueprints = project.get_blueprints()
+    # Get a simple time series blueprint (usually first one is good)
+    blueprint = blueprints[0]
+
+    # Train the model
+    model_job = project.train_datetime(blueprint.id)
+    model = model_job.get_result_when_complete()
+
+    # Get available prediction servers and use the first one
+    prediction_servers = dr.PredictionServer.list()
+    if not prediction_servers:
+        raise RuntimeError("No prediction servers available")
+
+    # Create deployment from leaderboard
+    deployment = dr.Deployment.create_from_learning_model(
+        model_id=model.id,
+        label=deployment_label,  # No timestamp
+        description="Integration test deployment for time series regression",
+        default_prediction_server_id=prediction_servers[0].id,
+    )
+
+    yield {
+        "project": project,
+        "model": model,
+        "deployment": deployment,
+        "deployment_id": deployment.id,
+        "source_dataset_id": dataset.id,
+    }
+
+    # Cleanup - commented out to preserve deployment for future test runs
+    # try:
+    #     deployment.delete()
+    # except Exception as e:
+    #     print(f"Warning: Could not delete deployment {deployment.id}: {e}")
+
+    # try:
+    #     project.delete()
+    # except Exception as e:
+    #     print(f"Warning: Could not delete project {project.id}: {e}")
+
+    # try:
+    #     dataset.delete()
+    # except Exception as e:
+    #     print(f"Warning: Could not delete dataset {dataset.id}: {e}")
+
+
+@pytest.fixture(scope="session")
+def multiseries_regression_dataset_name() -> str:
+    return "multiseries_regression_train.csv"
+
+
+@pytest.fixture(scope="session")
+def multiseries_regression_project_name() -> str:
+    return "MCP Test Multiseries TS Regression Project"
+
+
+@pytest.fixture(scope="session")
+def multiseries_regression_project(
+    dr_client,
+    test_data_dir,
+    multiseries_regression_dataset_name,
+    multiseries_regression_project_name,
+) -> Generator[Dict[str, Any], None, None]:
+    """Create a multiseries time series regression project and return the best model deployment."""
+    deployment_label = "MCP Test Multiseries TS Regression Deployment"
+
+    # First, check if deployment already exists
+    try:
+        deployments = dr.Deployment.list()
+        for deployment in deployments:
+            if deployment.label and deployment.label.startswith(deployment_label):
+                print(f"Reusing existing multiseries deployment: {deployment.id}")
+                # Get the model and project info
+                if deployment.model:
+                    model = dr.Model.get(
+                        project=deployment.model["project_id"],
+                        model_id=deployment.model["id"],
+                    )
+                    project = dr.Project.get(deployment.model["project_id"])
+
+                    yield {
+                        "project": project,
+                        "model": model,
+                        "deployment": deployment,
+                        "deployment_id": deployment.id,
+                        "source_dataset_id": project.catalog_id,
+                    }
+                    return  # Exit early, don't clean up existing deployment
+    except Exception as e:
+        print(f"Error checking for existing multiseries deployments: {e}")
+
+    # If no existing deployment found, create new one
+    train_file = test_data_dir / multiseries_regression_dataset_name
+
+    # Create multiseries project
+    dataset: Any = dr.Dataset.create_from_file(file_path=train_file)
+    project = dr.Project.create_from_dataset(
+        dataset.id, project_name=multiseries_regression_project_name
+    )
+
+    # Set up multiseries time series partitioning
+    datetime_spec = dr.DatetimePartitioningSpecification(
+        datetime_partition_column="date",
+        use_time_series=True,
+        multiseries_id_columns=["store_id"],
+        forecast_window_start=1,
+        forecast_window_end=7,
+    )
+
+    # Start modeling with multiseries time series configuration
+    project.analyze_and_model(
+        target="sales",
+        partitioning_method=datetime_spec,
+        mode=dr.enums.AUTOPILOT_MODE.MANUAL,
+    )
+
+    # Train just one model instead of full autopilot
+    blueprints = project.get_blueprints()
+    # Get a simple time series blueprint (usually first one is good)
+    blueprint = blueprints[0]
+
+    # Train the model
+    model_job = project.train_datetime(blueprint.id)
+    model = model_job.get_result_when_complete()
+
+    # Get available prediction servers and use the first one
+    prediction_servers = dr.PredictionServer.list()
+    if not prediction_servers:
+        raise RuntimeError("No prediction servers available")
+
+    # Create deployment from leaderboard
+    deployment = dr.Deployment.create_from_learning_model(
+        model_id=model.id,
+        label=deployment_label,  # No timestamp
+        description="Integration test deployment for multiseries time series regression",
+        default_prediction_server_id=prediction_servers[0].id,
+    )
+
+    yield {
+        "project": project,
+        "model": model,
+        "deployment": deployment,
+        "deployment_id": deployment.id,
+        "source_dataset_id": dataset.id,
+    }
+
+    # Cleanup - commented out to preserve deployment for future test runs
+    # try:
+    #     deployment.delete()
+    # except Exception as e:
+    #     print(f"Warning: Could not delete deployment {deployment.id}: {e}")
+
+    # try:
+    #     project.delete()
+    # except Exception as e:
+    #     print(f"Warning: Could not delete project {project.id}: {e}")
+
+    # try:
+    #     dataset.delete()
+    # except Exception as e:
+    #     print(f"Warning: Could not delete dataset {dataset.id}: {e}")
+
+
+@pytest.fixture(scope="session")
+def classification_dataset_name() -> str:
+    return "text_classification_train.csv"
+
+
+@pytest.fixture(scope="session")
+def classification_project_name() -> str:
+    return "MCP Test Text Classification Project"
+
+
+@pytest.fixture(scope="session")
+def classification_project(
+    dr_client,
+    test_data_dir,
+    classification_dataset_name,
+    classification_project_name,
+) -> Generator[Dict[str, Any], None, None]:
+    """Create a text classification project and return the best model deployment."""
+    deployment_label = "MCP Test Text Classification Deployment"
+
+    # First, check if deployment already exists
+    try:
+        deployments = dr.Deployment.list()
+        for deployment in deployments:
+            if deployment.label and deployment.label.startswith(deployment_label):
+                print(f"Reusing existing classification deployment: {deployment.id}")
+                # Get the model and project info
+                if deployment.model:
+                    model = dr.Model.get(
+                        project=deployment.model["project_id"],
+                        model_id=deployment.model["id"],
+                    )
+                    project = dr.Project.get(deployment.model["project_id"])
+
+                    yield {
+                        "project": project,
+                        "model": model,
+                        "deployment": deployment,
+                        "deployment_id": deployment.id,
+                        "source_dataset_id": project.catalog_id,
+                    }
+                    return  # Exit early, don't clean up existing deployment
+    except Exception as e:
+        print(f"Error checking for existing classification deployments: {e}")
+
+    # If no existing deployment found, create new one
+    train_file = test_data_dir / classification_dataset_name
+
+    # Create classification project
+    dataset: Any = dr.Dataset.create_from_file(file_path=train_file)
+    project = dr.Project.create_from_dataset(
+        dataset.id, project_name=classification_project_name
+    )
+
+    # Start modeling with text classification
+    project.analyze_and_model(
+        target="sentiment",
+        mode=dr.enums.AUTOPILOT_MODE.MANUAL,
+    )
+
+    # Train just one model instead of full autopilot
+    blueprints = project.get_blueprints()
+    # Get a text blueprint for classification
+    text_blueprint = None
+    for blueprint in blueprints:
+        if "text" in blueprint.model_type.lower():
+            text_blueprint = blueprint
+            break
+
+    if not text_blueprint:
+        # Fallback to first blueprint if no text blueprint found
+        text_blueprint = blueprints[0]
+
+    # Train the model
+    model_job_id = project.train(text_blueprint.id)
+    model_job = dr.ModelJob.get(project.id, model_job_id)
+    model = model_job.get_result_when_complete()
+
+    # Get available prediction servers and use the first one
+    prediction_servers = dr.PredictionServer.list()
+    if not prediction_servers:
+        raise RuntimeError("No prediction servers available")
+
+    # Create deployment from leaderboard
+    deployment = dr.Deployment.create_from_learning_model(
+        model_id=model.id,
+        label=deployment_label,  # No timestamp
+        description="Integration test deployment for text classification",
+        default_prediction_server_id=prediction_servers[0].id,
+    )
+
+    yield {
+        "project": project,
+        "model": model,
+        "deployment": deployment,
+        "deployment_id": deployment.id,
+        "source_dataset_id": dataset.id,
+    }
+
+    # Cleanup - commented out to preserve deployment for future test runs
+    # try:
+    #     deployment.delete()
+    # except Exception as e:
+    #     print(f"Warning: Could not delete deployment {deployment.id}: {e}")
+
+    # try:
+    #     project.delete()
+    # except Exception as e:
+    #     print(f"Warning: Could not delete project {project.id}: {e}")
+
+    # try:
+    #     dataset.delete()
+    # except Exception as e:
+    #     print(f"Warning: Could not delete dataset {dataset.id}: {e}")

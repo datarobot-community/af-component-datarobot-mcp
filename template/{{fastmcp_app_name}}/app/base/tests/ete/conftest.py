@@ -14,7 +14,8 @@
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from pathlib import Path
+from typing import Any, AsyncGenerator
 
 import pytest
 from mcp.client.session import ClientSession
@@ -57,3 +58,60 @@ def openai_llm_client() -> LLMMCPClient:
         raise ValueError(f"Missing required OpenAI environment variables: {e}") from e
     except Exception as e:
         raise ConnectionError(f"Failed to create LLM MCP client: {str(e)}") from e
+
+
+@pytest.fixture(scope="session")
+def diabetes_scoring_small_file_path() -> Path:
+    return (
+        Path(__file__).parent.parent.parent / "data" / "10k_diabetes_scoring_small.csv"
+    )
+
+
+@pytest.fixture(scope="session")
+def nonexistent_file_path() -> str:
+    return "nonexistent_file_path"
+
+
+@pytest.fixture(scope="session")
+def deployment_id(classification_project: dict[str, Any]) -> str:
+    return str(classification_project["deployment_id"])
+
+
+@pytest.fixture(scope="session")
+def nonexistent_deployment_id() -> str:
+    return "nonexistent_deployment_id"
+
+
+@pytest.fixture(scope="session")
+def classification_project_id(classification_project: dict[str, Any]) -> str:
+    return str(classification_project["project"].id)
+
+
+@pytest.fixture(scope="session")
+def nonexistent_project_id() -> str:
+    return "nonexistent_project_id"
+
+
+@pytest.fixture(scope="session")
+def model_id(classification_project: dict[str, Any]) -> str:
+    return str(classification_project["model"].id)
+
+
+@pytest.fixture(scope="session")
+def dataset_url() -> str:
+    return "https://s3.amazonaws.com/datarobot_public_datasets/10k_diabetes_scoring_small.csv"
+
+
+@pytest.fixture(scope="session")
+def nonexistent_model_id() -> str:
+    return "nonexistent_model_id"
+
+
+@pytest.fixture(scope="session")
+def classification_dataset_id(classification_project: dict[str, Any]) -> str:
+    return str(classification_project["source_dataset_id"])
+
+
+@pytest.fixture(scope="session")
+def nonexistent_dataset_name() -> str:
+    return "nonexistent_dataset_name"

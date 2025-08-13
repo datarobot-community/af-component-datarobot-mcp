@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+from typing import Any
 
 import pytest
 
@@ -69,12 +70,12 @@ class TestDeploymentInfoPromptsE2E(ToolBaseE2E):
     )
     async def test_get_deployment_info_prompt_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_get_deployment_info_prompt_success,
-        deployment_id,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_get_deployment_info_prompt_success: Any,
+        deployment_id: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(deployment_id=deployment_id)
 
         async with ete_test_mcp_session as session:
@@ -83,5 +84,5 @@ class TestDeploymentInfoPromptsE2E(ToolBaseE2E):
                 expectations_for_get_deployment_info_prompt_success,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_get_deployment_info_prompt_success",
             )
