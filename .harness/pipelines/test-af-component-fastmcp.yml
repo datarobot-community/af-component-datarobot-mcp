@@ -7,7 +7,7 @@ pipeline:
     - stage:
         name: Test FastMCP
         identifier: Test_Component_FastMCP
-        description: ""
+        description: "."
         type: CI
         spec:
           cloneCodebase: true
