@@ -58,8 +58,8 @@ def openai_llm_client() -> LLMMCPClient:
         raise ValueError(f"Missing required OpenAI environment variables: {e}") from e
     except Exception as e:
         raise ConnectionError(f"Failed to create LLM MCP client: {str(e)}") from e
-
 {%- if mcp_template_framework == "base_with_tools" %}
+
 
 @pytest.fixture(scope="session")
 def diabetes_scoring_small_file_path() -> Path:
