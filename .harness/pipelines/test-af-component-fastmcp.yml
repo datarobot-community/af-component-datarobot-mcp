@@ -79,7 +79,6 @@ pipeline:
         strategy:
           matrix:
             python:
-              - python3.10
               - python3.11
               - python3.12
             nodeName: <+matrix.python>
