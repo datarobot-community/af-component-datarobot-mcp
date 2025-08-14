@@ -51,7 +51,7 @@ def patch_predict_dependencies() -> Generator[dict[str, Any], None, None]:
 
 @pytest.mark.asyncio
 async def test_predict_with_deployment_by_file_path(
-    patch_predict_dependencies,
+    patch_predict_dependencies: Dict[str, Any],
 ) -> None:
     mock_job = MagicMock()
     mock_job.id = "jobid"
@@ -67,7 +67,7 @@ async def test_predict_with_deployment_by_file_path(
 
 @pytest.mark.asyncio
 async def test_predict_with_deployment_by_ai_catalog(
-    patch_predict_dependencies,
+    patch_predict_dependencies: Dict[str, Any],
 ) -> None:
     with patch("app.base.tools.predict.uuid.uuid4", return_value="uuid"):
         mock_job = MagicMock()
@@ -81,7 +81,7 @@ async def test_predict_with_deployment_by_ai_catalog(
 
 @pytest.mark.asyncio
 async def test_predict_with_deployment_from_project_data(
-    patch_predict_dependencies,
+    patch_predict_dependencies: Dict[str, Any],
 ) -> None:
     with patch("app.base.tools.predict.uuid.uuid4", return_value="uuid"):
         mock_job = MagicMock()
@@ -97,7 +97,7 @@ async def test_predict_with_deployment_from_project_data(
 
 @pytest.mark.asyncio
 async def test_predict_with_deployment_by_file_path_timeout(
-    patch_predict_dependencies,
+    patch_predict_dependencies: Dict[str, Any],
 ) -> None:
     mock_job = MagicMock()
     mock_job.id = "jobid"
@@ -119,7 +119,7 @@ async def test_predict_with_deployment_by_file_path_timeout(
 
 @pytest.mark.asyncio
 async def test_predict_with_deployment_by_file_path_failure_error(
-    patch_predict_dependencies,
+    patch_predict_dependencies: Dict[str, Any],
 ) -> None:
     mock_job = MagicMock()
     mock_job.id = "jobid"
@@ -141,7 +141,7 @@ async def test_predict_with_deployment_by_file_path_failure_error(
 
 @pytest.mark.asyncio
 async def test_predict_with_deployment_by_file_path_unsuccessful_error(
-    patch_predict_dependencies,
+    patch_predict_dependencies: Dict[str, Any],
 ) -> None:
     mock_job = MagicMock()
     mock_job.id = "jobid"
@@ -161,7 +161,7 @@ async def test_predict_with_deployment_by_file_path_unsuccessful_error(
     )
 
 
-def test_get_or_create_s3_credential_create(monkeypatch) -> None:
+def test_get_or_create_s3_credential_create(monkeypatch: Any) -> None:
     mock_cred = MagicMock()
     monkeypatch.setattr(predict.dr.Credential, "list", lambda: [])
     monkeypatch.setattr(predict.dr.Credential, "create_s3", lambda **kwargs: mock_cred)
@@ -176,7 +176,7 @@ def test_get_or_create_s3_credential_create(monkeypatch) -> None:
     assert cred is mock_cred
 
 
-def test_get_or_create_s3_credential_existing(monkeypatch) -> None:
+def test_get_or_create_s3_credential_existing(monkeypatch: Any) -> None:
     mock_cred = MagicMock()
     mock_cred.name = "dr_mcp_server_temp_storage_s3_cred"
     monkeypatch.setattr(predict.dr.Credential, "list", lambda: [mock_cred])
@@ -201,7 +201,7 @@ def test_make_output_settings() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_prediction_explanations_basic(monkeypatch) -> None:
+async def test_get_prediction_explanations_basic(monkeypatch: Any) -> None:
     mock_model = MagicMock()
     mock_model.get_or_request_prediction_explanations = MagicMock(
         return_value=[
@@ -226,7 +226,7 @@ async def test_get_prediction_explanations_basic(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_prediction_explanations_empty(monkeypatch) -> None:
+async def test_get_prediction_explanations_empty(monkeypatch: Any) -> None:
     mock_model = MagicMock()
     mock_model.get_or_request_prediction_explanations = MagicMock(return_value=[])
     mock_project = MagicMock()
@@ -245,7 +245,7 @@ async def test_get_prediction_explanations_empty(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_prediction_explanations_sdk_error(monkeypatch) -> None:
+async def test_get_prediction_explanations_sdk_error(monkeypatch: Any) -> None:
     mock_model = MagicMock()
     mock_model.get_or_request_prediction_explanations = MagicMock(
         side_effect=Exception("SDK error")

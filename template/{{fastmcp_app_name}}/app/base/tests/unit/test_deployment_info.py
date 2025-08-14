@@ -549,7 +549,7 @@ async def test_get_deployment_info_custom_model() -> None:
         model: Dict[str, Any] = {}
 
         def get_features(self) -> str:
-            return []
+            return "[]"
 
         def get_capabilities(self) -> None:
             pass
