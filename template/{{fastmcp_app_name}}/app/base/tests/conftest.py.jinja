@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Generator
 {% if mcp_template_framework == "base_with_tools" %}
 import datarobot as dr{% endif %}
 import pytest
@@ -35,12 +35,12 @@ def dr_client() -> Any:
 
 {% if mcp_template_framework == "base_with_tools" %}
 @pytest.fixture(scope="session")
-def timeseries_regression_dataset_name():
+def timeseries_regression_dataset_name() -> str:
     return "timeseries_regression_train.csv"
 
 
 @pytest.fixture(scope="session")
-def timeseries_regression_project_name():
+def timeseries_regression_project_name() -> str:
     return "MCP Test TS Regression Project"
 
 
@@ -50,7 +50,7 @@ def timeseries_regression_project(
     test_data_dir,
     timeseries_regression_dataset_name,
     timeseries_regression_project_name,
-):
+) -> Generator[Dict[str, Any], None, None]:
     """Create a time series regression project and return the best model deployment."""
     deployment_label = "MCP Test TS Regression Deployment"
 
@@ -58,14 +58,15 @@ def timeseries_regression_project(
     try:
         deployments = dr.Deployment.list()
         for deployment in deployments:
-            if deployment.label.startswith(deployment_label):
+            if deployment.label and deployment.label.startswith(deployment_label):
                 print(f"Reusing existing deployment: {deployment.id}")
                 # Get the model and project info
-                model = dr.Model.get(
-                    project=deployment.model["project_id"],
-                    model_id=deployment.model["id"],
-                )
-                project = dr.Project.get(deployment.model["project_id"])
+                if deployment.model:
+                    model = dr.Model.get(
+                        project=deployment.model["project_id"],
+                        model_id=deployment.model["id"],
+                    )
+                    project = dr.Project.get(deployment.model["project_id"])
 
                 yield {
                     "project": project,
@@ -80,7 +81,7 @@ def timeseries_regression_project(
 
     # If no existing deployment found, create new one
     train_file = test_data_dir / timeseries_regression_dataset_name
-    dataset = dr.Dataset.create_from_file(file_path=train_file)
+    dataset: Any = dr.Dataset.create_from_file(file_path=train_file)
 
     # Create project
     project = dr.Project.create_from_dataset(
@@ -150,12 +151,12 @@ def timeseries_regression_project(
 
 
 @pytest.fixture(scope="session")
-def multiseries_regression_dataset_name():
+def multiseries_regression_dataset_name() -> str:
     return "multiseries_regression_train.csv"
 
 
 @pytest.fixture(scope="session")
-def multiseries_regression_project_name():
+def multiseries_regression_project_name() -> str:
     return "MCP Test Multiseries TS Regression Project"
 
 
@@ -165,7 +166,7 @@ def multiseries_regression_project(
     test_data_dir,
     multiseries_regression_dataset_name,
     multiseries_regression_project_name,
-):
+) -> Generator[Dict[str, Any], None, None]:
     """Create a multiseries time series regression project and return the best model deployment."""
     deployment_label = "MCP Test Multiseries TS Regression Deployment"
 
@@ -173,14 +174,15 @@ def multiseries_regression_project(
     try:
         deployments = dr.Deployment.list()
         for deployment in deployments:
-            if deployment.label.startswith(deployment_label):
+            if deployment.label and deployment.label.startswith(deployment_label):
                 print(f"Reusing existing multiseries deployment: {deployment.id}")
                 # Get the model and project info
-                model = dr.Model.get(
-                    project=deployment.model["project_id"],
-                    model_id=deployment.model["id"],
-                )
-                project = dr.Project.get(deployment.model["project_id"])
+                if deployment.model:
+                    model = dr.Model.get(
+                        project=deployment.model["project_id"],
+                        model_id=deployment.model["id"],
+                    )
+                    project = dr.Project.get(deployment.model["project_id"])
 
                 yield {
                     "project": project,
@@ -197,7 +199,7 @@ def multiseries_regression_project(
     train_file = test_data_dir / multiseries_regression_dataset_name
 
     # Create multiseries project
-    dataset = dr.Dataset.create_from_file(file_path=train_file)
+    dataset: Any = dr.Dataset.create_from_file(file_path=train_file)
     project = dr.Project.create_from_dataset(
         dataset.id, project_name=multiseries_regression_project_name
     )
@@ -266,19 +268,19 @@ def multiseries_regression_project(
 
 
 @pytest.fixture(scope="session")
-def classification_dataset_name():
+def classification_dataset_name() -> str:
     return "text_classification_train.csv"
 
 
 @pytest.fixture(scope="session")
-def classification_project_name():
+def classification_project_name() -> str:
     return "MCP Test Text Classification Project"
 
 
 @pytest.fixture(scope="session")
 def classification_project(
     dr_client, test_data_dir, classification_dataset_name, classification_project_name
-):
+) -> Generator[Dict[str, Any], None, None]:
     """Create a text classification project and return the best model deployment."""
     deployment_label = "MCP Test Text Classification Deployment"
 
@@ -286,14 +288,15 @@ def classification_project(
     try:
         deployments = dr.Deployment.list()
         for deployment in deployments:
-            if deployment.label.startswith(deployment_label):
+            if deployment.label and deployment.label.startswith(deployment_label):
                 print(f"Reusing existing text deployment: {deployment.id}")
                 # Get the model and project info
-                model = dr.Model.get(
-                    project=deployment.model["project_id"],
-                    model_id=deployment.model["id"],
-                )
-                project = dr.Project.get(deployment.model["project_id"])
+                if deployment.model:
+                    model = dr.Model.get(
+                        project=deployment.model["project_id"],
+                        model_id=deployment.model["id"],
+                    )
+                    project = dr.Project.get(deployment.model["project_id"])
 
                 yield {
                     "project": project,
@@ -310,7 +313,7 @@ def classification_project(
     train_file = test_data_dir / classification_dataset_name
 
     # Create a Dataset from the file
-    dataset = dr.Dataset.create_from_file(file_path=train_file)
+    dataset: Any = dr.Dataset.create_from_file(file_path=train_file)
 
     # Create a Project from the Dataset's ID
     project = dr.Project.create_from_dataset(
