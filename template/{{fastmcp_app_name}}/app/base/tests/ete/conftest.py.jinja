@@ -14,8 +14,11 @@
 
 import asyncio
 from contextlib import asynccontextmanager
-{% if mcp_template_framework == "base_with_tools" %}from pathlib import Path{% endif %}
-from typing import Any, AsyncGenerator, Dict
+from typing import AsyncGenerator
+{% if mcp_template_framework == "base_with_tools" %}
+from pathlib import Path
+from typing import Any, Dict
+{% endif %}
 
 import pytest
 from mcp.client.session import ClientSession
