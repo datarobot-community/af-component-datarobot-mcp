@@ -81,6 +81,7 @@ pipeline:
             python:
               - python3.11
               - python3.12
+              - python3.13
             nodeName: <+matrix.python>
   properties:
     ci:
