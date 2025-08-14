@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 from urllib.parse import urlparse, urlunparse
 
 from pydantic import AliasChoices, Field
@@ -44,7 +44,7 @@ class MCPServerConfig(BaseSettings):
         ),
         description="Port number for the MCP server",
     )
-    mcp_server_log_level: str = Field(
+    mcp_server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
         default="WARNING",
         validation_alias=AliasChoices(
             RUNTIME_PARAM_ENV_VAR_NAME_PREFIX + "MCP_SERVER_LOG_LEVEL",
@@ -60,7 +60,7 @@ class MCPServerConfig(BaseSettings):
         ),
         description="Host address for the MCP server",
     )
-    app_log_level: str = Field(
+    app_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
         default="INFO",
         validation_alias=AliasChoices(
             RUNTIME_PARAM_ENV_VAR_NAME_PREFIX + "APP_LOG_LEVEL",
