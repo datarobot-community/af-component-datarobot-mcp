@@ -36,7 +36,6 @@ def dr_client() -> Any:
     return get_sdk_client()
 {% if mcp_template_framework == "base_with_tools" %}
 
-
 @pytest.fixture(scope="session")
 def timeseries_regression_dataset_name() -> str:
     return "timeseries_regression_train.csv"
