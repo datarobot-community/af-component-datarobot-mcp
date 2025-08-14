@@ -110,7 +110,7 @@ mcp_server_configs = get_config()
 mcp = TaggedFastMCP(
     name=mcp_server_configs.mcp_server_name,
     port=mcp_server_configs.mcp_server_port,
-    log_level=str(mcp_server_configs.mcp_server_log_level),
+    log_level=mcp_server_configs.mcp_server_log_level,  # type: ignore[arg-type]
     host=mcp_server_configs.mcp_server_host,
     stateless_http=True,
 )
