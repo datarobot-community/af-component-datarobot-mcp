@@ -14,10 +14,12 @@
 
 import asyncio
 from contextlib import asynccontextmanager
+{% if mcp_template_framework == "base" %}
 from typing import AsyncGenerator
+{% endif %}
 {% if mcp_template_framework == "base_with_tools" %}
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, AsyncGenerator, Dict
 {% endif %}
 
 import pytest
