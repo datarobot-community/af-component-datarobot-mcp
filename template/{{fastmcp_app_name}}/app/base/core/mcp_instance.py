@@ -15,6 +15,7 @@
 from functools import wraps
 from typing import Any, Callable, List, Optional
 
+from .config import MCPServerConfig
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import Tool as MCPTool
 from mcp.types import ToolAnnotations
@@ -105,7 +106,7 @@ class TaggedFastMCP(FastMCP):
 
 
 # Create the tagged MCP instance
-mcp_server_configs = get_config()
+mcp_server_configs: MCPServerConfig = get_config()
 
 mcp = TaggedFastMCP(
     name=mcp_server_configs.mcp_server_name,
