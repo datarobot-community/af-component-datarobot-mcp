@@ -19,7 +19,7 @@ from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import Tool as MCPTool
 from mcp.types import ToolAnnotations
 
-from .config import get_config, MCPServerConfig
+from .config import MCPServerConfig, get_config
 from .logging import log_execution
 from .memory_management import MemoryManager, get_memory_manager
 from .telemetry import trace_execution
