@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import json
-from typing import Any, Generator
+from typing import Any, Dict, Generator
 from unittest.mock import MagicMock, patch
 
 import datarobot as dr
