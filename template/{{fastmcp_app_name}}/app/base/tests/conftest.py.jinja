@@ -14,7 +14,7 @@
 
 from pathlib import Path
 from typing import Any, Dict, Generator
-{%- if mcp_template_framework == "base_with_tools" %}import datarobot as dr{% endif -%}
+{% if mcp_template_framework == "base_with_tools" %}import datarobot as dr{% endif %}
 import pytest
 
 from app.base.core.common import get_sdk_client
