@@ -44,13 +44,15 @@ class MCPServerConfig(BaseSettings):
         ),
         description="Port number for the MCP server",
     )
-    mcp_server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
-        default="WARNING",
-        validation_alias=AliasChoices(
-            RUNTIME_PARAM_ENV_VAR_NAME_PREFIX + "MCP_SERVER_LOG_LEVEL",
-            "MCP_SERVER_LOG_LEVEL",
-        ),
-        description="Log level for the MCP server",
+    mcp_server_log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = (
+        Field(
+            default="WARNING",
+            validation_alias=AliasChoices(
+                RUNTIME_PARAM_ENV_VAR_NAME_PREFIX + "MCP_SERVER_LOG_LEVEL",
+                "MCP_SERVER_LOG_LEVEL",
+            ),
+            description="Log level for the MCP server",
+        )
     )
     mcp_server_host: str = Field(
         default="0.0.0.0",
