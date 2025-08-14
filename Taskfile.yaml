@@ -36,8 +36,8 @@ tasks:
     desc: 🧹 Check whether the codebase is linted
     cmds:
       - echo "🧹 Linting"
-      - uv run ruff format --check --diff "$SRCDIR"
-      - uv run ruff check "$SRCDIR"
+      - uv run ruff format --check --diff "$SRCDIR" --config ./pyproject.toml "$SRCDIR"
+      - uv run ruff check "$SRCDIR" --config ./pyproject.toml "$SRCDIR"
       - uv run mypy --pretty "$SRCDIR"
 
   copyright:
