@@ -33,8 +33,7 @@ def dr_client() -> Any:
     """Get DataRobot client for integration tests."""
     return get_sdk_client()
 
-{% if mcp_template_framework == "base_with_tools" %}
-@pytest.fixture(scope="session")
+{% if mcp_template_framework == "base_with_tools" %}@pytest.fixture(scope="session")
 def timeseries_regression_dataset_name() -> str:
     return "timeseries_regression_train.csv"
 
@@ -279,7 +278,10 @@ def classification_project_name() -> str:
 
 @pytest.fixture(scope="session")
 def classification_project(
-    dr_client: Any, test_data_dir: Path, classification_dataset_name: str, classification_project_name: str
+    dr_client: Any,
+    test_data_dir: Path,
+    classification_dataset_name: str,
+    classification_project_name: str,
 ) -> Generator[Dict[str, Any], None, None]:
     """Create a text classification project and return the best model deployment."""
     deployment_label = "MCP Test Text Classification Deployment"

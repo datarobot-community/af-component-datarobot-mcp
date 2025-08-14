@@ -27,7 +27,9 @@ from .openai_llm_mcp_client import LLMMCPClient
 
 @pytest.fixture
 @asynccontextmanager
-async def ete_test_mcp_session(headers: dict[str, str] | None = None) -> AsyncGenerator[ClientSession, None]:
+async def ete_test_mcp_session(
+    headers: dict[str, str] | None = None,
+) -> AsyncGenerator[ClientSession, None]:
     """
     Create an MCP session for each test.
     """
@@ -56,7 +58,6 @@ def openai_llm_client() -> LLMMCPClient:
         raise ValueError(f"Missing required OpenAI environment variables: {e}") from e
     except Exception as e:
         raise ConnectionError(f"Failed to create LLM MCP client: {str(e)}") from e
-
 
 {% if mcp_template_framework == "base_with_tools" %}@pytest.fixture(scope="session")
 def diabetes_scoring_small_file_path() -> Path:
@@ -112,5 +113,4 @@ def classification_dataset_id(classification_project: Dict[str, Any]) -> str:
 
 @pytest.fixture(scope="session")
 def nonexistent_dataset_name() -> str:
-    return "nonexistent_dataset_name"
-{% endif %}
+    return "nonexistent_dataset_name"{% endif %}
