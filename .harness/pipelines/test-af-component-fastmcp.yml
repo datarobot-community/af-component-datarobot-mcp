@@ -54,7 +54,7 @@ pipeline:
                         shell: Sh
                         command: |-
                           cd ./copier_context_<+matrix.python>/mcp_server
-                          uvx --from go-task-bin task test
+                          uvx --from go-task-bin task unit 
                         envVariables:
                           UV_CACHE_DIR: /.uv_cache
                           UV_PYTHON: <+matrix.python>
