@@ -66,8 +66,17 @@ async def get_deployment_info(deployment_id: str) -> str:
     deployment = client.Deployment.get(deployment_id)
 
     # get features from the deployment
-    features = deployment.get_features()
+    features_raw = deployment.get_features()
     deployment.get_capabilities()
+
+    # Parse features if it's a JSON string
+    if isinstance(features_raw, str):
+        try:
+            features = json.loads(features_raw)
+        except json.JSONDecodeError:
+            features = []
+    else:
+        features = features_raw
 
     # get model type if its not a custom model
     project = None
