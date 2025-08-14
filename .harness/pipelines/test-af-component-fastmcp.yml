@@ -7,7 +7,7 @@ pipeline:
     - stage:
         name: Test FastMCP
         identifier: Test_Component_FastMCP
-        description: "."
+        description: ""
         type: CI
         spec:
           cloneCodebase: true
@@ -28,6 +28,7 @@ pipeline:
                       uvx --from go-task-bin task install
                     envVariables:
                       UV_CACHE_DIR: /.uv_cache
+                      UV_PYTHON: <+matrix.python>
               - parallel:
                   - step:
                       type: Run
@@ -42,6 +43,7 @@ pipeline:
                           uvx --from go-task-bin task lint-check
                         envVariables:
                           UV_CACHE_DIR: /.uv_cache
+                          UV_PYTHON: <+matrix.python>
                   - step:
                       type: Run
                       name: Unit Tests
@@ -55,6 +57,7 @@ pipeline:
                           uvx --from go-task-bin task test
                         envVariables:
                           UV_CACHE_DIR: /.uv_cache
+                          UV_PYTHON: <+matrix.python>
           platform:
             os: Linux
             arch: Amd64
