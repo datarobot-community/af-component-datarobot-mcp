@@ -91,7 +91,7 @@ class TaggedFastMCP(FastMCP):
         # Filter tools by tags
         filtered_tools = filter_tools_by_tags(list(all_tools), tags, match_all)
 
-        return filtered_tools
+        return filtered_tools  # type: ignore[return-value]
 
     async def get_all_tags(self) -> List[str]:
         """

@@ -14,6 +14,7 @@
 
 import json
 import tempfile
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -30,7 +31,7 @@ from app.base.tools.deployment_info import (
 
 @patch("app.base.tools.deployment_info.get_sdk_client")
 @pytest.mark.asyncio
-async def test_get_deployment_info_success(mock_get_sdk_client) -> None:
+async def test_get_deployment_info_success(mock_get_sdk_client: Any) -> None:
     """Test successful retrieval of deployment features."""
     # Setup mocks
     mock_client = MagicMock()
@@ -106,7 +107,7 @@ async def test_get_deployment_info_success(mock_get_sdk_client) -> None:
 @patch("app.base.tools.deployment_info.get_sdk_client")
 @pytest.mark.asyncio
 async def test_generate_prediction_data_template(
-    mock_get_sdk_client, mock_get_features
+    mock_get_sdk_client: Any, mock_get_features: Any
 ) -> None:
     """Test generating prediction data template."""
     # Setup mocks
@@ -187,7 +188,7 @@ async def test_generate_prediction_data_template(
 @patch("app.base.tools.deployment_info.get_sdk_client")
 @pytest.mark.asyncio
 async def test_validate_prediction_data_valid(
-    mock_get_sdk_client, mock_get_features, tmp_path
+    mock_get_sdk_client: Any, mock_get_features: Any, tmp_path: Any
 ) -> None:
     """Test validating valid prediction data."""
     # Setup mocks
@@ -253,7 +254,7 @@ async def test_validate_prediction_data_valid(
 @patch("app.base.tools.deployment_info.get_sdk_client")
 @pytest.mark.asyncio
 async def test_validate_prediction_data_missing_important_feature(
-    mock_get_sdk_client, mock_get_features, tmp_path
+    mock_get_sdk_client: Any, mock_get_features: Any, tmp_path: Any
 ) -> None:
     features_info = {
         "features": [
@@ -291,7 +292,7 @@ async def test_validate_prediction_data_missing_important_feature(
 # Additional tests for coverage
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_error(mock_get_features):
+async def test_generate_prediction_data_template_error(mock_get_features: Any) -> None:
     mock_get_features.return_value = "Error: something went wrong"
     result = await generate_prediction_data_template("bad_id")
     assert result.startswith("Error: ")
@@ -299,7 +300,7 @@ async def test_generate_prediction_data_template_error(mock_get_features):
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_empty_features(mock_get_features):
+async def test_generate_prediction_data_template_empty_features(mock_get_features: Any) -> None:
     mock_get_features.return_value = json.dumps(
         {
             "features": [],
@@ -315,7 +316,7 @@ async def test_generate_prediction_data_template_empty_features(mock_get_feature
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_unknown_type(mock_get_features):
+async def test_generate_prediction_data_template_unknown_type(mock_get_features: Any) -> None:
     features_info = {
         "features": [{"name": "foo", "feature_type": "unknown"}],
         "model_type": "Test",
@@ -330,7 +331,7 @@ async def test_generate_prediction_data_template_unknown_type(mock_get_features)
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_none_min_max(mock_get_features):
+async def test_generate_prediction_data_template_none_min_max(mock_get_features: Any) -> None:
     features_info = {
         "features": [
             {"name": "num", "feature_type": "numeric", "min": None, "max": None},
@@ -348,7 +349,7 @@ async def test_generate_prediction_data_template_none_min_max(mock_get_features)
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_key_summary(mock_get_features):
+async def test_generate_prediction_data_template_key_summary(mock_get_features: Any) -> None:
     features_info = {
         "features": [
             {
@@ -369,7 +370,7 @@ async def test_generate_prediction_data_template_key_summary(mock_get_features):
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_multiseries(mock_get_features):
+async def test_generate_prediction_data_template_multiseries(mock_get_features: Any) -> None:
     features_info = {
         "features": [{"name": "num", "feature_type": "numeric"}],
         "model_type": "Test",
@@ -390,7 +391,7 @@ async def test_generate_prediction_data_template_multiseries(mock_get_features):
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_validate_prediction_data_error(mock_get_features):
+async def test_validate_prediction_data_error(mock_get_features: Any) -> None:
     mock_get_features.return_value = "Error: bad deployment"
     with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
         f.write("a,b\n1,2\n")
@@ -405,7 +406,7 @@ async def test_validate_prediction_data_error(mock_get_features):
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_validate_prediction_data_missing_feature(mock_get_features, tmp_path):
+async def test_validate_prediction_data_missing_feature(mock_get_features: Any, tmp_path: Any) -> None:
     features_info = {
         "features": [
             {
@@ -426,7 +427,7 @@ async def test_validate_prediction_data_missing_feature(mock_get_features, tmp_p
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_validate_prediction_data_extra_columns(mock_get_features, tmp_path):
+async def test_validate_prediction_data_extra_columns(mock_get_features: Any, tmp_path: Any) -> None:
     features_info = {
         "features": [
             {
@@ -447,7 +448,7 @@ async def test_validate_prediction_data_extra_columns(mock_get_features, tmp_pat
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_validate_prediction_data_type_mismatch(mock_get_features, tmp_path):
+async def test_validate_prediction_data_type_mismatch(mock_get_features: Any, tmp_path: Any) -> None:
     features_info = {
         "features": [
             {
@@ -469,8 +470,8 @@ async def test_validate_prediction_data_type_mismatch(mock_get_features, tmp_pat
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
 async def test_validate_prediction_data_time_series_missing(
-    mock_get_features, tmp_path
-):
+    mock_get_features: Any, tmp_path: Any
+) -> None:
     features_info = {
         "features": [
             {
@@ -498,8 +499,8 @@ async def test_validate_prediction_data_time_series_missing(
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
 async def test_validate_prediction_data_time_series_parse_error(
-    mock_get_features, tmp_path
-):
+    mock_get_features: Any, tmp_path: Any
+) -> None:
     features_info = {
         "features": [
             {
@@ -534,7 +535,7 @@ async def test_validate_prediction_data_time_series_parse_error(
 
 @patch("app.base.tools.deployment_info.get_deployment_info")
 @pytest.mark.asyncio
-async def test_get_deployment_features_missing_fields(mock_get_info):
+async def test_get_deployment_features_missing_fields(mock_get_info: Any) -> None:
     mock_info = json.dumps({})
     mock_get_info.return_value = mock_info
 
@@ -543,14 +544,14 @@ async def test_get_deployment_features_missing_fields(mock_get_info):
 
 
 @pytest.mark.asyncio
-async def test_get_deployment_info_custom_model():
+async def test_get_deployment_info_custom_model() -> None:
     class DummyDeployment:
         model = {}
 
-        def get_features(self):
+        def get_features(self) -> str:
             return []
 
-        def get_capabilities(self):
+        def get_capabilities(self) -> None:
             pass
 
     with patch("app.base.tools.deployment_info.get_sdk_client") as mock_client:
@@ -566,8 +567,8 @@ async def test_get_deployment_info_custom_model():
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
 async def test_generate_prediction_data_template_categorical_defaults(
-    mock_get_features,
-):
+    mock_get_features: Any,
+) -> None:
     features_info = {
         "features": [
             {"name": "cat", "feature_type": "categorical"},
@@ -587,7 +588,7 @@ async def test_generate_prediction_data_template_categorical_defaults(
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_exception(mock_get_features):
+async def test_generate_prediction_data_template_exception(mock_get_features: Any) -> None:
     mock_get_features.side_effect = Exception("fail")
     with pytest.raises(MCPError) as exc_info:
         await generate_prediction_data_template("id")
@@ -598,7 +599,7 @@ async def test_generate_prediction_data_template_exception(mock_get_features):
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_validate_prediction_data_file_error(mock_get_features):
+async def test_validate_prediction_data_file_error(mock_get_features: Any) -> None:
     mock_get_features.return_value = json.dumps({"features": [], "model_type": "Test"})
     with pytest.raises(MCPError) as exc_info:
         await validate_prediction_data("id", "/not/a/real/file.csv")
@@ -610,7 +611,7 @@ async def test_validate_prediction_data_file_error(mock_get_features):
 
 @patch("app.base.tools.deployment_info.get_deployment_info")
 @pytest.mark.asyncio
-async def test_get_deployment_features_error_string(mock_get_info):
+async def test_get_deployment_features_error_string(mock_get_info: Any) -> None:
     mock_get_info.return_value = "Error: not found"
     result = await get_deployment_features("id")
     info = json.loads(result)
@@ -621,7 +622,7 @@ async def test_get_deployment_features_error_string(mock_get_info):
 
 @patch("app.base.tools.deployment_info.get_deployment_info")
 @pytest.mark.asyncio
-async def test_get_deployment_features_optional_fields(mock_get_info):
+async def test_get_deployment_features_optional_fields(mock_get_info: Any) -> None:
     base = {"features": [], "total_features": 0}
     mock_get_info.return_value = json.dumps(base)
     result = await get_deployment_features("id")

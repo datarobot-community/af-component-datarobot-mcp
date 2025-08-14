@@ -143,7 +143,7 @@ async def predict_with_deployment_by_ai_catalog(
     job = dr.BatchPredictionJob.score(
         deployment=deployment_id,
         intake_settings={
-            "type": "dss",  # type: ignore[typeddict-item]
+            "type": "dss",
             "dataset_id": dataset_id,
         },
         output_settings=output_settings,  # type: ignore[arg-type]

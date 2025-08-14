@@ -71,7 +71,7 @@ def nonexistent_file_path() -> str:
 
 
 @pytest.fixture(scope="session")
-def deployment_id(classification_project: dict[str, Any]) -> str:
+def deployment_id(classification_project: Dict[str, Any]) -> str:
     return str(classification_project["deployment_id"])
 
 
@@ -81,7 +81,7 @@ def nonexistent_deployment_id() -> str:
 
 
 @pytest.fixture(scope="session")
-def classification_project_id(classification_project: dict[str, Any]) -> str:
+def classification_project_id(classification_project: Dict[str, Any]) -> str:
     return str(classification_project["project"].id)
 
 
@@ -91,7 +91,7 @@ def nonexistent_project_id() -> str:
 
 
 @pytest.fixture(scope="session")
-def model_id(classification_project: dict[str, Any]) -> str:
+def model_id(classification_project: Dict[str, Any]) -> str:
     return str(classification_project["model"].id)
 
 
@@ -106,7 +106,7 @@ def nonexistent_model_id() -> str:
 
 
 @pytest.fixture(scope="session")
-def classification_dataset_id(classification_project: dict[str, Any]) -> str:
+def classification_dataset_id(classification_project: Dict[str, Any]) -> str:
     return str(classification_project["source_dataset_id"])
 
 

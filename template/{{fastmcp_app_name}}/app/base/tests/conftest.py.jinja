@@ -46,10 +46,10 @@ def timeseries_regression_project_name() -> str:
 
 @pytest.fixture(scope="session")
 def timeseries_regression_project(
-    dr_client,
-    test_data_dir,
-    timeseries_regression_dataset_name,
-    timeseries_regression_project_name,
+    dr_client: Any,
+    test_data_dir: Path,
+    timeseries_regression_dataset_name: str,
+    timeseries_regression_project_name: str,
 ) -> Generator[Dict[str, Any], None, None]:
     """Create a time series regression project and return the best model deployment."""
     deployment_label = "MCP Test TS Regression Deployment"
@@ -162,10 +162,10 @@ def multiseries_regression_project_name() -> str:
 
 @pytest.fixture(scope="session")
 def multiseries_regression_project(
-    dr_client,
-    test_data_dir,
-    multiseries_regression_dataset_name,
-    multiseries_regression_project_name,
+    dr_client: Any,
+    test_data_dir: Path,
+    multiseries_regression_dataset_name: str,
+    multiseries_regression_project_name: str,
 ) -> Generator[Dict[str, Any], None, None]:
     """Create a multiseries time series regression project and return the best model deployment."""
     deployment_label = "MCP Test Multiseries TS Regression Deployment"
@@ -279,7 +279,7 @@ def classification_project_name() -> str:
 
 @pytest.fixture(scope="session")
 def classification_project(
-    dr_client, test_data_dir, classification_dataset_name, classification_project_name
+    dr_client: Any, test_data_dir: Path, classification_dataset_name: str, classification_project_name: str
 ) -> Generator[Dict[str, Any], None, None]:
     """Create a text classification project and return the best model deployment."""
     deployment_label = "MCP Test Text Classification Deployment"
