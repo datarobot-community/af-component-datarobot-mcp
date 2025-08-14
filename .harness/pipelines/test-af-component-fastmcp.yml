@@ -23,7 +23,7 @@ pipeline:
                     shell: Sh
                     command: |-
                       apt -o Acquire::Check-Valid-Until=false update && apt install -y git g++
-                      uvx copier copy . ./copier_context_<+matrix.python> --defaults
+                      uvx copier copy . ./copier_context_<+matrix.python> --defaults --data mcp_template_framework=
                       cd ./copier_context_<+matrix.python>/mcp_server
                       uvx --from go-task-bin task install
                     envVariables:
