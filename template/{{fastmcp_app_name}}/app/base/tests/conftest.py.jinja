@@ -63,10 +63,10 @@ def timeseries_regression_project(
                 # Get the model and project info
                 if deployment.model:
                     model = dr.Model.get(
-                        project=deployment.model["project_id"],
-                        model_id=deployment.model["id"],
+                        project=str(deployment.model["project_id"]),
+                        model_id=str(deployment.model["id"]),
                     )
-                    project = dr.Project.get(deployment.model["project_id"])
+                    project = dr.Project.get(str(deployment.model["project_id"]))
 
                 yield {
                     "project": project,
@@ -179,10 +179,10 @@ def multiseries_regression_project(
                 # Get the model and project info
                 if deployment.model:
                     model = dr.Model.get(
-                        project=deployment.model["project_id"],
-                        model_id=deployment.model["id"],
+                        project=str(deployment.model["project_id"]),
+                        model_id=str(deployment.model["id"]),
                     )
-                    project = dr.Project.get(deployment.model["project_id"])
+                    project = dr.Project.get(str(deployment.model["project_id"]))
 
                 yield {
                     "project": project,
@@ -293,10 +293,10 @@ def classification_project(
                 # Get the model and project info
                 if deployment.model:
                     model = dr.Model.get(
-                        project=deployment.model["project_id"],
-                        model_id=deployment.model["id"],
+                        project=str(deployment.model["project_id"]),
+                        model_id=str(deployment.model["id"]),
                     )
-                    project = dr.Project.get(deployment.model["project_id"])
+                    project = dr.Project.get(str(deployment.model["project_id"]))
 
                 yield {
                     "project": project,

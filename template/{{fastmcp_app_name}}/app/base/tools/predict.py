@@ -177,7 +177,7 @@ async def predict_with_deployment_from_project_data(
     """
     output_settings, bucket, key = make_output_settings(get_or_create_s3_credential())
     intake_settings: dict[str, Any] = {
-        "type": "dss",  # type: ignore[typeddict-item]
+        "type": "dss",
         "project_id": project_id,
     }
     if partition:

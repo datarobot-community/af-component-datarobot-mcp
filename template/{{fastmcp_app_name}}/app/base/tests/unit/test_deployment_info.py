@@ -546,7 +546,7 @@ async def test_get_deployment_features_missing_fields(mock_get_info: Any) -> Non
 @pytest.mark.asyncio
 async def test_get_deployment_info_custom_model() -> None:
     class DummyDeployment:
-        model = {}
+        model: Dict[str, Any] = {}
 
         def get_features(self) -> str:
             return []
@@ -652,7 +652,7 @@ async def test_get_deployment_features_optional_fields(mock_get_info: Any) -> No
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_frequent_values(mock_get_features):
+async def test_generate_prediction_data_template_frequent_values(mock_get_features: Any) -> None:
     features_info = {
         "features": [
             {
@@ -678,8 +678,8 @@ async def test_generate_prediction_data_template_frequent_values(mock_get_featur
 @patch("app.base.tools.deployment_info.get_sdk_client")
 @pytest.mark.asyncio
 async def test_validate_prediction_data_missing_values(
-    mock_get_sdk_client, mock_get_features, tmp_path
-):
+    mock_get_sdk_client: Any, mock_get_features: Any, tmp_path: Any
+) -> None:
     features_info = {
         "features": [
             {"name": "cat", "feature_type": "categorical"},
@@ -714,8 +714,8 @@ async def test_validate_prediction_data_missing_values(
 @patch("app.base.tools.deployment_info.get_sdk_client")
 @pytest.mark.asyncio
 async def test_validate_prediction_data_with_csv_string(
-    mock_get_sdk_client, mock_get_features
-):
+    mock_get_sdk_client: Any, mock_get_features: Any
+) -> None:
     features_info = {
         "features": [
             {"name": "cat", "feature_type": "categorical"},
