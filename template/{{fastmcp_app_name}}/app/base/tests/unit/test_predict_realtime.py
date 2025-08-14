@@ -14,7 +14,7 @@
 
 import io
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Generator
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -26,7 +26,7 @@ from app.base.tools import predict_realtime
 
 
 @pytest.fixture()
-def patch_realtime_dependencies() -> Dict[str, Any]:
+def patch_realtime_dependencies() -> Generator[Dict[str, Any], None, None]:
     with (
         patch("app.base.tools.predict_realtime.get_sdk_client") as mock_get_sdk_client,
         patch("app.base.tools.predict_realtime.pd.read_csv") as mock_read_csv,

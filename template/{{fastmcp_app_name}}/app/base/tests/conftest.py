@@ -97,20 +97,20 @@ def timeseries_regression_project(
     )
 
     # Start modeling with time series configuration
-    project.analyze_and_model(
+    project.analyze_and_model(  # type: ignore[attr-defined]
         target="sales",
         partitioning_method=datetime_spec,
         mode=dr.enums.AUTOPILOT_MODE.MANUAL,
     )
 
     # Train just one model instead of full autopilot
-    blueprints = project.get_blueprints()
+    blueprints = project.get_blueprints()  # type: ignore[attr-defined]
     # Get a simple time series blueprint (usually first one is good)
     blueprint = blueprints[0]
 
     # Train the model
-    model_job = project.train_datetime(blueprint.id)
-    model = model_job.get_result_when_complete()
+    model_job = project.train_datetime(blueprint.id)  # type: ignore[attr-defined]
+    model = model_job.get_result_when_complete()  # type: ignore[no-untyped-call]
 
     # Get available prediction servers and use the first one
     prediction_servers = dr.PredictionServer.list()
@@ -214,20 +214,20 @@ def multiseries_regression_project(
     )
 
     # Start modeling with multiseries time series configuration
-    project.analyze_and_model(
+    project.analyze_and_model(  # type: ignore[attr-defined]
         target="sales",
         partitioning_method=datetime_spec,
         mode=dr.enums.AUTOPILOT_MODE.MANUAL,
     )
 
     # Train just one model instead of full autopilot
-    blueprints = project.get_blueprints()
+    blueprints = project.get_blueprints()  # type: ignore[attr-defined]
     # Get a simple time series blueprint (usually first one is good)
     blueprint = blueprints[0]
 
     # Train the model
-    model_job = project.train_datetime(blueprint.id)
-    model = model_job.get_result_when_complete()
+    model_job = project.train_datetime(blueprint.id)  # type: ignore[attr-defined]
+    model = model_job.get_result_when_complete()  # type: ignore[no-untyped-call]
 
     # Get available prediction servers and use the first one
     prediction_servers = dr.PredictionServer.list()
@@ -322,13 +322,13 @@ def classification_project(
     )
 
     # Start modeling with text classification
-    project.analyze_and_model(
+    project.analyze_and_model(  # type: ignore[attr-defined]
         target="sentiment",
         mode=dr.enums.AUTOPILOT_MODE.MANUAL,
     )
 
     # Train just one model instead of full autopilot
-    blueprints = project.get_blueprints()
+    blueprints = project.get_blueprints()  # type: ignore[attr-defined]
     # Get a text blueprint for classification
     text_blueprint = None
     for blueprint in blueprints:
@@ -341,9 +341,9 @@ def classification_project(
         text_blueprint = blueprints[0]
 
     # Train the model
-    model_job_id = project.train(text_blueprint.id)
-    model_job = dr.ModelJob.get(project.id, model_job_id)
-    model = model_job.get_result_when_complete()
+    model_job_id = project.train(text_blueprint.id)  # type: ignore[attr-defined]
+    model_job = dr.ModelJob.get(project.id, model_job_id)  # type: ignore[attr-defined]
+    model = model_job.get_result_when_complete()  # type: ignore[no-untyped-call]
 
     # Get available prediction servers and use the first one
     prediction_servers = dr.PredictionServer.list()
