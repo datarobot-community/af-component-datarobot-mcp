@@ -14,7 +14,7 @@
 
 import json
 import tempfile
-from typing import Any
+from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
