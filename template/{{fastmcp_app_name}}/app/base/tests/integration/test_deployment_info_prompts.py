@@ -28,7 +28,9 @@ from .mcp_utils import integration_test_mcp_session
 class TestMCPDeploymentInfoPromptIntegration:
     """Integration tests for MCP deployment info prompt."""
 
-    async def test_deployment_info_prompt(self, classification_project: dict[str, Any]) -> None:
+    async def test_deployment_info_prompt(
+        self, classification_project: dict[str, Any]
+    ) -> None:
         """Complete integration test for MCP deployment info prompt"""
 
         async with integration_test_mcp_session() as session:

@@ -83,8 +83,8 @@ async def predict_with_deployment_by_ai_catalog_rt(
 @dr_mcp_tool(tags=["prediction", "realtime", "scoring"])
 async def predict_realtime(
     deployment_id: str,
-            file_path: Optional[str] = None,
-        dataset: Optional[str] = None,
+    file_path: Optional[str] = None,
+    dataset: Optional[str] = None,
     forecast_point: Optional[str] = None,
     forecast_range_start: Optional[str] = None,
     forecast_range_end: Optional[str] = None,
@@ -97,7 +97,7 @@ async def predict_realtime(
     explanation_algorithm: Optional[str] = None,
     prediction_endpoint: Optional[str] = None,
     timeout: int = 600,
-    ) -> dict[str, Any]:
+) -> dict[str, Any]:
     """
     Make real-time predictions using a DataRobot deployment and a local CSV file or a dataset string.
 

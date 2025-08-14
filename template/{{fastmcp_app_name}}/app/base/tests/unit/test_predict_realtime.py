@@ -51,7 +51,9 @@ def patch_realtime_dependencies() -> Generator[Dict[str, Any], None, None]:
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_forecast_point(patch_realtime_dependencies: Dict[str, Any]) -> None:
+async def test_predict_realtime_forecast_point(
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
     patch_realtime_dependencies["mock_deployment_get"].return_value = MagicMock()
@@ -79,7 +81,9 @@ async def test_predict_realtime_forecast_point(patch_realtime_dependencies: Dict
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_forecast_range_resource(patch_realtime_dependencies: Dict[str, Any]) -> None:
+async def test_predict_realtime_forecast_range_resource(
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     # Create a large DataFrame to trigger resource path
     df = pd.DataFrame({"a": range(MAX_INLINE_SIZE), "b": range(MAX_INLINE_SIZE)})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
@@ -233,7 +237,9 @@ async def test_predict_timeseries_regression_historical_range(
 
 
 @pytest.mark.asyncio
-async def test_predict_timeseries_regression_multiseries(patch_realtime_dependencies: Dict[str, Any]) -> None:
+async def test_predict_timeseries_regression_multiseries(
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test time series regression with multiple series (e.g., multiple stores, regions)."""
     # Mock multiseries regression data
     df = pd.DataFrame(
@@ -511,7 +517,9 @@ async def test_predict_realtime_with_passthrough_columns_specific(
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_with_custom_endpoint(patch_realtime_dependencies: Dict[str, Any]) -> None:
+async def test_predict_realtime_with_custom_endpoint(
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test predict_realtime with custom prediction endpoint."""
     df = pd.DataFrame({"feature": [1, 2]})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
@@ -568,7 +576,9 @@ async def test_predict_realtime_regular_prediction_no_time_series_params(
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_with_dataset_csv(patch_realtime_dependencies: Dict[str, Any]) -> None:
+async def test_predict_realtime_with_dataset_csv(
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     # Prepare a CSV string
     csv_str = "a,b\n1,3\n2,4\n"
     df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
@@ -594,7 +604,9 @@ async def test_predict_realtime_with_dataset_csv(patch_realtime_dependencies: Di
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_with_dataset_json(patch_realtime_dependencies: Dict[str, Any]) -> None:
+async def test_predict_realtime_with_dataset_json(
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     # Prepare a JSON string
     data = [{"a": 1, "b": 3}, {"a": 2, "b": 4}]
     json_str = json.dumps(data)
@@ -623,7 +635,9 @@ async def test_predict_realtime_with_dataset_json(patch_realtime_dependencies: D
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_dataset_takes_precedence(patch_realtime_dependencies: Dict[str, Any]) -> None:
+async def test_predict_realtime_dataset_takes_precedence(
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     # If both dataset and file_path are provided, dataset should be used
     csv_str = "a,b\n1,3\n2,4\n"
     df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})

@@ -214,7 +214,9 @@ async def generate_prediction_data_template(deployment_id: str, n_rows: int = 1)
 
 @dr_mcp_tool(tags=["deployment", "validation", "data"])
 async def validate_prediction_data(
-            deployment_id: str, file_path: Optional[str] = None, csv_string: Optional[str] = None
+    deployment_id: str,
+    file_path: Optional[str] = None,
+    csv_string: Optional[str] = None,
 ) -> str:
     """
     Validate if a CSV file is suitable for making predictions with a deployment.

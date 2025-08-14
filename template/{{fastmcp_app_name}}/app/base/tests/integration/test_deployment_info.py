@@ -24,7 +24,9 @@ from .mcp_utils import integration_test_mcp_session
 class TestMCPDeploymentInfoIntegration:
     """Integration tests for MCP deployment info tools (multiclass project)."""
 
-    async def test_get_deployment_features_and_template(self, classification_project: dict[str, Any]) -> None:
+    async def test_get_deployment_features_and_template(
+        self, classification_project: dict[str, Any]
+    ) -> None:
         """Integration test for get_deployment_features and generate_prediction_data_template on a multiclass deployment."""
         async with integration_test_mcp_session() as session:
             deployment_id = classification_project["deployment_id"]
