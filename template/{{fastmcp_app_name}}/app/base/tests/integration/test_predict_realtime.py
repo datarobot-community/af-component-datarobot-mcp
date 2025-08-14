@@ -195,11 +195,13 @@ class TestMCPRealtimePredictToolsIntegration:
             )
             assert result.isError
             assert (
-                                    result.content[0].text  # type: ignore[union-attr]
+                result.content[0].text  # type: ignore[union-attr]
                 == "Error executing tool predict_realtime: Error in predict_realtime: ValueError: series_id_column 'invalid_column' not found in input data."
             )
 
-    async def test_deployment_compatibility(self, timeseries_regression_project: dict[str, Any]) -> None:
+    async def test_deployment_compatibility(
+        self, timeseries_regression_project: dict[str, Any]
+    ) -> None:
         """Integration test to verify deployment is compatible with time series predictions."""
 
         deployment_id = timeseries_regression_project["deployment_id"]

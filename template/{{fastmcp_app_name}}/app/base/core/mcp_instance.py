@@ -19,7 +19,7 @@ from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import Tool as MCPTool
 from mcp.types import ToolAnnotations
 
-from .config import get_config
+from .config import MCPServerConfig, get_config
 from .logging import log_execution
 from .memory_management import MemoryManager, get_memory_manager
 from .telemetry import trace_execution
@@ -105,12 +105,12 @@ class TaggedFastMCP(FastMCP):
 
 
 # Create the tagged MCP instance
-mcp_server_configs = get_config()
+mcp_server_configs: MCPServerConfig = get_config()
 
 mcp = TaggedFastMCP(
     name=mcp_server_configs.mcp_server_name,
     port=mcp_server_configs.mcp_server_port,
-    log_level=str(mcp_server_configs.mcp_server_log_level),
+    log_level=mcp_server_configs.mcp_server_log_level,
     host=mcp_server_configs.mcp_server_host,
     stateless_http=True,
 )

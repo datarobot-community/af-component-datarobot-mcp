@@ -31,7 +31,9 @@ from app.base.core.utils import generate_presigned_url
 logger = logging.getLogger(__name__)
 
 
-def _handle_prediction_resource(job: Any, bucket: str, key: str, deployment_id: str, input_desc: str) -> str:
+def _handle_prediction_resource(
+    job: Any, bucket: str, key: str, deployment_id: str, input_desc: str
+) -> str:
     s3_url = generate_presigned_url(bucket, key)
     resource_manager = ResourceManager()
     resource = HttpResource(
@@ -157,8 +159,8 @@ async def predict_with_deployment_by_ai_catalog(
 async def predict_with_deployment_from_project_data(
     deployment_id: str,
     project_id: str,
-            dataset_id: Optional[str] = None,
-        partition: Optional[str] = None,
+    dataset_id: Optional[str] = None,
+    partition: Optional[str] = None,
     timeout: int = 600,
 ) -> str:
     """

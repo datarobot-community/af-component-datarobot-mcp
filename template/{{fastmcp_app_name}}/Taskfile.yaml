@@ -69,15 +69,15 @@ tasks:
       - uv run mypy --pretty .
 
   lint-check:
-    silent: true
+    silent: false
     desc: "🧹 Check whether the codebase is linted"
     cmds:
-      - uv run ruff format --check .
+      - uv run ruff format --check --diff .
       - uv run ruff check .
       - uv run mypy --pretty .
 
   test:
-    silent: true
+    silent: false
     desc: "🧪 Run tests"
     cmds:
       - rm -rf .coverage .coverage.xml htmlcov

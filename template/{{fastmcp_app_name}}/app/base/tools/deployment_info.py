@@ -66,8 +66,17 @@ async def get_deployment_info(deployment_id: str) -> str:
     deployment = client.Deployment.get(deployment_id)
 
     # get features from the deployment
-    features = deployment.get_features()
+    features_raw = deployment.get_features()
     deployment.get_capabilities()
+
+    # Parse features if it's a JSON string
+    if isinstance(features_raw, str):
+        try:
+            features = json.loads(features_raw)
+        except json.JSONDecodeError:
+            features = []
+    else:
+        features = features_raw
 
     # get model type if its not a custom model
     project = None
@@ -214,7 +223,9 @@ async def generate_prediction_data_template(deployment_id: str, n_rows: int = 1)
 
 @dr_mcp_tool(tags=["deployment", "validation", "data"])
 async def validate_prediction_data(
-            deployment_id: str, file_path: Optional[str] = None, csv_string: Optional[str] = None
+    deployment_id: str,
+    file_path: Optional[str] = None,
+    csv_string: Optional[str] = None,
 ) -> str:
     """
     Validate if a CSV file is suitable for making predictions with a deployment.

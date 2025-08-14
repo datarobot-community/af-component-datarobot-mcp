@@ -300,7 +300,9 @@ async def test_generate_prediction_data_template_error(mock_get_features: Any) -
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_empty_features(mock_get_features: Any) -> None:
+async def test_generate_prediction_data_template_empty_features(
+    mock_get_features: Any,
+) -> None:
     mock_get_features.return_value = json.dumps(
         {
             "features": [],
@@ -316,7 +318,9 @@ async def test_generate_prediction_data_template_empty_features(mock_get_feature
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_unknown_type(mock_get_features: Any) -> None:
+async def test_generate_prediction_data_template_unknown_type(
+    mock_get_features: Any,
+) -> None:
     features_info = {
         "features": [{"name": "foo", "feature_type": "unknown"}],
         "model_type": "Test",
@@ -331,7 +335,9 @@ async def test_generate_prediction_data_template_unknown_type(mock_get_features:
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_none_min_max(mock_get_features: Any) -> None:
+async def test_generate_prediction_data_template_none_min_max(
+    mock_get_features: Any,
+) -> None:
     features_info = {
         "features": [
             {"name": "num", "feature_type": "numeric", "min": None, "max": None},
@@ -349,7 +355,9 @@ async def test_generate_prediction_data_template_none_min_max(mock_get_features:
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_key_summary(mock_get_features: Any) -> None:
+async def test_generate_prediction_data_template_key_summary(
+    mock_get_features: Any,
+) -> None:
     features_info = {
         "features": [
             {
@@ -370,7 +378,9 @@ async def test_generate_prediction_data_template_key_summary(mock_get_features: 
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_multiseries(mock_get_features: Any) -> None:
+async def test_generate_prediction_data_template_multiseries(
+    mock_get_features: Any,
+) -> None:
     features_info = {
         "features": [{"name": "num", "feature_type": "numeric"}],
         "model_type": "Test",
@@ -406,7 +416,9 @@ async def test_validate_prediction_data_error(mock_get_features: Any) -> None:
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_validate_prediction_data_missing_feature(mock_get_features: Any, tmp_path: Any) -> None:
+async def test_validate_prediction_data_missing_feature(
+    mock_get_features: Any, tmp_path: Any
+) -> None:
     features_info = {
         "features": [
             {
@@ -427,7 +439,9 @@ async def test_validate_prediction_data_missing_feature(mock_get_features: Any, 
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_validate_prediction_data_extra_columns(mock_get_features: Any, tmp_path: Any) -> None:
+async def test_validate_prediction_data_extra_columns(
+    mock_get_features: Any, tmp_path: Any
+) -> None:
     features_info = {
         "features": [
             {
@@ -448,7 +462,9 @@ async def test_validate_prediction_data_extra_columns(mock_get_features: Any, tm
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_validate_prediction_data_type_mismatch(mock_get_features: Any, tmp_path: Any) -> None:
+async def test_validate_prediction_data_type_mismatch(
+    mock_get_features: Any, tmp_path: Any
+) -> None:
     features_info = {
         "features": [
             {
@@ -588,7 +604,9 @@ async def test_generate_prediction_data_template_categorical_defaults(
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_exception(mock_get_features: Any) -> None:
+async def test_generate_prediction_data_template_exception(
+    mock_get_features: Any,
+) -> None:
     mock_get_features.side_effect = Exception("fail")
     with pytest.raises(MCPError) as exc_info:
         await generate_prediction_data_template("id")
@@ -652,7 +670,9 @@ async def test_get_deployment_features_optional_fields(mock_get_info: Any) -> No
 
 @patch("app.base.tools.deployment_info.get_deployment_features")
 @pytest.mark.asyncio
-async def test_generate_prediction_data_template_frequent_values(mock_get_features: Any) -> None:
+async def test_generate_prediction_data_template_frequent_values(
+    mock_get_features: Any,
+) -> None:
     features_info = {
         "features": [
             {
