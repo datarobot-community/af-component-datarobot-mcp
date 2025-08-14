@@ -35,6 +35,7 @@ _answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
 
 # Files to be excluded
 _exclude:
+  - "*.j2"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/data.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/deployment_info.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tools/deployment.py{% endif %}"
