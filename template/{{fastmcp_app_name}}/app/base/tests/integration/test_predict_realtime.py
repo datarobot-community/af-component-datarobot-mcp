@@ -14,6 +14,7 @@
 
 import json
 from io import StringIO
+from typing import Any
 
 import pandas as pd
 import pytest
@@ -27,8 +28,8 @@ class TestMCPRealtimePredictToolsIntegration:
     """Integration tests for MCP realtime predict tools."""
 
     async def test_timeseries_regression_forecast_point(
-        self, timeseries_regression_project, test_data_dir
-    ):
+        self, timeseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for time series regression with forecast point."""
         async with integration_test_mcp_session() as session:
             deployment_id = timeseries_regression_project["deployment_id"]
@@ -66,8 +67,8 @@ class TestMCPRealtimePredictToolsIntegration:
             assert len(df) == 7
 
     async def test_timeseries_regression_historical_range(
-        self, timeseries_regression_project, test_data_dir
-    ):
+        self, timeseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for time series regression with historical date range."""
         async with integration_test_mcp_session() as session:
             deployment_id = timeseries_regression_project["deployment_id"]
@@ -99,8 +100,8 @@ class TestMCPRealtimePredictToolsIntegration:
             assert len(df) == 14
 
     async def test_multiseries_regression(
-        self, multiseries_regression_project, test_data_dir
-    ):
+        self, multiseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for multiseries time series regression."""
         async with integration_test_mcp_session() as session:
             deployment_id = multiseries_regression_project["deployment_id"]
@@ -140,8 +141,8 @@ class TestMCPRealtimePredictToolsIntegration:
                 assert response_dict["s3_url"] is not None
 
     async def test_regular_realtime_prediction(
-        self, timeseries_regression_project, test_data_dir
-    ):
+        self, timeseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for regular real-time prediction (non-time series specific)."""
         async with integration_test_mcp_session() as session:
             deployment_id = timeseries_regression_project["deployment_id"]
@@ -174,8 +175,8 @@ class TestMCPRealtimePredictToolsIntegration:
                 assert response_dict["resource_id"] is not None
 
     async def test_timeseries_regression_error_handling(
-        self, timeseries_regression_project, test_data_dir
-    ):
+        self, timeseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for error handling with invalid parameters."""
         async with integration_test_mcp_session() as session:
             deployment_id = timeseries_regression_project["deployment_id"]
@@ -194,11 +195,11 @@ class TestMCPRealtimePredictToolsIntegration:
             )
             assert result.isError
             assert (
-                result.content[0].text
+                                    result.content[0].text  # type: ignore[union-attr]
                 == "Error executing tool predict_realtime: Error in predict_realtime: ValueError: series_id_column 'invalid_column' not found in input data."
             )
 
-    async def test_deployment_compatibility(self, timeseries_regression_project):
+    async def test_deployment_compatibility(self, timeseries_regression_project: dict[str, Any]) -> None:
         """Integration test to verify deployment is compatible with time series predictions."""
 
         deployment_id = timeseries_regression_project["deployment_id"]
@@ -222,8 +223,8 @@ class TestMCPRealtimePredictToolsIntegration:
         assert project.target in ["sales", "sales (actual)"]
 
     async def test_predict_realtime_with_explanations(
-        self, timeseries_regression_project, test_data_dir
-    ):
+        self, timeseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for predict_realtime with explanation parameters."""
         async with integration_test_mcp_session() as session:
             deployment_id = timeseries_regression_project["deployment_id"]
@@ -265,8 +266,8 @@ class TestMCPRealtimePredictToolsIntegration:
                     )
 
     async def test_predict_realtime_time_series_with_explanations(
-        self, timeseries_regression_project, test_data_dir
-    ):
+        self, timeseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test combining time series forecasting with explanations."""
         async with integration_test_mcp_session() as session:
             deployment_id = timeseries_regression_project["deployment_id"]
@@ -316,8 +317,8 @@ class TestMCPRealtimePredictToolsIntegration:
             assert len(df) == 7
 
     async def test_classification_basic_prediction(
-        self, classification_project, test_data_dir
-    ):
+        self, classification_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for basic text classification prediction."""
         async with integration_test_mcp_session() as session:
             deployment_id = classification_project["deployment_id"]
@@ -355,8 +356,8 @@ class TestMCPRealtimePredictToolsIntegration:
             print(f"Text classification predictions successful with {len(df)} rows")
 
     async def test_predict_realtime_comprehensive_explanation_parameters(
-        self, timeseries_regression_project, test_data_dir
-    ):
+        self, timeseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for predict_realtime with comprehensive explanation parameters."""
         async with integration_test_mcp_session() as session:
             deployment_id = timeseries_regression_project["deployment_id"]
@@ -408,8 +409,8 @@ class TestMCPRealtimePredictToolsIntegration:
             )
 
     async def test_predict_realtime_with_custom_endpoint_and_passthrough_all(
-        self, timeseries_regression_project, test_data_dir
-    ):
+        self, timeseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for predict_realtime with custom endpoint and passthrough_columns='all'."""
         async with integration_test_mcp_session() as session:
             deployment_id = timeseries_regression_project["deployment_id"]
@@ -463,8 +464,8 @@ class TestMCPRealtimePredictToolsIntegration:
             print(f"Output columns: {list(df.columns)}")
 
     async def test_predict_realtime_with_max_ngram_explanations(
-        self, timeseries_regression_project, test_data_dir
-    ):
+        self, timeseries_regression_project: dict[str, Any], test_data_dir: Any
+    ) -> None:
         """Integration test for predict_realtime with max_ngram_explanations parameter."""
         async with integration_test_mcp_session() as session:
             deployment_id = timeseries_regression_project["deployment_id"]

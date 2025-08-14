@@ -14,7 +14,7 @@
 
 import json
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from datarobot.models.model import Model
 
@@ -24,7 +24,7 @@ from app.base.core.mcp_instance import dr_mcp_tool
 logger = logging.getLogger(__name__)
 
 
-def model_to_dict(model):
+def model_to_dict(model: Any) -> dict[str, Any]:
     """Convert a DataRobot Model object to a dictionary."""
     try:
         return {
@@ -44,7 +44,7 @@ def model_to_dict(model):
 class ModelEncoder(json.JSONEncoder):
     """Custom JSON encoder for DataRobot Model objects."""
 
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, Model):
             return model_to_dict(obj)
         return super().default(obj)

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+from typing import Any
 
 from app.base.core.mcp_instance import dr_mcp_extras, mcp
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 @mcp.prompt()
 @dr_mcp_extras(type="prompt")
-async def get_deployment_info_prompt(deployment_id: str) -> dict:
+async def get_deployment_info_prompt(deployment_id: str) -> dict[str, Any]:
     """Get detailed information about a deployment including its features, model type, and requirements"""
     text = f"""
     Show me detailed information about deployment {deployment_id}, including:

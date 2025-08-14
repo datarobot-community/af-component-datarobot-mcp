@@ -17,7 +17,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import pandas as pd
 from datarobot_predict import TimeSeriesType
@@ -39,7 +39,7 @@ class BucketInfo(BaseModel):
     key: str
 
 
-def make_output_settings():
+def make_output_settings() -> BucketInfo:
     bucket_info = get_s3_bucket_info()
     s3_key = f"{bucket_info['prefix']}{uuid.uuid4()}.csv"
     return BucketInfo(bucket=bucket_info["bucket"], key=s3_key)
@@ -83,8 +83,8 @@ async def predict_with_deployment_by_ai_catalog_rt(
 @dr_mcp_tool(tags=["prediction", "realtime", "scoring"])
 async def predict_realtime(
     deployment_id: str,
-    file_path: str = None,
-    dataset: str = None,
+            file_path: Optional[str] = None,
+        dataset: Optional[str] = None,
     forecast_point: Optional[str] = None,
     forecast_range_start: Optional[str] = None,
     forecast_range_end: Optional[str] = None,
@@ -97,7 +97,7 @@ async def predict_realtime(
     explanation_algorithm: Optional[str] = None,
     prediction_endpoint: Optional[str] = None,
     timeout: int = 600,
-) -> dict:
+    ) -> dict[str, Any]:
     """
     Make real-time predictions using a DataRobot deployment and a local CSV file or a dataset string.
 
@@ -275,4 +275,4 @@ async def predict_realtime(
         bucket_info.key,
         f"pred_{deployment_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
         max_explanations != 0 and max_explanations != "0",
-    )
+    )  # type: ignore[return-value]

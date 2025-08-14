@@ -15,7 +15,7 @@
 import json
 import logging
 import uuid
-from typing import Any
+from typing import Any, Optional
 
 import datarobot as dr
 from mcp.server.fastmcp.resources import HttpResource, ResourceManager
@@ -31,7 +31,7 @@ from app.base.core.utils import generate_presigned_url
 logger = logging.getLogger(__name__)
 
 
-def _handle_prediction_resource(job, bucket, key, deployment_id, input_desc):
+def _handle_prediction_resource(job: Any, bucket: str, key: str, deployment_id: str, input_desc: str) -> str:
     s3_url = generate_presigned_url(bucket, key)
     resource_manager = ResourceManager()
     resource = HttpResource(
@@ -66,7 +66,7 @@ def get_or_create_s3_credential() -> Any:
     raise Exception("No AWS credentials found in your MCP deployment.")
 
 
-def make_output_settings(cred: Any) -> tuple[dict, str, str]:
+def make_output_settings(cred: Any) -> tuple[dict[str, Any], str, str]:
     bucket_info = get_s3_bucket_info()
     s3_bucket = bucket_info["bucket"]
     s3_prefix = bucket_info["prefix"]
@@ -85,8 +85,8 @@ def make_output_settings(cred: Any) -> tuple[dict, str, str]:
 
 
 def wait_for_preds_and_cache_results(
-    job, bucket, key, deployment_id, input_desc, timeout
-):
+    job: Any, bucket: str, key: str, deployment_id: str, input_desc: str, timeout: int
+) -> str:
     job.wait_for_completion(timeout)
     if job.status in ["ERROR", "FAILED", "ABORTED"]:
         logger.error(f"Job failed with status {job.status}")
@@ -114,10 +114,10 @@ async def predict_with_deployment_by_file_path(
     job = dr.BatchPredictionJob.score(
         deployment=deployment_id,
         intake_settings={
-            "type": "localFile",
+            "type": "localFile",  # type: ignore[typeddict-item]
             "file": file_path,
         },
-        output_settings=output_settings,
+        output_settings=output_settings,  # type: ignore[arg-type]
     )
     return wait_for_preds_and_cache_results(
         job, bucket, key, deployment_id, f"Scoring file {file_path}.", timeout
@@ -143,10 +143,10 @@ async def predict_with_deployment_by_ai_catalog(
     job = dr.BatchPredictionJob.score(
         deployment=deployment_id,
         intake_settings={
-            "type": "dss",
+            "type": "dss",  # type: ignore[typeddict-item]
             "dataset_id": dataset_id,
         },
-        output_settings=output_settings,
+        output_settings=output_settings,  # type: ignore[arg-type]
     )
     return wait_for_preds_and_cache_results(
         job, bucket, key, deployment_id, f"Scoring dataset {dataset_id}.", timeout
@@ -157,8 +157,8 @@ async def predict_with_deployment_by_ai_catalog(
 async def predict_with_deployment_from_project_data(
     deployment_id: str,
     project_id: str,
-    dataset_id: str = None,
-    partition: str = None,
+            dataset_id: Optional[str] = None,
+        partition: Optional[str] = None,
     timeout: int = 600,
 ) -> str:
     """
@@ -176,7 +176,7 @@ async def predict_with_deployment_from_project_data(
         A string summary of the batch prediction job and download link if available.
     """
     output_settings, bucket, key = make_output_settings(get_or_create_s3_credential())
-    intake_settings = {
+    intake_settings: dict[str, Any] = {
         "type": "dss",
         "project_id": project_id,
     }
@@ -186,8 +186,8 @@ async def predict_with_deployment_from_project_data(
         intake_settings["dataset_id"] = dataset_id
     job = dr.BatchPredictionJob.score(
         deployment=deployment_id,
-        intake_settings=intake_settings,
-        output_settings=output_settings,
+        intake_settings=intake_settings,  # type: ignore[arg-type]
+        output_settings=output_settings,  # type: ignore[arg-type]
     )
     return wait_for_preds_and_cache_results(
         job, bucket, key, deployment_id, f"Scoring project {project_id}.", timeout

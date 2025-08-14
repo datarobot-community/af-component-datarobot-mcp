@@ -57,7 +57,7 @@ def predictions_result_response(
         resource = save_df_to_s3_and_register_resource(df, bucket, key, resource_name)
         return PredictionResponse(
             type="resource",
-            resource_id=resource.uri.encoded_string(),
+            resource_id=str(resource.uri),
             s3_url=resource.url,
             show_explanations=show_explanations,
         )

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+from typing import Any
 
 import pytest
 
@@ -134,12 +135,12 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
     )
     async def test_get_deployment_features_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_get_deployment_features_success,
-        deployment_id,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_get_deployment_features_success: Any,
+        deployment_id: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(deployment_id=deployment_id)
 
         async with ete_test_mcp_session as session:
@@ -148,7 +149,7 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
                 expectations_for_get_deployment_features_success,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_get_deployment_features_success",
             )
 
     @pytest.mark.parametrize(
@@ -162,12 +163,12 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
     )
     async def test_generate_prediction_data_template_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_generate_prediction_data_template_success,
-        deployment_id,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_generate_prediction_data_template_success: Any,
+        deployment_id: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(deployment_id=deployment_id)
 
         async with ete_test_mcp_session as session:
@@ -176,7 +177,7 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
                 expectations_for_generate_prediction_data_template_success,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_generate_prediction_data_template_success",
             )
 
     @pytest.mark.skip(
@@ -193,13 +194,13 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
     )
     async def test_validate_prediction_data_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_validate_prediction_data_success,
-        deployment_id,
-        diabetes_scoring_small_file_path,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_validate_prediction_data_success: Any,
+        deployment_id: str,
+        diabetes_scoring_small_file_path: Any,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(
             deployment_id=deployment_id,
             file_path=diabetes_scoring_small_file_path,
@@ -211,7 +212,7 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
                 expectations_for_validate_prediction_data_success,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_validate_prediction_data_success",
             )
 
     @pytest.mark.parametrize(
@@ -225,13 +226,13 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
     )
     async def test_validate_prediction_data_failure(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_validate_prediction_data_failure,
-        deployment_id,
-        nonexistent_file_path,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_validate_prediction_data_failure: Any,
+        deployment_id: str,
+        nonexistent_file_path: str,
+        prompt_template: str,
+    ) -> None:
         prompt = prompt_template.format(
             deployment_id=deployment_id,
             file_path=nonexistent_file_path,
@@ -243,5 +244,5 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
                 expectations_for_validate_prediction_data_failure,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_validate_prediction_data_failure",
             )

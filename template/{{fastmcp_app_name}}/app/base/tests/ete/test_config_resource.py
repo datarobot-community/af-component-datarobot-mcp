@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+from typing import Any
 
 import pytest
 
@@ -56,16 +57,16 @@ class TestConfigResourceE2E(ToolBaseE2E):
     )
     async def test_get_server_config_success(
         self,
-        openai_llm_client,
-        ete_test_mcp_session,
-        expectations_for_get_server_config_success,
-        prompt_template,
-    ):
+        openai_llm_client: Any,
+        ete_test_mcp_session: Any,
+        expectations_for_get_server_config_success: Any,
+        prompt_template: str,
+    ) -> None:
         async with ete_test_mcp_session as session:
             await self._run_test_with_expectations(
                 prompt_template,
                 expectations_for_get_server_config_success,
                 openai_llm_client,
                 session,
-                inspect.currentframe().f_code.co_name,
+                "test_get_server_config_success",
             )

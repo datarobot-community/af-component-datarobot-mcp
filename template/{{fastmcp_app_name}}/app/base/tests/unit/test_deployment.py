@@ -22,12 +22,12 @@ from app.base.core import common
 from app.base.tools import deployment
 
 
-def test_load_dotenv():
+def test_load_dotenv() -> None:
     load_dotenv(verbose=True)
 
 
 @pytest.mark.asyncio
-async def test_list_deployments_success():
+async def test_list_deployments_success() -> None:
     with patch("app.base.tools.deployment.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_dep1 = MagicMock(id="1", label="dep1")
@@ -40,7 +40,7 @@ async def test_list_deployments_success():
 
 
 @pytest.mark.asyncio
-async def test_list_deployments_empty():
+async def test_list_deployments_empty() -> None:
     with patch("app.base.tools.deployment.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_client.Deployment.list.return_value = []
@@ -50,7 +50,7 @@ async def test_list_deployments_empty():
 
 
 @pytest.mark.asyncio
-async def test_list_deployments_error():
+async def test_list_deployments_error() -> None:
     with patch(
         "app.base.tools.deployment.get_sdk_client", side_effect=Exception("fail")
     ):
@@ -60,7 +60,7 @@ async def test_list_deployments_error():
 
 
 @pytest.mark.asyncio
-async def test_get_model_info_from_deployment_success():
+async def test_get_model_info_from_deployment_success() -> None:
     with patch("app.base.tools.deployment.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_deployment = MagicMock()
@@ -73,7 +73,7 @@ async def test_get_model_info_from_deployment_success():
 
 
 @pytest.mark.asyncio
-async def test_get_model_info_from_deployment_not_found():
+async def test_get_model_info_from_deployment_not_found() -> None:
     with patch("app.base.tools.deployment.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_client.Deployment.get.side_effect = Exception(
@@ -89,7 +89,7 @@ async def test_get_model_info_from_deployment_not_found():
 
 
 @pytest.mark.asyncio
-async def test_get_model_info_from_deployment_error():
+async def test_get_model_info_from_deployment_error() -> None:
     with patch(
         "app.base.tools.deployment.get_sdk_client", side_effect=Exception("fail")
     ):
@@ -101,7 +101,7 @@ async def test_get_model_info_from_deployment_error():
 
 
 @pytest.mark.asyncio
-async def test_deploy_model_success():
+async def test_deploy_model_success() -> None:
     with patch("app.base.tools.deployment.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_server = MagicMock(id="srv1")
@@ -118,7 +118,7 @@ async def test_deploy_model_success():
 
 
 @pytest.mark.asyncio
-async def test_deploy_model_no_prediction_servers():
+async def test_deploy_model_no_prediction_servers() -> None:
     with patch("app.base.tools.deployment.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_client.PredictionServer.list.return_value = []
@@ -130,7 +130,7 @@ async def test_deploy_model_no_prediction_servers():
 
 
 @pytest.mark.asyncio
-async def test_deploy_model_error():
+async def test_deploy_model_error() -> None:
     with patch("app.base.tools.deployment.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_client.PredictionServer.list.side_effect = Exception("fail servers")
@@ -142,7 +142,7 @@ async def test_deploy_model_error():
 
 
 @pytest.mark.asyncio
-async def test_get_sdk_client_uses_bearer_token():
+async def test_get_sdk_client_uses_bearer_token() -> None:
     # Simulate a FastMCP Context with a Bearer token in headers
     ctx = MagicMock()
     ctx.request = MagicMock()
@@ -155,7 +155,7 @@ async def test_get_sdk_client_uses_bearer_token():
 
 
 @pytest.mark.asyncio
-async def test_get_sdk_client_falls_back_to_env():
+async def test_get_sdk_client_falls_back_to_env() -> None:
     # Simulate a FastMCP Context with no Authorization header
     ctx = MagicMock()
     ctx.request = MagicMock()
@@ -175,7 +175,7 @@ async def test_get_sdk_client_falls_back_to_env():
 
 
 @pytest.mark.asyncio
-async def test_get_sdk_client_no_ctx():
+async def test_get_sdk_client_no_ctx() -> None:
     # No context provided, should use environment token
     with (
         patch("datarobot.Client") as mock_client,

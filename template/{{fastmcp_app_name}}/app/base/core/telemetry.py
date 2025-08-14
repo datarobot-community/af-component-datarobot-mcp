@@ -219,7 +219,7 @@ def get_trace_id() -> Optional[str]:
     if not context.is_valid:
         return None
 
-    return format_trace_id(context.trace_id)
+    return str(format_trace_id(context.trace_id))
 
 
 T = TypeVar("T", bound=Callable[..., Any])

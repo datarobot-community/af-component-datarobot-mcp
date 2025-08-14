@@ -20,7 +20,7 @@ from app.base.tools import data
 
 
 @pytest.mark.asyncio
-async def test_upload_dataset_to_ai_catalog_success():
+async def test_upload_dataset_to_ai_catalog_success() -> None:
     with (
         patch("app.base.tools.data.get_sdk_client") as mock_get_client,
         patch("os.path.exists", return_value=True),
@@ -37,7 +37,7 @@ async def test_upload_dataset_to_ai_catalog_success():
 
 
 @pytest.mark.asyncio
-async def test_upload_dataset_to_ai_catalog_file_not_found():
+async def test_upload_dataset_to_ai_catalog_file_not_found() -> None:
     with (
         patch("app.base.tools.data.get_sdk_client"),
         patch("os.path.exists", return_value=False),
@@ -47,7 +47,7 @@ async def test_upload_dataset_to_ai_catalog_file_not_found():
 
 
 @pytest.mark.asyncio
-async def test_upload_dataset_to_ai_catalog_error():
+async def test_upload_dataset_to_ai_catalog_error() -> None:
     with patch("app.base.tools.data.get_sdk_client", side_effect=Exception("fail")):
         with pytest.raises(Exception) as exc_info:
             await data.upload_dataset_to_ai_catalog("somefile.csv")
@@ -57,7 +57,7 @@ async def test_upload_dataset_to_ai_catalog_error():
 
 
 @pytest.mark.asyncio
-async def test_list_ai_catalog_items_success():
+async def test_list_ai_catalog_items_success() -> None:
     with patch("app.base.tools.data.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_ds1 = MagicMock()
@@ -74,7 +74,7 @@ async def test_list_ai_catalog_items_success():
 
 
 @pytest.mark.asyncio
-async def test_list_ai_catalog_items_empty():
+async def test_list_ai_catalog_items_empty() -> None:
     with patch("app.base.tools.data.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_client.Dataset.list.return_value = []
@@ -84,7 +84,7 @@ async def test_list_ai_catalog_items_empty():
 
 
 @pytest.mark.asyncio
-async def test_list_ai_catalog_items_error():
+async def test_list_ai_catalog_items_error() -> None:
     with patch("app.base.tools.data.get_sdk_client", side_effect=Exception("fail")):
         with pytest.raises(Exception) as exc_info:
             await data.list_ai_catalog_items()

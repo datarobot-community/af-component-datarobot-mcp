@@ -338,7 +338,7 @@ def _analyze_target_for_use_cases(
     df: pd.DataFrame, target_col: str
 ) -> List[UseCaseSuggestion]:
     """Analyze a specific target column and suggest use cases"""
-    suggestions = []
+    suggestions: List[UseCaseSuggestion] = []
 
     target_data = df[target_col].dropna()
     if len(target_data) == 0:

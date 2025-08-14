@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
+
 import pytest
 from mcp.types import (
     GetPromptResult,
@@ -26,7 +28,7 @@ from .mcp_utils import integration_test_mcp_session
 class TestMCPDeploymentInfoPromptIntegration:
     """Integration tests for MCP deployment info prompt."""
 
-    async def test_deployment_info_prompt(self, classification_project):
+    async def test_deployment_info_prompt(self, classification_project: dict[str, Any]) -> None:
         """Complete integration test for MCP deployment info prompt"""
 
         async with integration_test_mcp_session() as session:
@@ -48,7 +50,7 @@ class TestMCPDeploymentInfoPromptIntegration:
             assert len(result.messages) > 0
             assert isinstance(result.messages[0], PromptMessage)
 
-            result_text = result.messages[0].content.text
+            result_text = result.messages[0].content.text  # type: ignore[union-attr]
             result_role = result.messages[0].role
             assert result_role == "user", f"Result role: {result_role}"
             expected_text = f"""

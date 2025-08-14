@@ -20,7 +20,7 @@ from app.base.tools import project
 
 
 @pytest.mark.asyncio
-async def test_list_projects_success():
+async def test_list_projects_success() -> None:
     with patch("app.base.tools.project.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_proj1 = MagicMock(id="1", project_name="proj1")
@@ -33,7 +33,7 @@ async def test_list_projects_success():
 
 
 @pytest.mark.asyncio
-async def test_list_projects_empty():
+async def test_list_projects_empty() -> None:
     with patch("app.base.tools.project.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_client.Project.list.return_value = []
@@ -43,7 +43,7 @@ async def test_list_projects_empty():
 
 
 @pytest.mark.asyncio
-async def test_list_projects_error():
+async def test_list_projects_error() -> None:
     with patch("app.base.tools.project.get_sdk_client", side_effect=Exception("fail")):
         with pytest.raises(Exception) as exc_info:
             await project.list_projects()
@@ -51,7 +51,7 @@ async def test_list_projects_error():
 
 
 @pytest.mark.asyncio
-async def test_get_project_dataset_by_name_success():
+async def test_get_project_dataset_by_name_success() -> None:
     with patch("app.base.tools.project.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_project = MagicMock()
@@ -67,7 +67,7 @@ async def test_get_project_dataset_by_name_success():
 
 
 @pytest.mark.asyncio
-async def test_get_project_dataset_by_name_not_found():
+async def test_get_project_dataset_by_name_not_found() -> None:
     with patch("app.base.tools.project.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_project = MagicMock()
@@ -82,7 +82,7 @@ async def test_get_project_dataset_by_name_not_found():
 
 
 @pytest.mark.asyncio
-async def test_get_project_dataset_by_name_error():
+async def test_get_project_dataset_by_name_error() -> None:
     with patch("app.base.tools.project.get_sdk_client", side_effect=Exception("fail")):
         with pytest.raises(Exception) as exc_info:
             await project.get_project_dataset_by_name("pid", "training")

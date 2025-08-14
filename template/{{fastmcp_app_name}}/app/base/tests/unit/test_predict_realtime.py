@@ -14,6 +14,7 @@
 
 import io
 import json
+from typing import Any, Dict, Generator
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -25,7 +26,7 @@ from app.base.tools import predict_realtime
 
 
 @pytest.fixture()
-def patch_realtime_dependencies():
+def patch_realtime_dependencies() -> Generator[Dict[str, Any], None, None]:
     with (
         patch("app.base.tools.predict_realtime.get_sdk_client") as mock_get_sdk_client,
         patch("app.base.tools.predict_realtime.pd.read_csv") as mock_read_csv,
@@ -50,7 +51,7 @@ def patch_realtime_dependencies():
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_forecast_point(patch_realtime_dependencies):
+async def test_predict_realtime_forecast_point(patch_realtime_dependencies: Dict[str, Any]) -> None:
     df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
     patch_realtime_dependencies["mock_deployment_get"].return_value = MagicMock()
@@ -78,7 +79,7 @@ async def test_predict_realtime_forecast_point(patch_realtime_dependencies):
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_forecast_range_resource(patch_realtime_dependencies):
+async def test_predict_realtime_forecast_range_resource(patch_realtime_dependencies: Dict[str, Any]) -> None:
     # Create a large DataFrame to trigger resource path
     df = pd.DataFrame({"a": range(MAX_INLINE_SIZE), "b": range(MAX_INLINE_SIZE)})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
@@ -118,8 +119,8 @@ async def test_predict_realtime_forecast_range_resource(patch_realtime_dependenc
 
 @pytest.mark.asyncio
 async def test_predict_timeseries_regression_forecast_point_with_intervals(
-    patch_realtime_dependencies,
-):
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test time series regression with forecast point and prediction intervals."""
     # Mock regression input data with typical time series features
     df = pd.DataFrame(
@@ -175,8 +176,8 @@ async def test_predict_timeseries_regression_forecast_point_with_intervals(
 
 @pytest.mark.asyncio
 async def test_predict_timeseries_regression_historical_range(
-    patch_realtime_dependencies,
-):
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test time series regression with historical date range predictions."""
     # Mock regression input data
     df = pd.DataFrame(
@@ -232,7 +233,7 @@ async def test_predict_timeseries_regression_historical_range(
 
 
 @pytest.mark.asyncio
-async def test_predict_timeseries_regression_multiseries(patch_realtime_dependencies):
+async def test_predict_timeseries_regression_multiseries(patch_realtime_dependencies: Dict[str, Any]) -> None:
     """Test time series regression with multiple series (e.g., multiple stores, regions)."""
     # Mock multiseries regression data
     df = pd.DataFrame(
@@ -288,8 +289,8 @@ async def test_predict_timeseries_regression_multiseries(patch_realtime_dependen
 
 @pytest.mark.asyncio
 async def test_predict_timeseries_regression_large_dataset_resource(
-    patch_realtime_dependencies,
-):
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test time series regression with large dataset that triggers S3 resource storage."""
     # Create large regression dataset
     large_df = pd.DataFrame(
@@ -341,8 +342,8 @@ async def test_predict_timeseries_regression_large_dataset_resource(
 
 @pytest.mark.asyncio
 async def test_predict_timeseries_regression_series_id_validation_error(
-    patch_realtime_dependencies,
-):
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test time series regression with invalid series_id_column raises appropriate error."""
     df = pd.DataFrame(
         {
@@ -370,8 +371,8 @@ async def test_predict_timeseries_regression_series_id_validation_error(
 
 @pytest.mark.asyncio
 async def test_predict_timeseries_regression_no_prediction_intervals(
-    patch_realtime_dependencies,
-):
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test time series regression without prediction intervals (point estimates only)."""
     df = pd.DataFrame(
         {
@@ -419,8 +420,8 @@ async def test_predict_timeseries_regression_no_prediction_intervals(
 
 @pytest.mark.asyncio
 async def test_predict_realtime_with_all_explanation_parameters(
-    patch_realtime_dependencies,
-):
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test predict_realtime with comprehensive explanation parameters."""
     df = pd.DataFrame({"text": ["hello world", "test document"], "feature": [1, 2]})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
@@ -459,8 +460,8 @@ async def test_predict_realtime_with_all_explanation_parameters(
 
 @pytest.mark.asyncio
 async def test_predict_realtime_with_passthrough_columns_all(
-    patch_realtime_dependencies,
-):
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test predict_realtime with passthrough_columns='all'."""
     df = pd.DataFrame({"id": [1, 2], "feature1": [10, 20], "feature2": [100, 200]})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
@@ -485,8 +486,8 @@ async def test_predict_realtime_with_passthrough_columns_all(
 
 @pytest.mark.asyncio
 async def test_predict_realtime_with_passthrough_columns_specific(
-    patch_realtime_dependencies,
-):
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test predict_realtime with specific passthrough columns."""
     df = pd.DataFrame({"id": [1, 2], "feature1": [10, 20], "feature2": [100, 200]})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
@@ -510,7 +511,7 @@ async def test_predict_realtime_with_passthrough_columns_specific(
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_with_custom_endpoint(patch_realtime_dependencies):
+async def test_predict_realtime_with_custom_endpoint(patch_realtime_dependencies: Dict[str, Any]) -> None:
     """Test predict_realtime with custom prediction endpoint."""
     df = pd.DataFrame({"feature": [1, 2]})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
@@ -536,8 +537,8 @@ async def test_predict_realtime_with_custom_endpoint(patch_realtime_dependencies
 
 @pytest.mark.asyncio
 async def test_predict_realtime_regular_prediction_no_time_series_params(
-    patch_realtime_dependencies,
-):
+    patch_realtime_dependencies: Dict[str, Any],
+) -> None:
     """Test predict_realtime for regular prediction without any time series parameters."""
     df = pd.DataFrame({"feature1": [1, 2], "feature2": [10, 20]})
     patch_realtime_dependencies["mock_read_csv"].return_value = df
@@ -567,7 +568,7 @@ async def test_predict_realtime_regular_prediction_no_time_series_params(
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_with_dataset_csv(patch_realtime_dependencies):
+async def test_predict_realtime_with_dataset_csv(patch_realtime_dependencies: Dict[str, Any]) -> None:
     # Prepare a CSV string
     csv_str = "a,b\n1,3\n2,4\n"
     df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
@@ -593,7 +594,7 @@ async def test_predict_realtime_with_dataset_csv(patch_realtime_dependencies):
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_with_dataset_json(patch_realtime_dependencies):
+async def test_predict_realtime_with_dataset_json(patch_realtime_dependencies: Dict[str, Any]) -> None:
     # Prepare a JSON string
     data = [{"a": 1, "b": 3}, {"a": 2, "b": 4}]
     json_str = json.dumps(data)
@@ -622,7 +623,7 @@ async def test_predict_realtime_with_dataset_json(patch_realtime_dependencies):
 
 
 @pytest.mark.asyncio
-async def test_predict_realtime_dataset_takes_precedence(patch_realtime_dependencies):
+async def test_predict_realtime_dataset_takes_precedence(patch_realtime_dependencies: Dict[str, Any]) -> None:
     # If both dataset and file_path are provided, dataset should be used
     csv_str = "a,b\n1,3\n2,4\n"
     df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})

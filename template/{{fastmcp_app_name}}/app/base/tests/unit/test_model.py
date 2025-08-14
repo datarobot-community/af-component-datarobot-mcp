@@ -20,7 +20,7 @@ from app.base.tools import model
 
 
 @pytest.mark.asyncio
-async def test_get_best_model_success():
+async def test_get_best_model_success() -> None:
     with patch("app.base.tools.model.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_project = MagicMock()
@@ -39,7 +39,7 @@ async def test_get_best_model_success():
 
 
 @pytest.mark.asyncio
-async def test_get_best_model_no_models():
+async def test_get_best_model_no_models() -> None:
     with patch("app.base.tools.model.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_project = MagicMock()
@@ -55,7 +55,7 @@ async def test_get_best_model_no_models():
 
 
 @pytest.mark.asyncio
-async def test_get_best_model_project_not_found():
+async def test_get_best_model_project_not_found() -> None:
     with patch("app.base.tools.model.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_client.Project.get.return_value = None
@@ -69,7 +69,7 @@ async def test_get_best_model_project_not_found():
 
 
 @pytest.mark.asyncio
-async def test_get_best_model_error():
+async def test_get_best_model_error() -> None:
     with patch("app.base.tools.model.get_sdk_client", side_effect=Exception("fail")):
         with pytest.raises(Exception) as exc_info:
             await model.get_best_model("pid", "AUC")
@@ -77,7 +77,7 @@ async def test_get_best_model_error():
 
 
 @pytest.mark.asyncio
-async def test_score_dataset_with_model_success():
+async def test_score_dataset_with_model_success() -> None:
     with patch("app.base.tools.model.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_project = MagicMock()
@@ -97,7 +97,7 @@ async def test_score_dataset_with_model_success():
 
 
 @pytest.mark.asyncio
-async def test_score_dataset_with_model_project_not_found():
+async def test_score_dataset_with_model_project_not_found() -> None:
     with patch("app.base.tools.model.get_sdk_client") as mock_get_client:
         project_id = "pid"
         mock_client = MagicMock()
@@ -117,7 +117,7 @@ async def test_score_dataset_with_model_project_not_found():
 
 
 @pytest.mark.asyncio
-async def test_score_dataset_with_model_model_not_found():
+async def test_score_dataset_with_model_model_not_found() -> None:
     with patch("app.base.tools.model.get_sdk_client") as mock_get_client:
         mock_client = MagicMock()
         mock_project = MagicMock()
@@ -137,7 +137,7 @@ async def test_score_dataset_with_model_model_not_found():
 
 
 @pytest.mark.asyncio
-async def test_score_dataset_with_model_error():
+async def test_score_dataset_with_model_error() -> None:
     with patch("app.base.tools.model.get_sdk_client", side_effect=Exception("fail")):
         with pytest.raises(Exception) as exc_info:
             await model.score_dataset_with_model("pid", "mid", "url")

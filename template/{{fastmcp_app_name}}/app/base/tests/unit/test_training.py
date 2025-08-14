@@ -22,7 +22,7 @@ from app.base.tools import training
 
 
 @pytest.mark.asyncio
-async def test_analyze_dataset():
+async def test_analyze_dataset() -> None:
     mock_dataset = MagicMock()
     mock_df = pd.DataFrame(
         {
@@ -53,7 +53,7 @@ async def test_analyze_dataset():
 
 
 @pytest.mark.asyncio
-async def test_suggest_use_cases():
+async def test_suggest_use_cases() -> None:
     mock_dataset = MagicMock()
     mock_df = pd.DataFrame(
         {
@@ -82,7 +82,7 @@ async def test_suggest_use_cases():
 
 
 @pytest.mark.asyncio
-async def test_get_exploratory_insights():
+async def test_get_exploratory_insights() -> None:
     mock_dataset = MagicMock()
     mock_df = pd.DataFrame({"features": [1, 2, 3], "target": [0, 1, 0]})
     mock_dataset.get_as_dataframe.return_value = mock_df
@@ -104,7 +104,7 @@ async def test_get_exploratory_insights():
 
 
 @pytest.mark.asyncio
-async def test_start_autopilot_new_project():
+async def test_start_autopilot_new_project() -> None:
     mock_dataset = MagicMock()
     mock_dataset.id = "test_dataset_id"
     mock_project = MagicMock()
@@ -132,7 +132,7 @@ async def test_start_autopilot_new_project():
 
 
 @pytest.mark.asyncio
-async def test_start_autopilot_existing_project():
+async def test_start_autopilot_existing_project() -> None:
     mock_project = MagicMock()
     mock_project.id = "test_project_id"
     mock_project.get_status.return_value = "running"
@@ -154,7 +154,7 @@ async def test_start_autopilot_existing_project():
 
 
 @pytest.mark.asyncio
-async def test_get_model_roc_curve():
+async def test_get_model_roc_curve() -> None:
     mock_project = MagicMock()
     mock_model = MagicMock()
     mock_roc_curve = MagicMock()
@@ -187,7 +187,7 @@ async def test_get_model_roc_curve():
 
 
 @pytest.mark.asyncio
-async def test_get_model_feature_impact():
+async def test_get_model_feature_impact() -> None:
     mock_project = MagicMock()
     mock_model = MagicMock()
     mock_feature_impact = [
@@ -213,7 +213,7 @@ async def test_get_model_feature_impact():
 
 
 @pytest.mark.asyncio
-async def test_get_model_lift_chart():
+async def test_get_model_lift_chart() -> None:
     mock_project = MagicMock()
     mock_model = MagicMock()
     mock_lift_chart = MagicMock()
@@ -241,7 +241,7 @@ async def test_get_model_lift_chart():
 
 
 @pytest.mark.asyncio
-async def test_start_autopilot_validation():
+async def test_start_autopilot_validation() -> None:
     """Test validation of input parameters for start_autopilot."""
     # Test missing dataset info for new project
     with patch("app.base.tools.training.get_sdk_client"):

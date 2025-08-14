@@ -110,7 +110,7 @@ mcp_server_configs = get_config()
 mcp = TaggedFastMCP(
     name=mcp_server_configs.mcp_server_name,
     port=mcp_server_configs.mcp_server_port,
-    log_level=str(mcp_server_configs.mcp_server_log_level),  # type: ignore[arg-type]
+    log_level=str(mcp_server_configs.mcp_server_log_level),
     host=mcp_server_configs.mcp_server_host,
     stateless_http=True,
 )
@@ -148,7 +148,9 @@ def dr_mcp_tool(
             agent_id = None
             if (
                 ctx
+                and hasattr(ctx, "request_context")
                 and ctx.request_context
+                and hasattr(ctx.request_context, "request")
                 and ctx.request_context.request
                 and hasattr(ctx.request_context.request, "headers")
             ):
