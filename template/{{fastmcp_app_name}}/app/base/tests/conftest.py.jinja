@@ -351,7 +351,7 @@ def classification_project(
     # Train the model
     model_job_id = project.train(text_blueprint.id)  # type: ignore[attr-defined]
     model_job = dr.ModelJob.get(project.id, model_job_id)  # type: ignore[attr-defined]
-    model = model_job.get_result_when_complete()
+    model = model_job.get_result_when_complete()  # type: ignore[no-untyped-call]
 
     # Get available prediction servers and use the first one
     prediction_servers = dr.PredictionServer.list()
