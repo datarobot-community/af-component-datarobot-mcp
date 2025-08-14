@@ -15,12 +15,11 @@
 from functools import wraps
 from typing import Any, Callable, List, Optional
 
-from .config import MCPServerConfig
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import Tool as MCPTool
 from mcp.types import ToolAnnotations
 
-from .config import get_config
+from .config import get_config, MCPServerConfig
 from .logging import log_execution
 from .memory_management import MemoryManager, get_memory_manager
 from .telemetry import trace_execution

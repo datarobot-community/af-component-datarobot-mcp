@@ -13,7 +13,9 @@
 # limitations under the License.
 
 from pathlib import Path
+{%- if mcp_template_framework == "base" %}
 from typing import Any
+{%- endif %}
 {%- if mcp_template_framework == "base_with_tools" %}
 from typing import Dict, Generator
 
