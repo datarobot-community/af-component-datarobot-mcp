@@ -24,7 +24,7 @@ pipeline:
                         shell: Sh
                         command: |-
                           apt-get update -o Acquire::Check-Valid-Until=false || true
-                          apt-get install -y --fix-missing git g++ || apt-get install -y --fix-missing git build-essential
+                          apt-get install -y git build-essential
                           uvx copier copy . ./copier_context_base_<+matrix.python> --data mcp_template_framework=base --defaults
                           cd ./copier_context_base_<+matrix.python>/mcp_server
                           uvx --from go-task-bin task install
@@ -104,7 +104,7 @@ pipeline:
                         shell: Sh
                         command: |-
                           apt-get update -o Acquire::Check-Valid-Until=false || true
-                          apt-get install -y --fix-missing git g++ || apt-get install -y --fix-missing git build-essential
+                          apt-get install -y git build-essential
                           uvx copier copy . ./copier_context_tools_<+matrix.python> --data mcp_template_framework=base_with_tools --defaults
                           cd ./copier_context_tools_<+matrix.python>/mcp_server
                           uvx --from go-task-bin task install
