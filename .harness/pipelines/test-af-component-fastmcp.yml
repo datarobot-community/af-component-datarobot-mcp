@@ -25,7 +25,7 @@ pipeline:
                         command: |-
                           apt -o Acquire::Check-Valid-Until=false update && apt install -y git g++
                           uvx copier copy . ./copier_context_base_<+matrix.python> --data mcp_template_framework=base --defaults
-                          cd ./copier_context_<+matrix.python>/mcp_server
+                          cd ./copier_context_base_<+matrix.python>/mcp_server
                           uvx --from go-task-bin task install
                         envVariables:
                           UV_CACHE_DIR: /.uv_cache
