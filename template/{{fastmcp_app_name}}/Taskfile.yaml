@@ -69,15 +69,15 @@ tasks:
       - uv run mypy --pretty .
 
   lint-check:
-    silent: false
+    silent: true
     desc: "🧹 Check whether the codebase is linted"
     cmds:
-      - uv run ruff format --check --diff .
+      - uv run ruff format --check .
       - uv run ruff check .
       - uv run mypy --pretty .
 
   test:
-    silent: false
+    silent: true
     desc: "🧪 Run tests"
     cmds:
       - rm -rf .coverage .coverage.xml htmlcov
@@ -129,7 +129,43 @@ tasks:
   unit:
     desc: "Run unit tests"
     cmds:
+      - rm -rf .coverage .coverage.xml htmlcov
       - echo "Running unit tests"
       - uv sync --all-extras && uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/base/tests/unit/ app/recipe/tests/unit/{{end}}
-        -s -vv
+        --cov=app --cov-report=xml --cov-report=html --cov-report=term-missing -s -vv
+    silent: true
+
+  test-interactive:
+    desc: "🧪 Run interactive MCP client test"
+    cmds:
+      - echo "🧪 Starting interactive MCP client test"
+      # Check if server is running on port 8082
+      - |
+        if ! curl -s http://localhost:8082/ > /dev/null 2>&1; then
+          echo "MCP server not running on port 8082. Starting it now..."
+          # Kill any existing process on the port
+          if lsof -i :8082 > /dev/null 2>&1; then
+            echo "Killing existing process on port 8082"
+            lsof -i :8082 | grep LISTEN | awk '{print $2}' | xargs kill -9 2>/dev/null || true
+          fi
+          # Start server
+          OTEL_ATTRIBUTES='{"environment":"test","service.instance.id":"ete-tests"}' \
+          MCP_SERVER_PORT=8082 uv run app/main.py &
+          # Wait for server to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:8082/ > /dev/null 2>&1; then
+              echo "Server is ready"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Server failed to start"
+              exit 1
+            fi
+            sleep 1
+          done
+        else
+          echo "MCP server already running on port 8082"
+        fi
+      - echo ""
+      - uv run python test_interactive.py
     silent: true
