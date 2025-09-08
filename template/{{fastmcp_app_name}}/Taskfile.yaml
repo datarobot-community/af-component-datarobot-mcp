@@ -8,6 +8,10 @@ tasks:
     cmds:
       - echo "🔧 Installing dependencies.."
       - uv sync --all-extras --dev
+      - |
+        if [ -s recipe_requirements.txt ]; then
+          uv pip install -r recipe_requirements.txt
+        fi
     silent: true
 
   dev:

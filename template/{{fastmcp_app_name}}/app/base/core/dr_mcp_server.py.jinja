@@ -23,6 +23,7 @@ from mcp.server.fastmcp import FastMCP
 
 from app.recipe.core.recipe_config import get_recipe_config
 from app.recipe.core.recipe_credentials import get_recipe_credentials
+from app.recipe.core.server_lifecycle import RecipeServerLifecycle
 
 from .config import get_config
 from .credentials import get_credentials
@@ -85,6 +86,7 @@ class DataRobotMCPServer:
         self._mcp_transport = transport
         self._root_tracing_span = initialize_telemetry()
         self._memory_manager: Optional[MemoryManager] = None
+        self._recipe_lifecycle = RecipeServerLifecycle()
 
         if get_credentials().has_aws_credentials():
             self._logger.info("Initializing memory manager")
@@ -132,9 +134,38 @@ class DataRobotMCPServer:
             for resource in resources:
                 self._logger.info(f" - {resource.name}")
 
+            # Execute pre-server recipe start actions
+            asyncio.run(self._recipe_lifecycle.pre_server_start(self._mcp))
+
+            # Create event loop for async operations
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            async def run_server() -> None:
+                # Start server in background based on transport type
+                if self._mcp_transport == "stdio":
+                    server_task = asyncio.create_task(self._mcp.run_stdio_async())
+                elif self._mcp_transport == "sse":
+                    server_task = asyncio.create_task(self._mcp.run_sse_async())
+                elif self._mcp_transport == "streamable-http":
+                    server_task = asyncio.create_task(
+                        self._mcp.run_streamable_http_async()
+                    )
+                else:
+                    raise ValueError(f"Unsupported transport: {self._mcp_transport}")
+
+                # Give the server a moment to initialize
+                await asyncio.sleep(1)
+
+                # Execute post-server start recipe actions
+                await self._recipe_lifecycle.post_server_start(self._mcp)
+
+                # Wait for server to complete
+                await server_task
+
             # Start the server
             self._logger.info("Starting MCP server...")
-            self._mcp.run(transport=self._mcp_transport)  # type: ignore[arg-type]
+            loop.run_until_complete(run_server())
 
         except Exception as e:
             self._logger.error(f"Server error: {e}")

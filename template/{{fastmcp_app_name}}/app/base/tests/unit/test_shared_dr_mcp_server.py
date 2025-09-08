@@ -67,40 +67,92 @@ class TestDataRobotMCPServer:
         with pytest.raises(ValueError, match="Missing required DataRobot credentials"):
             server.run()
 
+    @pytest.mark.asyncio
     @patch("app.base.core.dr_mcp_server.get_config")
-    def test_run_success(
-        self, mock_get_config: MagicMock, mock_mcp: MagicMock, mock_config: MagicMock
+    @patch("app.base.core.dr_mcp_server.asyncio")
+    @patch("app.base.core.dr_mcp_server.get_credentials")
+    async def test_run_success(
+        self,
+        mock_get_credentials: MagicMock,
+        mock_asyncio: MagicMock,
+        mock_get_config: MagicMock,
+        mock_mcp: MagicMock,
+        mock_config: MagicMock,
     ) -> None:
         """Test successful server run."""
         mock_get_config.return_value = mock_config
+        mock_creds = MagicMock()
+        mock_creds.has_datarobot_credentials.return_value = True
+        mock_get_credentials.return_value = mock_creds
+
+        # Mock asyncio methods
+        mock_loop = MagicMock()
+        mock_asyncio.new_event_loop.return_value = mock_loop
+        mock_mcp.run_streamable_http_async = AsyncMock()
 
         server = DataRobotMCPServer(mock_mcp)
         server.run()
 
-        # Verify MCP server was started with correct transport
-        mock_mcp.run.assert_called_once_with(transport="streamable-http")
+        # Verify event loop was created and used
+        mock_asyncio.new_event_loop.assert_called_once()
+        mock_asyncio.set_event_loop.assert_called_once_with(mock_loop)
+        mock_loop.run_until_complete.assert_called_once()
 
         # Verify tools were listed
         mock_mcp.list_tools.assert_called_once()
 
+    @pytest.mark.asyncio
     @patch("app.base.core.dr_mcp_server.get_config")
-    def test_run_server_error(
-        self, mock_get_config: MagicMock, mock_mcp: MagicMock, mock_config: MagicMock
+    @patch("app.base.core.dr_mcp_server.asyncio")
+    @patch("app.base.core.dr_mcp_server.get_credentials")
+    async def test_run_server_error(
+        self,
+        mock_get_credentials: MagicMock,
+        mock_asyncio: MagicMock,
+        mock_get_config: MagicMock,
+        mock_mcp: MagicMock,
+        mock_config: MagicMock,
     ) -> None:
         """Test server run with MCP error."""
         mock_get_config.return_value = mock_config
-        mock_mcp.run.side_effect = Exception("Server failed to start")
+        mock_creds = MagicMock()
+        mock_creds.has_datarobot_credentials.return_value = True
+        mock_get_credentials.return_value = mock_creds
+
+        # Mock asyncio methods
+        mock_loop = MagicMock()
+        mock_asyncio.new_event_loop.return_value = mock_loop
+
+        # Set up the loop.run_until_complete to raise the exception
+        mock_loop.run_until_complete.side_effect = Exception("Server failed to start")
 
         server = DataRobotMCPServer(mock_mcp)
         with pytest.raises(Exception, match="Server failed to start"):
             server.run()
 
+    @pytest.mark.asyncio
     @patch("app.base.core.dr_mcp_server.get_config")
-    def test_run_lists_tools(
-        self, mock_get_config: MagicMock, mock_mcp: MagicMock, mock_config: MagicMock
+    @patch("app.base.core.dr_mcp_server.asyncio")
+    @patch("app.base.core.dr_mcp_server.get_credentials")
+    async def test_run_lists_tools(
+        self,
+        mock_get_credentials: MagicMock,
+        mock_asyncio: MagicMock,
+        mock_get_config: MagicMock,
+        mock_mcp: MagicMock,
+        mock_config: MagicMock,
     ) -> None:
         """Test that tools are listed before server start."""
         mock_get_config.return_value = mock_config
+        mock_creds = MagicMock()
+        mock_creds.has_datarobot_credentials.return_value = True
+        mock_get_credentials.return_value = mock_creds
+
+        # Mock asyncio methods
+        mock_loop = MagicMock()
+        mock_asyncio.new_event_loop.return_value = mock_loop
+        mock_mcp.run_streamable_http_async = AsyncMock()
+
         mock_tools = [MagicMock(name="tool1"), MagicMock(name="tool2")]
         mock_mcp.list_tools = AsyncMock(return_value=mock_tools)
 
@@ -109,4 +161,4 @@ class TestDataRobotMCPServer:
 
         # Verify tools were listed before server start
         mock_mcp.list_tools.assert_called_once()
-        mock_mcp.run.assert_called_once()
+        mock_loop.run_until_complete.assert_called_once()
