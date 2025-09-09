@@ -12,18 +12,58 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from functools import wraps
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from mcp.server.fastmcp import Context, FastMCP
+from mcp.types import AnyFunction, ToolAnnotations
 from mcp.types import Tool as MCPTool
-from mcp.types import ToolAnnotations
 
 from .config import MCPServerConfig, get_config
 from .logging import log_execution
 from .memory_management import MemoryManager, get_memory_manager
 from .telemetry import trace_execution
 from .tool_filter import filter_tools_by_tags, list_all_tags
+
+logger = logging.getLogger(__name__)
+
+
+async def get_agent_and_storage_ids(
+    args: Tuple[Any, ...], kwargs: Dict[str, Any]
+) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Extract agent ID from request context and get corresponding storage ID.
+
+    Args:
+        args: Positional arguments that may contain a Context object
+        kwargs: Keyword arguments that may contain a Context object
+
+    Returns:
+        Tuple of (agent_id, storage_id), both may be None if not found
+    """
+    # Find the context argument if it exists
+    ctx = next((arg for arg in args if isinstance(arg, Context)), kwargs.get("ctx"))
+
+    # Extract X-Agent-Id if context and headers exist
+    agent_id = None
+    if (
+        ctx
+        and ctx.request_context
+        and ctx.request_context.request
+        and hasattr(ctx.request_context.request, "headers")
+    ):
+        headers = ctx.request_context.request.headers
+        agent_id = headers.get("x-agent-id")
+
+    # If agent_id was found, get the active storage_id
+    storage_id = None
+    if agent_id and MemoryManager.is_initialized():
+        memory_manager = get_memory_manager()
+        if memory_manager:
+            storage_id = await memory_manager.get_active_storage_id_for_agent(agent_id)
+
+    return agent_id, storage_id
 
 
 class TaggedFastMCP(FastMCP):
@@ -127,6 +167,33 @@ def dr_core_mcp_tool(
     return decorator
 
 
+async def memory_aware_wrapper(
+    func: Callable[..., Any], *args: Any, **kwargs: Any
+) -> Any:
+    """
+    Wrapper function that adds memory management capabilities to any async function.
+    Extracts agent and storage IDs from the context and adds them to kwargs if found.
+
+    Args:
+        func: The async function to wrap
+        *args: Positional arguments to pass to the function
+        **kwargs: Keyword arguments to pass to the function
+
+    Returns:
+        The result of calling the wrapped function
+    """
+    # Get agent and storage IDs from context
+    agent_id, storage_id = await get_agent_and_storage_ids(args, kwargs)
+
+    # Add IDs to kwargs if found
+    if agent_id and storage_id:
+        kwargs["agent_id"] = agent_id
+        kwargs["storage_id"] = storage_id
+
+    # Call the original function
+    return await func(*args, **kwargs)
+
+
 def dr_mcp_tool(
     tags: Optional[List[str]] = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
@@ -139,36 +206,7 @@ def dr_mcp_tool(
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
-            # Find the context argument if it exists
-            ctx = next(
-                (arg for arg in args if isinstance(arg, Context)), kwargs.get("ctx")
-            )
-
-            # Extract X-Agent-Id if context and headers exist
-            agent_id = None
-            if (
-                ctx
-                and hasattr(ctx, "request_context")
-                and ctx.request_context
-                and hasattr(ctx.request_context, "request")
-                and ctx.request_context.request
-                and hasattr(ctx.request_context.request, "headers")
-            ):
-                headers = ctx.request_context.request.headers
-                agent_id = headers.get("x-agent-id")
-
-            # If agent_id was found, get the active storage_id and add them to the kwargs
-            if agent_id and MemoryManager.is_initialized():
-                memory_manager = get_memory_manager()
-                if memory_manager:
-                    storage_id = await memory_manager.get_active_storage_id_for_agent(
-                        agent_id
-                    )
-                    kwargs["agent_id"] = agent_id
-                    kwargs["storage_id"] = storage_id
-
-            # Call the original function
-            return await func(*args, **kwargs)
+            return await memory_aware_wrapper(func, *args, **kwargs)
 
         # Apply the MCP decorators
         return mcp.tool(tags=tags)(dr_mcp_extras()(wrapper))
@@ -189,3 +227,54 @@ def dr_mcp_extras(
         return log_execution(trace_execution(trace_type=type)(func))
 
     return decorator
+
+
+async def register_tools(
+    fn: AnyFunction,
+    name: Optional[str] = None,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    structured_output: Optional[bool] = None,
+) -> None:
+    """
+    Register new tools after server has started.
+
+    Args:
+        fn: The function to register as a tool
+        name: Optional name for the tool (defaults to function name)
+        title: Optional human-readable title for the tool
+        description: Optional description of what the tool does
+        tags: Optional list of tags to apply to the tool
+        structured_output: Controls whether the tool's output is structured or unstructured
+    """
+    tool_name = name or fn.__name__
+    logger.info(f"Registering new tool: {tool_name}")
+
+    # Create a memory-aware version of the function
+    @wraps(fn)
+    async def memory_aware_fn(*args: Any, **kwargs: Any) -> Any:
+        return await memory_aware_wrapper(fn, *args, **kwargs)
+
+    # Apply dr_mcp_extras to the memory-aware function
+    wrapped_fn = dr_mcp_extras()(memory_aware_fn)
+
+    # Create annotations with tags if provided
+    annotations = ToolAnnotations(tags=tags)
+
+    # Register the tool
+    mcp.add_tool(
+        wrapped_fn,
+        name=tool_name,
+        title=title,
+        description=description,
+        annotations=annotations,
+        structured_output=structured_output,
+    )
+
+    # Verify tool is registered
+    tools = await mcp.list_tools()
+    if not any(tool.name == tool_name for tool in tools):
+        raise RuntimeError(f"Tool {tool_name} was not registered successfully")
+
+    logger.info(f"Registered tools: {len(tools)}")
