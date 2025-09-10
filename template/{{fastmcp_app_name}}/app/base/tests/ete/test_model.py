@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 from typing import Any
 
 import pytest
@@ -144,19 +145,21 @@ class TestModelE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_get_best_model_success: Any,
+        expectations_for_get_best_model_success: ETETestExpectations,
         classification_project_id: str,
         prompt_template: str,
     ) -> None:
         prompt = prompt_template.format(project_id=classification_project_id)
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = frame.f_code.co_name if frame else "test_get_best_model_success"
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_get_best_model_success,
                 openai_llm_client,
                 session,
-                "test_get_best_model_success",
+                test_name,
             )
 
     @pytest.mark.parametrize(
@@ -173,19 +176,21 @@ class TestModelE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_get_best_model_failure: Any,
+        expectations_for_get_best_model_failure: ETETestExpectations,
         nonexistent_project_id: str,
         prompt_template: str,
     ) -> None:
         prompt = prompt_template.format(project_id=nonexistent_project_id)
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = frame.f_code.co_name if frame else "test_get_best_model_failure"
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_get_best_model_failure,
                 openai_llm_client,
                 session,
-                "test_get_best_model_failure",
+                test_name,
             )
 
     @pytest.mark.skip(
@@ -204,7 +209,7 @@ class TestModelE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_score_dataset_with_model_success: Any,
+        expectations_for_score_dataset_with_model_success: ETETestExpectations,
         classification_project_id: str,
         model_id: str,
         dataset_url: str,
@@ -217,12 +222,18 @@ class TestModelE2E(ToolBaseE2E):
         )
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = (
+                frame.f_code.co_name
+                if frame
+                else "test_score_dataset_with_model_success"
+            )
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_score_dataset_with_model_success,
                 openai_llm_client,
                 session,
-                "test_score_dataset_with_model_success",
+                test_name,
             )
 
     @pytest.mark.parametrize(
@@ -238,7 +249,7 @@ class TestModelE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_score_dataset_with_model_failure: Any,
+        expectations_for_score_dataset_with_model_failure: ETETestExpectations,
         classification_project_id: str,
         nonexistent_model_id: str,
         dataset_url: str,
@@ -251,10 +262,16 @@ class TestModelE2E(ToolBaseE2E):
         )
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = (
+                frame.f_code.co_name
+                if frame
+                else "test_score_dataset_with_model_failure"
+            )
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_score_dataset_with_model_failure,
                 openai_llm_client,
                 session,
-                "test_score_dataset_with_model_failure",
+                test_name,
             )

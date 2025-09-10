@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 from typing import Any
 
 import pytest
@@ -26,6 +27,7 @@ from .tool_base_ete import (
 @pytest.fixture(scope="session")
 def expectations_for_list_projects_success(
     classification_project_id: str,
+    classification_project_name: str,
 ) -> ETETestExpectations:
     return ETETestExpectations(
         tool_calls_expected=[
@@ -35,7 +37,10 @@ def expectations_for_list_projects_success(
                 result=f"{classification_project_id}: ",
             ),
         ],
-        llm_response_content_contains_expectations=[classification_project_id],
+        llm_response_content_contains_expectations=[
+            classification_project_id,
+            classification_project_name,
+        ],
     )
 
 
@@ -143,16 +148,18 @@ class TestProjectsE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_list_projects_success: Any,
+        expectations_for_list_projects_success: ETETestExpectations,
         prompt: str,
     ) -> None:
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = frame.f_code.co_name if frame else "test_list_projects_success"
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_list_projects_success,
                 openai_llm_client,
                 session,
-                "test_list_projects_success",
+                test_name,
             )
 
     @pytest.mark.parametrize(
@@ -167,7 +174,7 @@ class TestProjectsE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_get_project_dataset_by_name_success: Any,
+        expectations_for_get_project_dataset_by_name_success: ETETestExpectations,
         classification_project_id: str,
         classification_dataset_name: str,
         prompt_template: str,
@@ -178,12 +185,18 @@ class TestProjectsE2E(ToolBaseE2E):
         )
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = (
+                frame.f_code.co_name
+                if frame
+                else "test_get_project_dataset_by_name_success"
+            )
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_get_project_dataset_by_name_success,
                 openai_llm_client,
                 session,
-                "test_get_project_dataset_by_name_success",
+                test_name,
             )
 
     @pytest.mark.parametrize(
@@ -198,7 +211,7 @@ class TestProjectsE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_get_project_dataset_by_name_failure: Any,
+        expectations_for_get_project_dataset_by_name_failure: ETETestExpectations,
         classification_project_id: str,
         nonexistent_dataset_name: str,
         prompt_template: str,
@@ -208,12 +221,18 @@ class TestProjectsE2E(ToolBaseE2E):
         )
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = (
+                frame.f_code.co_name
+                if frame
+                else "test_get_project_dataset_by_name_failure"
+            )
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_get_project_dataset_by_name_failure,
                 openai_llm_client,
                 session,
-                "test_get_project_dataset_by_name_failure",
+                test_name,
             )
 
     @pytest.mark.parametrize(
@@ -228,7 +247,7 @@ class TestProjectsE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_get_project_dataset_by_name_success_with_multiple_calls: Any,
+        expectations_for_get_project_dataset_by_name_success_with_multiple_calls: ETETestExpectations,
         classification_project_name: str,
         classification_dataset_name: str,
         prompt_template: str,
@@ -239,10 +258,16 @@ class TestProjectsE2E(ToolBaseE2E):
         )
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = (
+                frame.f_code.co_name
+                if frame
+                else "test_get_project_dataset_by_name_success_with_multiple_calls"
+            )
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_get_project_dataset_by_name_success_with_multiple_calls,
                 openai_llm_client,
                 session,
-                "test_get_project_dataset_by_name_success_with_multiple_calls",
+                test_name,
             )

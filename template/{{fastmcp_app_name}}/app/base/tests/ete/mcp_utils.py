@@ -51,7 +51,7 @@ def get_openai_llm_client_config() -> Dict[str, str]:
     openai_api_base = os.environ.get("OPENAI_API_BASE")
     openai_api_deployment_id = os.environ.get("OPENAI_API_DEPLOYMENT_ID")
     openai_api_version = os.environ.get("OPENAI_API_VERSION")
-    save_llm_responses = os.environ.get("SAVE_LLM_RESPONSES", "true").lower() == "true"
+    save_llm_responses = os.environ.get("SAVE_LLM_RESPONSES", "false").lower() == "true"
 
     # Check for OpenAI configuration
     if not openai_api_key:

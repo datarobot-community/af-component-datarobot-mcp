@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 from typing import Any
 
 import pytest
@@ -99,7 +100,7 @@ class TestDeploymentE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_list_deployments_success: Any,
+        expectations_for_list_deployments_success: ETETestExpectations,
         prompt: str,
     ) -> None:
         async with ete_test_mcp_session as session:
@@ -108,7 +109,11 @@ class TestDeploymentE2E(ToolBaseE2E):
                 expectations_for_list_deployments_success,
                 openai_llm_client,
                 session,
-                "test_list_deployments_success",
+                (
+                    inspect.currentframe().f_code.co_name  # type: ignore[union-attr]
+                    if inspect.currentframe()
+                    else "test_list_deployments_success"
+                ),
             )
 
     @pytest.mark.parametrize(
@@ -124,7 +129,7 @@ class TestDeploymentE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_get_model_info_from_deployment_success: Any,
+        expectations_for_get_model_info_from_deployment_success: ETETestExpectations,
         deployment_id: str,
         prompt_template: str,
     ) -> None:
@@ -136,7 +141,11 @@ class TestDeploymentE2E(ToolBaseE2E):
                 expectations_for_get_model_info_from_deployment_success,
                 openai_llm_client,
                 session,
-                "test_get_model_info_from_deployment_success",
+                (
+                    inspect.currentframe().f_code.co_name  # type: ignore[union-attr]
+                    if inspect.currentframe()
+                    else "test_get_model_info_from_deployment_success"
+                ),
             )
 
     @pytest.mark.parametrize(
@@ -152,7 +161,7 @@ class TestDeploymentE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_get_model_info_from_deployment_failure: Any,
+        expectations_for_get_model_info_from_deployment_failure: ETETestExpectations,
         nonexistent_deployment_id: str,
         prompt_template: str,
     ) -> None:
@@ -164,5 +173,9 @@ class TestDeploymentE2E(ToolBaseE2E):
                 expectations_for_get_model_info_from_deployment_failure,
                 openai_llm_client,
                 session,
-                "test_get_model_info_from_deployment_failure",
+                (
+                    inspect.currentframe().f_code.co_name  # type: ignore[union-attr]
+                    if inspect.currentframe()
+                    else "test_get_model_info_from_deployment_failure"
+                ),
             )

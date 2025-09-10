@@ -53,7 +53,7 @@ async def test_mcp_interactive() -> None:
         "openai_api_base": openai_api_base,
         "openai_api_deployment_id": openai_api_deployment_id,
         "openai_api_version": openai_api_version,
-        "save_llm_responses": True,
+        "save_llm_responses": False,
     }
     llm_client = LLMMCPClient(str(config))
 

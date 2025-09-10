@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 from typing import Any
 
 import pytest
@@ -128,7 +129,7 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
         [
             """
             I have a DataRobot deployment with ID '{deployment_id}' and I need to understand what features it requires for making predictions.
-            Can you help me get information about the required input features, their types, and importance scores?
+            Can you help me get deployment features, their types, and importance scores?
             """
         ],
     )
@@ -136,19 +137,25 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_get_deployment_features_success: Any,
+        expectations_for_get_deployment_features_success: ETETestExpectations,
         deployment_id: str,
         prompt_template: str,
     ) -> None:
         prompt = prompt_template.format(deployment_id=deployment_id)
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = (
+                frame.f_code.co_name
+                if frame
+                else "test_get_deployment_features_success"
+            )
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_get_deployment_features_success,
                 openai_llm_client,
                 session,
-                "test_get_deployment_features_success",
+                test_name,
             )
 
     @pytest.mark.parametrize(
@@ -164,19 +171,25 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_generate_prediction_data_template_success: Any,
+        expectations_for_generate_prediction_data_template_success: ETETestExpectations,
         deployment_id: str,
         prompt_template: str,
     ) -> None:
         prompt = prompt_template.format(deployment_id=deployment_id)
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = (
+                frame.f_code.co_name
+                if frame
+                else "test_generate_prediction_data_template_success"
+            )
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_generate_prediction_data_template_success,
                 openai_llm_client,
                 session,
-                "test_generate_prediction_data_template_success",
+                test_name,
             )
 
     @pytest.mark.skip(
@@ -195,9 +208,9 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_validate_prediction_data_success: Any,
+        expectations_for_validate_prediction_data_success: ETETestExpectations,
         deployment_id: str,
-        diabetes_scoring_small_file_path: Any,
+        diabetes_scoring_small_file_path: str,
         prompt_template: str,
     ) -> None:
         prompt = prompt_template.format(
@@ -206,12 +219,18 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
         )
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = (
+                frame.f_code.co_name
+                if frame
+                else "test_validate_prediction_data_success"
+            )
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_validate_prediction_data_success,
                 openai_llm_client,
                 session,
-                "test_validate_prediction_data_success",
+                test_name,
             )
 
     @pytest.mark.parametrize(
@@ -227,7 +246,7 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_validate_prediction_data_failure: Any,
+        expectations_for_validate_prediction_data_failure: ETETestExpectations,
         deployment_id: str,
         nonexistent_file_path: str,
         prompt_template: str,
@@ -238,10 +257,16 @@ class TestDeploymentInfoE2E(ToolBaseE2E):
         )
 
         async with ete_test_mcp_session as session:
+            frame = inspect.currentframe()
+            test_name = (
+                frame.f_code.co_name
+                if frame
+                else "test_validate_prediction_data_failure"
+            )
             await self._run_test_with_expectations(
                 prompt,
                 expectations_for_validate_prediction_data_failure,
                 openai_llm_client,
                 session,
-                "test_validate_prediction_data_failure",
+                test_name,
             )
