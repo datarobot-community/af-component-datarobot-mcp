@@ -56,9 +56,6 @@ _exclude:
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_deployment.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_model.py{% endif %}"
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_projects.py{% endif %}"
-  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_config_resource.py{% endif %}"
-  - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/ete/test_deployment_info_prompts.py{% endif
-    %}"
 
 
   - "{% if mcp_template_framework == 'base' %}{{fastmcp_app_name}}/app/base/tests/integration/test_deployment_info.py{% endif

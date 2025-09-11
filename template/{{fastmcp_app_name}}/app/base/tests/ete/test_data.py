@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 from pathlib import Path
 from typing import Any
 
@@ -104,9 +105,9 @@ class TestDataE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_upload_dataset_to_ai_catalog_success: Any,
+        expectations_for_upload_dataset_to_ai_catalog_success: ETETestExpectations,
         prompt_template: str,
-        diabetes_scoring_small_file_path: Any,
+        diabetes_scoring_small_file_path: str,
     ) -> None:
         prompt = prompt_template.format(file_path=diabetes_scoring_small_file_path)
         async with ete_test_mcp_session as session:
@@ -115,7 +116,11 @@ class TestDataE2E(ToolBaseE2E):
                 expectations_for_upload_dataset_to_ai_catalog_success,
                 openai_llm_client,
                 session,
-                "test_upload_dataset_to_ai_catalog_success",
+                (
+                    inspect.currentframe().f_code.co_name  # type: ignore[union-attr]
+                    if inspect.currentframe()
+                    else "test_upload_dataset_to_ai_catalog_success"
+                ),
             )
 
     @pytest.mark.parametrize(
@@ -131,7 +136,7 @@ class TestDataE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_upload_dataset_to_ai_catalog_failure: Any,
+        expectations_for_upload_dataset_to_ai_catalog_failure: ETETestExpectations,
         prompt_template: str,
         nonexistent_file_path: str,
     ) -> None:
@@ -142,7 +147,11 @@ class TestDataE2E(ToolBaseE2E):
                 expectations_for_upload_dataset_to_ai_catalog_failure,
                 openai_llm_client,
                 session,
-                "test_upload_dataset_to_ai_catalog_failure",
+                (
+                    inspect.currentframe().f_code.co_name  # type: ignore[union-attr]
+                    if inspect.currentframe()
+                    else "test_upload_dataset_to_ai_catalog_failure"
+                ),
             )
 
     @pytest.mark.parametrize(
@@ -158,7 +167,7 @@ class TestDataE2E(ToolBaseE2E):
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
-        expectations_for_list_ai_catalog_items_success: Any,
+        expectations_for_list_ai_catalog_items_success: ETETestExpectations,
         prompt: str,
     ) -> None:
         async with ete_test_mcp_session as session:
@@ -167,5 +176,9 @@ class TestDataE2E(ToolBaseE2E):
                 expectations_for_list_ai_catalog_items_success,
                 openai_llm_client,
                 session,
-                "test_list_ai_catalog_items_success",
+                (
+                    inspect.currentframe().f_code.co_name  # type: ignore[union-attr]
+                    if inspect.currentframe()
+                    else "test_list_ai_catalog_items_success"
+                ),
             )

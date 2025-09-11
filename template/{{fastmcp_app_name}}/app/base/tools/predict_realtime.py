@@ -17,7 +17,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 from datarobot_predict import TimeSeriesType
@@ -97,7 +97,7 @@ async def predict_realtime(
     explanation_algorithm: Optional[str] = None,
     prediction_endpoint: Optional[str] = None,
     timeout: int = 600,
-) -> dict[str, Any]:
+) -> PredictionResponse:
     """
     Make real-time predictions using a DataRobot deployment and a local CSV file or a dataset string.
 
@@ -275,4 +275,4 @@ async def predict_realtime(
         bucket_info.key,
         f"pred_{deployment_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
         max_explanations != 0 and max_explanations != "0",
-    )  # type: ignore[return-value]
+    )

@@ -13,20 +13,18 @@
 # limitations under the License.
 
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import openai
 from mcp.client.session import ClientSession
 from mcp.types import (
     CallToolResult,
-    GetPromptResult,
     ListToolsResult,
-    ReadResourceResult,
     TextContent,
-    TextResourceContents,
 )
+from openai.types.chat.chat_completion import ChatCompletion
 
-# get_dr_mcp_server_url import removed as it's not used
+from .common import save_response_to_file
 
 
 class ToolCall:
@@ -88,9 +86,12 @@ class LLMMCPClient:
         tools_result: ListToolsResult = await mcp_session.list_tools()
         self.available_tools = [
             {
-                "name": tool.name,
-                "description": tool.description,
-                "parameters": tool.inputSchema,
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.inputSchema,
+                },
             }
             for tool in tools_result.tools
         ]
@@ -106,25 +107,62 @@ class LLMMCPClient:
             else str(result.content)
         )
 
-    async def _read_mcp_resource(
-        self, resource_uri: str, mcp_session: ClientSession
-    ) -> str:
-        """Read an MCP resource and return the result as a string."""
-        result: ReadResourceResult = await mcp_session.read_resource(resource_uri)  # type: ignore[arg-type]
-        return (
-            result.contents[0].text
-            if result.contents and isinstance(result.contents[0], TextResourceContents)
-            else str(result.contents)
-        )
+    async def _process_tool_calls(
+        self,
+        response: ChatCompletion,
+        messages: List[Any],
+        mcp_session: ClientSession,
+    ) -> Tuple[List[ToolCall], List[str]]:
+        """Process tool calls from the response, and return the tool calls and tool results."""
+        tool_calls = []
+        tool_results = []
 
-    async def _get_mcp_prompt(
-        self, prompt_name: str, arguments: Dict[str, Any], mcp_session: ClientSession
-    ) -> str:
-        """Get an MCP prompt and return the result as a string."""
-        result: GetPromptResult = await mcp_session.get_prompt(
-            prompt_name, arguments=arguments
-        )
-        return result.messages[0].content.text  # type: ignore[union-attr]
+        # If the response has tool calls, process them
+        if response.choices[0].message.tool_calls:
+            messages.append(
+                response.choices[0].message
+            )  # Add assistant's message with tool calls
+
+            for tool_call in response.choices[0].message.tool_calls:
+                tool_name = tool_call.function.name  # type: ignore[union-attr]
+                parameters = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
+
+                tool_calls.append(
+                    ToolCall(
+                        tool_name=tool_name,
+                        parameters=parameters,
+                        reasoning="Tool selected by LLM",
+                    )
+                )
+
+                try:
+                    result_text = await self._call_mcp_tool(
+                        tool_name, parameters, mcp_session
+                    )
+                    tool_results.append(result_text)
+
+                    # Add tool result to messages
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "content": result_text,
+                            "tool_call_id": tool_call.id,
+                            "name": tool_name,
+                        }
+                    )
+                except Exception as e:
+                    error_msg = f"Error calling {tool_name}: {str(e)}"
+                    tool_results.append(error_msg)
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "content": error_msg,
+                            "tool_call_id": tool_call.id,
+                            "name": tool_name,
+                        }
+                    )
+
+        return tool_calls, tool_results
 
     async def _get_llm_response(
         self, messages: List[Dict[str, Any]], allow_tool_calls: bool = True
@@ -142,61 +180,60 @@ class LLMMCPClient:
         return self.openai_client.chat.completions.create(**kwargs)
 
     async def process_prompt_with_mcp_support(
-        self, prompt: str, mcp_session: ClientSession
+        self, prompt: str, mcp_session: ClientSession, output_file_name: str = ""
     ) -> LLMResponse:
         """Process a prompt with MCP tool support."""
         # Add MCP tools to available tools
         await self._add_mcp_tool_to_available_tools(mcp_session)
 
-        messages = [{"role": "user", "content": prompt}]
-        tool_calls = []
-        tool_results = []
+        if output_file_name:
+            print(f"Processing prompt for test: {output_file_name}")
 
-        # Get initial response
-        response = await self._get_llm_response(messages, allow_tool_calls=True)
+        # Initialize conversation
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful AI assistant that can use tools to help users. If you need more information to provide a complete response, you can make multiple tool calls. When dealing with file paths, use them as raw paths without converting to file:// URLs.",
+            },
+            {"role": "user", "content": prompt},
+        ]
 
-        # Process tool calls if any
-        if response.choices[0].message.tool_calls:
-            messages.append(response.choices[0].message)
+        all_tool_calls = []
+        all_tool_results = []
 
-            for tool_call in response.choices[0].message.tool_calls:
-                tool_name = tool_call.function.name
-                parameters = json.loads(tool_call.function.arguments)
+        while True:
+            # Get LLM response
+            response = await self._get_llm_response(messages)
 
-                tool_calls.append(
-                    ToolCall(
-                        tool_name=tool_name,
-                        parameters=parameters,
-                        reasoning="Tool selected by LLM",
-                    )
-                )
+            # If no tool calls in response, this is the final response
+            if not response.choices[0].message.tool_calls:
+                final_response = response.choices[0].message.content
+                break
 
-                try:
-                    result_text = await self._call_mcp_tool(
-                        tool_name, parameters, mcp_session
-                    )
-                    tool_results.append(result_text)
+            # Process tool calls
+            tool_calls, tool_results = await self._process_tool_calls(
+                response, messages, mcp_session
+            )
+            all_tool_calls.extend(tool_calls)
+            all_tool_results.extend(tool_results)
 
-                    messages.append(
-                        {
-                            "role": "tool",
-                            "content": result_text,
-                            "tool_call_id": tool_call.id,
-                            "name": tool_name,
-                        }
-                    )
-                except Exception as e:
-                    error_msg = f"Error calling {tool_name}: {str(e)}"
-                    tool_results.append(error_msg)
+            # Get another LLM response to see if we need more tool calls
+            response = await self._get_llm_response(messages, allow_tool_calls=True)
 
-        # Get final response
-        final_response = response.choices[0].message.content
-        clean_content = (
-            final_response.replace("*", "").lower() if final_response else ""
-        )
+            # If no more tool calls needed, this is the final response
+            if not response.choices[0].message.tool_calls:
+                final_response = response.choices[0].message.content
+                break
 
-        return LLMResponse(
+        clean_content = final_response.replace("*", "").lower()
+
+        llm_response = LLMResponse(
             content=clean_content,
-            tool_calls=tool_calls,
-            tool_results=tool_results,
+            tool_calls=all_tool_calls,
+            tool_results=all_tool_results,
         )
+
+        if self.save_llm_responses:
+            save_response_to_file(llm_response, name=output_file_name)
+
+        return llm_response

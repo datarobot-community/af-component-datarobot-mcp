@@ -36,6 +36,9 @@ def expectations_for_example_placeholder() -> ETETestExpectations:
         ],
         llm_response_content_contains_expectations=[
             "placeholder",
+            "test",
+            "example",
+            "tool",
         ],
     )
 
@@ -53,7 +56,7 @@ class TestRecipePlaceholder(ToolBaseE2E):
         """
         ],
     )
-    async def test_upload_dataset_to_ai_catalog_success(
+    async def test_tool_example_placeholder_success(
         self,
         openai_llm_client: Any,
         ete_test_mcp_session: Any,
@@ -67,5 +70,5 @@ class TestRecipePlaceholder(ToolBaseE2E):
                 expectations_for_example_placeholder,
                 openai_llm_client,
                 session,
-                "test_upload_dataset_to_ai_catalog_success",
+                "test_tool_example_placeholder_success",
             )

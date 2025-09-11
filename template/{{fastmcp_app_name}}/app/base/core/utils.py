@@ -45,6 +45,7 @@ class PredictionResponse(BaseModel):
     data: Optional[str] = None
     resource_id: Optional[str] = None
     s3_url: Optional[str] = None
+    show_explanations: Optional[bool] = None
 
 
 def predictions_result_response(
@@ -52,7 +53,9 @@ def predictions_result_response(
 ) -> PredictionResponse:
     csv_str = df.to_csv(index=False)
     if len(csv_str.encode("utf-8")) < MAX_INLINE_SIZE:
-        return PredictionResponse(type="inline", data=csv_str)
+        return PredictionResponse(
+            type="inline", data=csv_str, show_explanations=show_explanations
+        )
     else:
         resource = save_df_to_s3_and_register_resource(df, bucket, key, resource_name)
         return PredictionResponse(
