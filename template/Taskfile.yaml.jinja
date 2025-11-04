@@ -1,0 +1,48 @@
+---
+version: "3"
+
+dotenv: [".env"]
+
+env:
+  PARENT_ENV: true
+
+includes:
+  mcp:
+    taskfile: ./{{fastmcp_app_name}}/Taskfile.yaml
+    dir: ./{{fastmcp_app_name}}
+    env:
+      PARENT_ENV: '{% raw %}{{.PARENT_ENV}}{% endraw %}'
+  infra:
+    taskfile: ./infra/Taskfile.yaml
+    dir: ./infra
+    env:
+      PARENT_ENV: '{% raw %}{{.PARENT_ENV}}{% endraw %}'
+
+tasks:
+  deploy:
+    desc: "🟢 Run Pulumi up in [DEPLOY] mode"
+    cmds:
+      - echo "Running pulumi up"
+      - task mcp:install
+      - task infra:deploy
+    silent: true
+  refresh:
+    desc: "⚪️ Run Pulumi refresh"
+    cmds:
+      - echo "Running pulumi refresh"
+      - cd ./infra && uv run pulumi refresh
+    silent: true
+  destroy:
+    desc: "🔴 Run Pulumi destroy"
+    cmds:
+      - echo "Running pulumi destroy"
+      - task infra:destroy
+    silent: true
+
+  install:
+    desc: "Install dependencies"
+    cmds:
+      - echo "Installing dependencies"
+      - task mcp:install
+      - task infra:install
+    silent: true
