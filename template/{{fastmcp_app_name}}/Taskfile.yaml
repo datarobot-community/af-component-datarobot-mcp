@@ -1,7 +1,7 @@
 ---
 # https://taskfile.dev
 version: '3'
-      
+
 tasks:
   install:
     desc: "🔧 Install dependencies"
@@ -64,7 +64,6 @@ tasks:
     silent: true
 
   lint:
-    silent: true
     desc: "🧹 Run linters"
     cmds:
       - echo "🧹 Running linters.."
@@ -72,18 +71,18 @@ tasks:
       - uv run ruff format .
       - uv run ruff check . --fix
       - uv run mypy --pretty --exclude 'app/tests' .
+    silent: true
 
   lint-check:
-    silent: true
     desc: "🧹 Check whether the codebase is linted"
     cmds:
       - uv sync --all-extras
       - uv run ruff format --check .
       - uv run ruff check .
       - uv run mypy --pretty --exclude 'app/tests' .
+    silent: true
 
   test:
-    silent: true
     desc: "🧪 Run tests"
     cmds:
       - rm -rf .coverage .coverage.xml htmlcov
@@ -91,6 +90,7 @@ tasks:
       - task unit
       - task integration
       - task ete
+    silent: true
 
   copyright:
     aliases: [license]
