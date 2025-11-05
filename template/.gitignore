@@ -173,4 +173,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-infra/docker/requirements.txt
+# temp files
+temp.txt
+
+/test_results/

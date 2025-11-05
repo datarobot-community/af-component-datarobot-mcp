@@ -204,7 +204,7 @@ else:
         description="Execution environment for MCP server",
         programming_language="python",
         use_cases=["customModel"],
-        docker_context_path=str(project_dir.parent / "infra" / "docker"),
+        docker_context_path=str(project_dir.parent / "{{fastmcp_app_name}}" / "docker"),
     )
 
 # Custom Model
