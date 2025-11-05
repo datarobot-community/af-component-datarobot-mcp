@@ -22,12 +22,10 @@ import asyncio
 import os
 from pathlib import Path
 
+from datarobot_genai.drmcp import LLMMCPClient, get_dr_mcp_server_url, get_headers
 from dotenv import load_dotenv
-from mcp.client.session import ClientSession
+from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
-
-from app.base.tests.ete.mcp_utils import get_dr_mcp_server_url
-from app.base.tests.ete.openai_llm_mcp_client import LLMMCPClient
 
 
 async def test_mcp_interactive() -> None:
@@ -60,7 +58,9 @@ async def test_mcp_interactive() -> None:
     print(f"🔗 Connecting to MCP server at: {get_dr_mcp_server_url()}")
 
     # Connect to the MCP server
-    async with streamablehttp_client(url=get_dr_mcp_server_url()) as (
+    async with streamablehttp_client(
+        url=get_dr_mcp_server_url(), headers=get_headers()
+    ) as (
         read_stream,
         write_stream,
         _,
@@ -129,7 +129,7 @@ async def test_mcp_interactive() -> None:
 if __name__ == "__main__":
     # Ensure we're in the right directory
     if not Path("app").exists():
-        print("❌ Error: Please run this script from the mcp_deployments directory")
+        print("❌ Error: Please run this script from the mcp directory")
         exit(1)
 
     # Load environment variables from .env file

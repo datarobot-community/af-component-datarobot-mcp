@@ -25,11 +25,11 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
 
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v5"
 
       # Ref: https://docs.astral.sh/uv/guides/integration/github/#installation
       - name: Setup uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           working-directory: {{ fastmcp_app_name }}
           enable-cache: true
@@ -50,12 +50,12 @@ jobs:
         working-directory: {{ fastmcp_app_name }}
         run: task lint-check
 
-      - name: Test
+      - name: Run Unit Tests
         working-directory: {{ fastmcp_app_name }}
-        run: task test
+        run: task unit
 
       - name: Get Cover
         uses: orgoro/coverage@v3.2
         with:
-          coverageFile: {{ fastmcp_app_name }}/.coverage.xml
+          coverageFile: {{ fastmcp_app_name }}/coverage.xml
           token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}

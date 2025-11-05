@@ -19,47 +19,81 @@ from typing import Sequence
 
 import pulumi
 import pulumi_datarobot
+import datarobot as dr
 from datarobot_pulumi_utils.pulumi.stack import PROJECT_NAME
-from datarobot_pulumi_utils.schema.apps import (
-    ApplicationSourceArgs,
-    CustomAppResourceBundles,
-)
-from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironments
 
 from . import project_dir, use_case
-from .recipe import MCP_RECIPE_RUNTIME_PARAMETERS
+from .{{fastmcp_app_name}}_user_params import MCP_USER_RUNTIME_PARAMETERS
 
 EXCLUDE_PATTERNS = [
     re.compile(pattern)
     for pattern in [
+        # Test and development files
         r".*tests/.*",
         r".*\.coverage",
+        r".*coverage\.xml",
+        r".*coveragerc"
+        r".*htmlcov/.*",
+        r".*env",
+        r".pre-commit-config.yaml",
+        # Cache and temporary files
         r".*\.DS_Store",
         r".*\.pyc",
+        r".*\.pyo",
+        r".*\.pyd",
         r".*\.ruff_cache/.*",
         r".*\.venv/.*",
         r".*\.mypy_cache/.*",
         r".*__pycache__/.*",
         r".*\.pytest_cache/.*",
+        r".*\.tox/.*",
+        r".*\.nox/.*",
+        r".*\.uv/.*",
+        # Documentation and examples
+        r".*docs/.*",
+        r".*examples/.*",
+        r".*samples/.*",
+        r".*\.md$",
+        r".*\.rst$",
+        r".*\.txt$",
+        # IDE and editor files
+        r".*\.vscode/.*",
+        r".*\.idea/.*",
+        r".*\.sublime-.*",
+        r".*\.vim/.*",
+        # OS specific files
+        r".*Thumbs\.db",
+        r".*desktop\.ini",
+        r".*\.swp",
+        r".*\.swo",
+        r".*~$",
+        # Build artifacts
+        r".*build/.*",
+        r".*dist/.*",
+        r".*egg-info/.*",
+        r".*\.egg/.*",
+        # Logs
+        r".*\.log$",
+        r".*logs/.*",
     ]
 ]
 
 
 __all__ = [
-    "{{fastmcp_app_name}}_app",
-    "{{fastmcp_app_name}}_app_env_name",
-    "{{fastmcp_app_name}}_app_resource_name",
-    "{{fastmcp_app_name}}_app_runtime_parameters",
-    "{{fastmcp_app_name}}_app_source",
-    "{{fastmcp_app_name}}_application_path",
-    "get_{{fastmcp_app_name}}_app_files",
+    "execution_environment",
+    "deployment",
+    "mcp_server_mcp_endpoint",
+    "mcp_server_base_endpoint",
 ]
+
+asset_name: str = f"MCP Server [{PROJECT_NAME}]"
+
+deployments_application_path = project_dir.parent / "{{fastmcp_app_name}}"
 
 
 def _prep_metadata_yaml(
     runtime_parameter_values: Sequence[
-        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs
-        | pulumi_datarobot.CustomModelRuntimeParameterValueArgs
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs
     ],
 ) -> None:
     from jinja2 import BaseLoader, Environment
@@ -79,10 +113,10 @@ def _prep_metadata_yaml(
         runtime_parameter_specs = "    []"
 
     # Read both templates
-    with open({{fastmcp_app_name}}_application_path / "metadata.yaml.jinja") as f:
+    with open(deployments_application_path / "metadata.yaml") as f:
         base_template_content = f.read()
 
-    recipe_template_path = {{fastmcp_app_name}}_application_path / "metadata-recipe.yaml"
+    recipe_template_path = deployments_application_path / "user-metadata.yaml"
     recipe_template_content = ""
     if recipe_template_path.exists():
         with open(recipe_template_path) as rf:
@@ -101,40 +135,40 @@ def _prep_metadata_yaml(
 
     # Render the combined template
     template = Environment(loader=BaseLoader()).from_string(combined_template)
-    ({{fastmcp_app_name}}_application_path / "metadata.yaml").write_text(
+    (deployments_application_path / "model-metadata.yaml").write_text(
         template.render(
             additional_params=runtime_parameter_specs,
         )
     )
 
 
-def get_{{fastmcp_app_name}}_app_files(
+def get_deployments_app_files(
     runtime_parameter_values: Sequence[
-        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs
-        | pulumi_datarobot.CustomModelRuntimeParameterValueArgs,
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs,
     ],
 ) -> list[tuple[str, str]]:
     _prep_metadata_yaml(runtime_parameter_values)
-    # Get all files from application path, following symlinks
-    # When we've upgraded to Python 3.13 we can use Path.glob(resuce_symlinks=True)
-    # https://docs.python.org/3.13/library/pathlib.html#pathlib.Path.glob
+
+    # Essential files only - whitelist approach to stay under 100 file limit
+    essential_files = [
+        "app/",
+        "model-metadata.yaml",
+    ]
     source_files = []
-    for dirpath, dirnames, filenames in os.walk(
-        {{fastmcp_app_name}}_application_path, followlinks=True
-    ):
-        for filename in filenames:
-            if filename == "metadata.yaml":
-                continue
-            file_path = os.path.join(dirpath, filename)
-            rel_path = os.path.relpath(file_path, {{fastmcp_app_name}}_application_path)
-            source_files.append((os.path.abspath(file_path), rel_path))
-    # Add the metadata.yaml file
-    source_files.append(
-        (
-            ({{fastmcp_app_name}}_application_path / "metadata.yaml").as_posix(),
-            "metadata.yaml",
-        )
-    )
+    # Add essential files
+    for essential_file in essential_files:
+        file_path = deployments_application_path / essential_file
+        if file_path.exists():
+            if file_path.is_file():
+                source_files.append((str(file_path), essential_file))
+            elif file_path.is_dir():
+                # Add all Python files from app directory only
+                for py_file in file_path.rglob("*.py"):
+                    if py_file.is_file():
+                        rel_path = py_file.relative_to(deployments_application_path)
+                        source_files.append((str(py_file), str(rel_path)))
+
+    # Filter out any files that match exclude patterns (safety check)
     source_files = [
         (file_path, file_name)
         for file_path, file_name in source_files
@@ -143,72 +177,111 @@ def get_{{fastmcp_app_name}}_app_files(
         )
     ]
 
-    return source_files
+    # Remove duplicates based on file_name (relative path)
+    seen_files = set()
+    unique_source_files = []
+    for file_path_, file_name in source_files:
+        if file_name not in seen_files:
+            seen_files.add(file_name)
+            unique_source_files.append((file_path_, file_name))
+    return unique_source_files
 
 
-# Start of Pulumi settings and application infrastructure
-{{fastmcp_app_name}}_app_env_name: str = "DATAROBOT_APPLICATION_ID"
-{{fastmcp_app_name}}_application_path = project_dir.parent / "{{fastmcp_app_name}}"
+# Execution Environment
+if len(os.environ.get("DATAROBOT_DEFAULT_EXECUTION_ENVIRONMENT", "")) > 0:
+    execution_environment_id = os.environ["DATAROBOT_DEFAULT_EXECUTION_ENVIRONMENT"]
 
-{{fastmcp_app_name}}_app_source_args = ApplicationSourceArgs(
-    resource_name=f"{{ _external_data.base.template_name }} [{PROJECT_NAME}]",
-    base_environment_id=RuntimeEnvironments.PYTHON_312_APPLICATION_BASE.value.id,
-).model_dump(mode="json", exclude_none=True)
+    pulumi.info("Using existing execution environment: " + execution_environment_id)
+    execution_environment = pulumi_datarobot.ExecutionEnvironment.get(
+        id=execution_environment_id,
+        resource_name="Execution environment [PRE-EXISTING] for MCP Server",
+    )
+else:
+    pulumi.info("Using docker folder to compile the execution environment")
+    execution_environment = pulumi_datarobot.ExecutionEnvironment(
+        resource_name="Execution Environment",
+        name=asset_name,
+        description="Execution environment for MCP server",
+        programming_language="python",
+        use_cases=["customModel"],
+        docker_context_path=str(project_dir.parent / "infra" / "docker"),
+    )
 
-{{fastmcp_app_name}}_app_resource_name: str = f"{{ _external_data.base.template_name }} [{PROJECT_NAME}]"
-{{fastmcp_app_name}}_app_runtime_parameters: list[
-    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs
+# Custom Model
+deployments_model_runtime_parameters: list[
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs
 ] = [
-    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="mcp_server_name",
         type="string",
         value=os.getenv("MCP_SERVER_NAME", "datarobot-mcp-server"),
     ),
-    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="mcp_server_log_level",
         type="string",
         value=os.getenv("MCP_SERVER_LOG_LEVEL", "WARNING"),
     ),
-    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+        key="mcp_server_register_dynamic_tools_on_startup",
+        type="boolean",
+        value=str(
+            os.getenv("MCP_SERVER_REGISTER_DYNAMIC_TOOLS_ON_STARTUP", "false")
+        ).lower(),
+    ),
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+        key="tool_registration_duplicate_behavior",
+        type="string",
+        value=str(
+            os.getenv("MCP_SERVER_TOOL_REGISTRATION_DUPLICATE_BEHAVIOR", "warn")
+        ).lower(),
+    ),
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+        key="tool_registration_allow_empty_schema",
+        type="boolean",
+        value=str(
+            os.getenv("MCP_SERVER_TOOL_REGISTRATION_ALLOW_EMPTY_SCHEMA", "false")
+        ).lower(),
+    ),
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="app_log_level", type="string", value=os.getenv("APP_LOG_LEVEL", "INFO")
     ),
-    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="otel_attributes", type="string", value=os.getenv("OTEL_ATTRIBUTES", "{}")
     ),
-    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="otel_enabled",
         type="boolean",
         value=str(os.getenv("OTEL_ENABLED", "true")).lower(),
     ),
-    pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="otel_enabled_http_instrumentors",
         type="boolean",
         value=str(os.getenv("OTEL_ENABLED_HTTP_INSTRUMENTORS", "false")).lower(),
+    ),
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+        key="enable_memory_management",
+        type="boolean",
+        value=str(os.getenv("ENABLE_MEMORY_MANAGEMENT", "false")).lower(),
+    ),
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+        key="enable_predictive_tools",
+        type="boolean",
+        value=str(os.getenv("ENABLE_PREDICTIVE_TOOLS", "true")).lower(),
     ),
 ]
 
 # Only add optional OTEL parameters if they have values
 if otel_collector_base_url := os.getenv("OTEL_COLLECTOR_BASE_URL"):
-    {{fastmcp_app_name}}_app_runtime_parameters.append(
-        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    deployments_model_runtime_parameters.append(
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
             key="otel_collector_base_url", type="string", value=otel_collector_base_url
-        )
-    )
-
-# Only add user_api_token if it is provided
-if user_api_token := os.getenv("USER_API_TOKEN"):
-    {{fastmcp_app_name}}_app_runtime_parameters.append(
-        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
-            key="user_api_token",
-            type="string",
-            value=user_api_token,
         )
     )
 
 # Only add otel_entity_id if it is provided
 if otel_entity_id := os.getenv("OTEL_ENTITY_ID"):
-    {{fastmcp_app_name}}_app_runtime_parameters.append(
-        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    deployments_model_runtime_parameters.append(
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
             key="otel_entity_id",
             type="string",
             value=otel_entity_id,
@@ -218,30 +291,24 @@ if otel_entity_id := os.getenv("OTEL_ENTITY_ID"):
 # Only add AWS credentials if they are provided
 if aws_access_key_id := os.getenv("AWS_ACCESS_KEY_ID"):
     if aws_secret_access_key := os.getenv("AWS_SECRET_ACCESS_KEY"):
-        {{fastmcp_app_name}}_app_runtime_parameters.extend(
+        credential = pulumi_datarobot.AwsCredential(
+            resource_name="AWS Credential",
+            name=asset_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=os.getenv("AWS_SESSION_TOKEN"),
+        )
+        deployments_model_runtime_parameters.extend(
             [
-                pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
-                    key="aws_access_key_id", type="string", value=aws_access_key_id
-                ),
-                pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
-                    key="aws_secret_access_key",
-                    type="string",
-                    value=aws_secret_access_key,
+                pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+                    key="aws_credential", type="credential", value=credential.id
                 ),
             ]
         )
 
-# Only add optional AWS parameters if they have values
-if aws_session_token := os.getenv("AWS_SESSION_TOKEN"):
-    {{fastmcp_app_name}}_app_runtime_parameters.append(
-        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
-            key="aws_session_token", type="string", value=aws_session_token
-        )
-    )
-
 if aws_predictions_s3_bucket := os.getenv("AWS_PREDICTIONS_S3_BUCKET"):
-    {{fastmcp_app_name}}_app_runtime_parameters.append(
-        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    deployments_model_runtime_parameters.append(
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
             key="aws_predictions_s3_bucket",
             type="string",
             value=aws_predictions_s3_bucket,
@@ -249,36 +316,78 @@ if aws_predictions_s3_bucket := os.getenv("AWS_PREDICTIONS_S3_BUCKET"):
     )
 
 if aws_predictions_s3_prefix := os.getenv("AWS_PREDICTIONS_S3_PREFIX"):
-    {{fastmcp_app_name}}_app_runtime_parameters.append(
-        pulumi_datarobot.ApplicationSourceRuntimeParameterValueArgs(
+    deployments_model_runtime_parameters.append(
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
             key="aws_predictions_s3_prefix",
             type="string",
             value=aws_predictions_s3_prefix,
         )
     )
 
-{{fastmcp_app_name}}_app_runtime_parameters.extend(MCP_RECIPE_RUNTIME_PARAMETERS)
 
-{{fastmcp_app_name}}_app_source = pulumi_datarobot.ApplicationSource(
-    files=get_{{fastmcp_app_name}}_app_files(
-        runtime_parameter_values={{fastmcp_app_name}}_app_runtime_parameters
-    ),
-    runtime_parameter_values={{fastmcp_app_name}}_app_runtime_parameters,
-    resources=pulumi_datarobot.ApplicationSourceResourcesArgs(
-        resource_label=CustomAppResourceBundles.CPU_XL.value.id,
-    ),
-    **{{fastmcp_app_name}}_app_source_args,
-)
+deployments_model_runtime_parameters.extend(MCP_USER_RUNTIME_PARAMETERS)
+custom_model_files = get_deployments_app_files(deployments_model_runtime_parameters)
 
-{{fastmcp_app_name}}_app = pulumi_datarobot.CustomApplication(
-    resource_name={{fastmcp_app_name}}_app_resource_name,
-    source_version_id={{fastmcp_app_name}}_app_source.version_id,
+
+use_mcp = os.getenv("USE_MCP_TARGET_TYPE", "true").lower() == "true"
+
+if use_mcp:
+    pulumi.info("Using MCP target_type")
+    target_type = "MCP"
+    target_name = None
+else:
+    pulumi.info("Using unstructured target_type for older environment")
+    target_type = "Unstructured"
+    target_name = "resultText"
+
+custom_model = pulumi_datarobot.CustomModel(
+    resource_name="Custom Model",
+    name=asset_name,
+    description="MCP server",
+    language="python",
+    base_environment_id=execution_environment.id,
+    base_environment_version_id=execution_environment.version_id,
+    target_type=target_type,
+    target_name=target_name,
+    resource_bundle_id="cpu.small",  # Use API /mlops/compute/bundles/?useCases=customModel to get list of available bundles
+    files=custom_model_files,
     use_case_ids=[use_case.id],
-    allow_auto_stopping=True,
+    runtime_parameter_values=deployments_model_runtime_parameters,
 )
 
-pulumi.export({{fastmcp_app_name}}_app_env_name, {{fastmcp_app_name}}_app.id)
-pulumi.export(
-    {{fastmcp_app_name}}_app_resource_name,
-    {{fastmcp_app_name}}_app.application_url,
+# Register the custom model so it can be deployed
+registerd_model = pulumi_datarobot.RegisteredModel(
+    resource_name="Registered Model",
+    name=asset_name,
+    custom_model_version_id=custom_model.version_id,
+    use_case_ids=[use_case.id],
 )
+
+# Where to run the custom model
+base_prediction_environment = pulumi_datarobot.PredictionEnvironment(
+    resource_name="Prediction Environment",
+    name=asset_name,
+    platform=dr.enums.PredictionEnvironmentPlatform.DATAROBOT_SERVERLESS,
+    opts=pulumi.ResourceOptions(retain_on_delete=True),
+)
+
+# Deploy the registered custom model
+deployment = pulumi_datarobot.Deployment(
+    resource_name="Deployment",
+    label=asset_name,
+    use_case_ids=[use_case.id],
+    registered_model_version_id=registerd_model.version_id,
+    prediction_environment_id=base_prediction_environment.id,
+)
+
+datarobot_endpoint = os.getenv("DATAROBOT_ENDPOINT", "").rstrip("/")
+mcp_server_mcp_endpoint = deployment.id.apply(
+    lambda id: f"{datarobot_endpoint}/deployments/{id}/directAccess/mcp"
+)
+mcp_server_base_endpoint = deployment.id.apply(
+    lambda id: f"{datarobot_endpoint}/deployments/{id}/directAccess/"
+)
+pulumi.export("Custom Model Id", custom_model.id)
+pulumi.export("Deployment Id", deployment.id)
+pulumi.export("MCP_SERVER_BASE_ENDPOINT", mcp_server_base_endpoint)
+pulumi.export("MCP_SERVER_MCP_ENDPOINT", mcp_server_mcp_endpoint)
