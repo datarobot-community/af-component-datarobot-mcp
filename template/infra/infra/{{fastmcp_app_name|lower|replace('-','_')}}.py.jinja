@@ -188,8 +188,8 @@ def get_deployments_app_files(
 
 
 # Execution Environment
-if len(os.environ.get("DATAROBOT_DEFAULT_EXECUTION_ENVIRONMENT", "")) > 0:
-    execution_environment_id = os.environ["DATAROBOT_DEFAULT_EXECUTION_ENVIRONMENT"]
+if len(os.environ.get("DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "")) > 0:
+    execution_environment_id = os.environ["DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT"]
 
     pulumi.info("Using existing execution environment: " + execution_environment_id)
     execution_environment = pulumi_datarobot.ExecutionEnvironment.get(
