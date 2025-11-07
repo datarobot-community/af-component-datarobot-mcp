@@ -283,12 +283,12 @@ if session_secret_key := os.getenv(SESSION_SECRET_KEY):
     )
     deployments_model_runtime_parameters.append(
         pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-            key=SESSION_SECRET_KEY,
+            key=SESSION_SECRET_KEY.lower(),
             type="credential",
             value=session_secret_cred.id,
         )
     )
-    pulumi.export("SESSION_SECRET_KEY", session_secret_key)
+    pulumi.export(SESSION_SECRET_KEY, session_secret_key)
 
 
 # Only add optional OTEL parameters if they have values
@@ -419,6 +419,6 @@ mcp_custom_model_runtime_parameters: list[
     pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="MCP_DEPLOYMENT_ID",
         type="string",
-        value=str(deployment.id),
+        value=deployment.id.apply(lambda id: f"{id}"),
     )
 ]
