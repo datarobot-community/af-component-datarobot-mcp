@@ -66,7 +66,8 @@ async def test_mcp_interactive() -> None:
 
     # Connect to the MCP server
     async with streamablehttp_client(
-        url=mcp_server_url, headers=get_headers()
+        url=mcp_server_url,
+        headers=get_headers(),
     ) as (
         read_stream,
         write_stream,
