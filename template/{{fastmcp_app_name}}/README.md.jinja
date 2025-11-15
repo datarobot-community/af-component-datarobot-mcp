@@ -51,32 +51,35 @@ The template includes pre-built tools for common DataRobot operations, a structu
 
 # Prerequisites
 
-If you are using DataRobot codespaces, this is already complete for you. If not, install the following tools:
+The MCP server requires you to install the following tools:
 
 - [Python](https://www.python.org/downloads/) (3.11+ required for infrastructure and backend development)
 - [Taskfile.dev](https://taskfile.dev/#/installation) (task runner)
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
 - [Pulumi](https://www.pulumi.com/docs/iac/download-install/) (infrastructure as code)
+- [Homebrew](https://docs.brew.sh/Installation) (package manager, **macOS only**)
+
+> **NOTE**: If you are using DataRobot codespaces, these prerequisites are already installed for you.
 
 ## DataRobot codespaces setup
 
-If you are developing within a DataRobot codespace, in order to test from the codespace the development ports need to be exposed. You can check this in the "Exposed Ports" section of your "Session Environment" tab (pictured below). You should have the ports 5173 (frontend), 8080 (application server) and 8842 (agent server) exposed. This should have been automatically enabled if you created this application template from the gallery, otherwise (e.g., if cloned) configure these ports manually. There will be a link next to the port to a URL where the service can be accessed when running locally in the codespace.
+When developing inside a DataRobot codespace, you must modify your codespace session environment to expose several ports.
+Ports can be accessed from the **Session environment** tab, as shown below:
 
-![Screenshot of Codespaces Session Environment.](_docs/static/img/screenshot-codespaces-ports.png)
+![](./img/codespace-ports.png)
 
-#### Example Installation Commands
+Enable the following ports:
 
-For the latest and most accurate installation instructions for your platform, visit:
+- 8080 (MCP server)
 
-- https://www.python.org/downloads/
-- https://taskfile.dev/installation/
-- https://docs.astral.sh/uv/getting-started/installation/
-- https://nodejs.org/en/download/
-- https://www.pulumi.com/docs/iac/download-install/
+After enabling the ports, you will see a link next to the port to a URL where the service can be accessed when running locally in the codespace.
 
-We provide the instructions below to save you a context flip, but your system may not meet the common expectations from these shortcut scripts:
+## Example Installation Commands
 
-**macOS:**
+For the latest installation instructions for your platform, refer to the links in the [Prerequisites](#prerequisites) section.
+The following sections provide example installation commands for macOS, Linux (Debian/Ubuntu/DataRobot codespaces), and Windows (PowerShell).
+
+### macOS
 
 ```sh
 brew install python
@@ -85,7 +88,7 @@ brew install uv
 brew install pulumi/tap/pulumi
 ```
 
-**Linux (Debian/Ubuntu/DataRobot codespaces):**
+### Linux (Debian/Ubuntu/DataRobot codespaces)
 
 ```sh
 # Python
@@ -99,7 +102,7 @@ curl -Ls https://astral.sh/uv/install.sh | sh
 curl -fsSL https://get.pulumi.com | sh
 ```
 
-**Windows (PowerShell):**
+### Windows (PowerShell)
 
 ```powershell
 # Python
@@ -120,8 +123,6 @@ git config --global core.symlink true
 # Alternatively, you can do it for just this repo by omitting the --global and running this in the repo.
 ```
 
-- [**DataRobot Account**](https://app.datarobot.com/): Valid API credentials with appropriate permissions
-
 ## Optional
 
 - [**Docker**](https://docs.docker.com/engine/install/): For containerized deployment
@@ -139,7 +140,7 @@ cd recipe-fastmcp-template
 
 ## Install dependencies
 
-> **Note:** This installs dependencies for both the MCP application and infrastructure components.
+> **NOTE**: This installs dependencies for both the MCP application and infrastructure components.
 
 ```bash
 task install
@@ -441,7 +442,7 @@ task dev
 <details>
 <summary>Client can't connect - "Connection refused"</summary>
 
-1. Verify server is running: `curl http://localhost:8080/health`
+1. Verify server is running: `curl http://localhost:8080/`
 2. Check firewall settings
 3. Verify the URL in your client config matches the server
 
