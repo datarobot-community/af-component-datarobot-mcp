@@ -285,7 +285,7 @@ if session_secret_key := os.getenv(SESSION_SECRET_KEY):
     )
     deployments_model_runtime_parameters.append(
         pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-            key=SESSION_SECRET_KEY.lower(),
+            key=SESSION_SECRET_KEY,
             type="credential",
             value=session_secret_cred.id,
         )
