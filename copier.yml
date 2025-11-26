@@ -10,18 +10,6 @@ copyright_year:
   default: 2025
   help: "The current year to register copyright properly in the license file"
 
-base_answers_file:
-  type: str
-  default: ".datarobot/answers/base.yml"
-  help: "Path to the base component answers file"
-
-# Grab the base component answers to re-use answers
-_external_data:
-  base: "{{ base_answers_file }}"
-
-_subdirectory: template
-_answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
-
 # Files to be excluded
 _exclude:
   - "*.j2"
