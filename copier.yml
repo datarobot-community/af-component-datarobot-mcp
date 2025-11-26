@@ -10,6 +10,10 @@ copyright_year:
   default: 2025
   help: "The current year to register copyright properly in the license file"
 
+_subdirectory: template
+_answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
+
+
 # Files to be excluded
 _exclude:
   - "*.j2"
