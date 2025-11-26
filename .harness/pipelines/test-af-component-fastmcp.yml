@@ -1,3 +1,4 @@
+---
 pipeline:
   name: Test FastMCP Component
   identifier: Build_af_component_fastmcp_backend_1752223405520
