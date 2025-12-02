@@ -158,6 +158,12 @@ tasks:
   test-interactive:
     desc: "🧪 Run interactive MCP client test"
     cmds:
+      # Set up cleanup to run on exit
+      - defer: |
+          echo "Stopping MCP Server"
+          lsof -i :8082 | grep LISTEN | awk '{print $2}' | xargs kill -9 2>/dev/null || true
+          echo "Stopping Jaeger"
+          docker stop jaeger || true
       - echo "🧪 Starting interactive MCP client test"
       - |
         if [ -z "$DR_MCP_SERVER_URL" ]; then
@@ -170,12 +176,6 @@ tasks:
         fi
         echo ""
         uv run python test_interactive.py
-      # Set up cleanup to run on exit
-      - defer: |
-          echo "Stopping MCP Server"
-          lsof -i :8082 | grep LISTEN | awk '{print $2}' | xargs kill -9 2>/dev/null || true
-          echo "Stopping Jaeger"
-          docker stop jaeger || true
     silent: true
 
   generate-docker-requirement-file:
