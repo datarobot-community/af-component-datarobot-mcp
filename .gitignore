@@ -132,8 +132,4 @@ env.bak/
 venv.bak/
 .idea/
 
-
-# UV 
-uv.lock
-
 tmp

@@ -34,7 +34,8 @@ EXCLUDE_PATTERNS = [
         r".*tests/.*",
         r".*\.coverage",
         r".*coverage\.xml",
-        r".*coveragerc" r".*htmlcov/.*",
+        r".*coveragerc",
+        r".*htmlcov/.*",
         r".*env",
         r".pre-commit-config.yaml",
         # Cache and temporary files
@@ -242,6 +243,20 @@ deployments_model_runtime_parameters: list[
         type="boolean",
         value=str(
             os.getenv("MCP_SERVER_TOOL_REGISTRATION_ALLOW_EMPTY_SCHEMA", "false")
+        ).lower(),
+    ),
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+        key="mcp_server_register_dynamic_prompts_on_startup",
+        type="boolean",
+        value=str(
+            os.getenv("MCP_SERVER_REGISTER_DYNAMIC_PROMPTS_ON_STARTUP", "false")
+        ).lower(),
+    ),
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+        key="prompt_registration_duplicate_behavior",
+        type="string",
+        value=str(
+            os.getenv("MCP_SERVER_PROMPT_REGISTRATION_DUPLICATE_BEHAVIOR", "warn")
         ).lower(),
     ),
     pulumi_datarobot.CustomModelRuntimeParameterValueArgs(

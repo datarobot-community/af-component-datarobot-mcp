@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import sys
 
 from datarobot_genai.drmcp import create_mcp_server
 
@@ -37,4 +38,8 @@ if __name__ == "__main__":
         transport="streamable-http",
     )
 
-    server.run(show_banner=True)
+    try:
+        server.run(show_banner=True)
+    except KeyboardInterrupt:
+        # Exit cleanly on Ctrl+C
+        sys.exit(0)
