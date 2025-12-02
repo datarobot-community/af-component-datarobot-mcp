@@ -95,6 +95,17 @@ This structure allows you to:
 
 </details>
 
+
+<details>
+<summary>Dynamic Prompt Registration</summary>
+
+| Variable                                            | Description                      | Default |
+|-----------------------------------------------------|----------------------------------|---------|
+| `MCP_SERVER_REGISTER_DYNAMIC_PROMPTS_ON_STARTUP`    | Auto-register prompts on startup | `false` |
+| `MCP_SERVER_PROMPT_REGISTRATION_DUPLICATE_BEHAVIOR` | How to handle duplicate prompts  | `warn`  |
+
+</details>
+
 <details>
 <summary>OpenTelemetry configuration</summary>
 

@@ -31,7 +31,7 @@
 
 This repository provides a production-ready template for building [FastMCP](https://github.com/jlowin/fastmcp) servers with DataRobot integration.
 Once configured, the template results in a complete framework for creating MCP Servers to be used by agents for calling tools, prompts, and resources.
-It can then be deployed as a DataRobot Custom Model Application, enabling seamless integration with AI assistants like Cursor, Claude Desktop, and other MCP-compatible clients.
+It can then be deployed as a DataRobot custom model application, enabling seamless integration with AI assistants like Cursor, Claude Desktop, and other MCP-compatible clients.
 
 The template includes pre-built tools for common DataRobot operations, a structured approach for adding custom tools, automated deployment infrastructure, and production-ready features like OpenTelemetry tracing and dynamic tool registration.
 
@@ -40,7 +40,7 @@ The template includes pre-built tools for common DataRobot operations, a structu
 # FastMCP template navigation
 
 - [Prerequisites](#prerequisites)
-- [Getting started](#getting-started)
+- [Get started](#getting-started)
 - [Deployment](#deployment)
 - [Next steps](#next-steps)
 - [Advanced options](#advanced-options)
@@ -74,7 +74,7 @@ Enable the following ports:
 
 After enabling the ports, you will see a link next to the port to a URL where the service can be accessed when running locally in the codespace.
 
-## Example Installation Commands
+## Example installation commands
 
 For the latest installation instructions for your platform, refer to the links in the [Prerequisites](#prerequisites) section.
 The following sections provide example installation commands for macOS, Linux (Debian/Ubuntu/DataRobot codespaces), and Windows (PowerShell).
@@ -129,7 +129,7 @@ git config --global core.symlink true
 - [**AWS Credentials**](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html): If using AWS-related features (S3 predictions or memory.)
 - [**Node.js**](https://nodejs.org/en/download/): Required for Claude Desktop MCP client setup
 
-# Getting started
+# Get started
 
 ## Clone the repository
 
@@ -148,10 +148,9 @@ task install
 
 ## Configure environment variables
 
-Create a `.env` file in the `dr_mcp/` directory:
+Create a `.env` file in the root directory:
 
 ```bash
-cd dr_mcp
 vim .env # or your preferred editor
 ```
 
@@ -178,6 +177,9 @@ DATAROBOT_ENDPOINT=[YOUR_DATAROBOT_ENDPOINT]
 # AWS_ACCESS_KEY_ID=your_aws_access_key
 # AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 # AWS_PREDICTIONS_S3_BUCKET=your_s3_bucket
+
+# Optional - Dynamic prompt registration
+# MCP_SERVER_REGISTER_DYNAMIC_PROMPTS_ON_STARTUP=false
 ```
 
 ### Add API credentials
@@ -204,7 +206,7 @@ Open the DataRobot UI to locate and copy your DataRobot API key and endpoint to 
 Start the server locally using the `task dev` command:
 
 ```bash
-task dev
+task mcp:dev
 ```
 
 The server will start on `http://localhost:8080` with the MCP endpoint at `http://localhost:8080/mcp/`.
@@ -267,7 +269,7 @@ Now that the local test passed, you can deploy the server to DataRobot.
 
 After deployment is successful, it creates the following resources:
 
-- **Execution Environment**: Docker-based Python 3.12 environment (or uses existing)
+- **Execution Environment**: Docker-based Python 3.12 environment (or uses an existing environment)
 - **Custom Model**: MCP server packaged as an unstructured custom model
 - **Registered Model**: Versioned model registration
 - **Prediction Environment**: DataRobot Serverless platform
@@ -282,21 +284,17 @@ run:
 pulumi login --local
 ```
 
-We recommend using a shared backend like Pulumi Cloud, Ceph, Minio, S3, or Azure Blob Storage. See
+DataRobot recommends using a shared backend like Pulumi Cloud, Ceph, Minio, S3, or Azure Blob Storage. See
 [Managing Pulumi State and Backends](https://www.pulumi.com/docs/iac/concepts/state-and-backends/) for
 more details. For production CI/CD information see our comprehensive
-[CI/CD Guide for Application Templates](https://docs.datarobot.com/en/docs/workbench/wb-apps/app-templates/pulumi-tasks/cicd-tutorial.html)
+[CI/CD Guide for Application Templates](https://docs.datarobot.com/en/docs/workbench/wb-apps/app-templates/pulumi-tasks/cicd-tutorial.html).
 
 ## Deploy to DataRobot
 
-1. Copy the `.env` file from the `dr_mcp` directory to the root directory:
+1. Create the `.env` file in the root directory.
 
-```bash
-cd .. # Previous steps left off in the dr_mcp directory
-cp dr_mcp/.env .env
-```
 
-1. Deploy to DataRobot using Pulumi:
+2. Deploy to DataRobot using Pulumi:
 
 > **Note**: During this process, you will be prompted to provide a new stack name and your Pulumi access token.
 > If prompted to perform an update, select "yes". Deployment can take several minutes to complete.
@@ -345,11 +343,11 @@ Use the `MCP_SERVER_MCP_ENDPOINT` URL (shown in the **outputs** section in the s
 
 # Advanced options
 
-## MCP Target Type Configuration
+## MCP target type configuration
 
-The template supports both MCP and Unstructured target types for DataRobot Custom Models. By default, it uses the MCP target type, but you can configure it for older environments that don't support MCP.
+The template supports both MCP and Unstructured target types for DataRobot custom models. By default, it uses the MCP target type, but you can configure it for older environments that don't support MCP.
 
-### Environment Variable Configuration
+### Environment variable configuration
 
 Set the `USE_MCP_TARGET_TYPE` environment variable to control the target type:
 
@@ -358,7 +356,7 @@ Set the `USE_MCP_TARGET_TYPE` environment variable to control the target type:
 USE_MCP_TARGET_TYPE=false task deploy
 ```
 
-## Runtime Parameters
+## Runtime parameters
 
 Customize deployment parameters by modifying the following files:
 
@@ -377,7 +375,7 @@ MCP_RECIPE_RUNTIME_PARAMETERS = [
 ]
 ```
 
-### dr_mcp/user-metadata.yaml
+### {{fastmcp_app_name}}/user-metadata.yaml
 
 Add your custom runtime parameters to the schema:
 
@@ -388,7 +386,7 @@ runtimeParameterDefinitions:
   # Add your custom runtime parameters here
 ```
 
-### dr_mcp/app/core/user_config.py
+### {{fastmcp_app_name}}/app/core/user_config.py
 
 Update the parameter handling:
 
@@ -432,7 +430,7 @@ These parameters will be available as environment variables in the deployed serv
 Another process is using port 8080. Either kill that process or change the port:
 
 ```bash
-cd dr_mcp
+cd {{fastmcp_app_name}}
 export MCP_SERVER_PORT=8081
 task dev
 ```
@@ -468,17 +466,17 @@ If you encounter issues or have questions:
 - **Open an Issue**: [GitHub Issues](https://github.com/datarobot/recipe-fastmcp-template/issues)
 - **Security Issues**: Email oss-community-management@datarobot.com
 
-# Contributing
+# Contributions
 
-We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
+DataRobot welcomes contributions. Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
 
 ## Quick contribution guide
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes following our code standards
-4. Run tests: `cd dr_mcp && task test`
-5. Run linters: `cd dr_mcp && task lint`
+4. Run tests: `task mcp:test`
+5. Run linters: `task mcp:lint`
 6. Commit with proper license headers
 7. Push and create a pull request
 
@@ -493,11 +491,11 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for de
 
 # Additional resources
 
-- [FastMCP Documentation](https://github.com/jlowin/fastmcp)
-- [Model Context Protocol Specification](https://modelcontextprotocol.io/)
-- [DataRobot API Documentation](https://docs.datarobot.com/)
-- [DataRobot Python Client](https://datarobot-public-api-client.readthedocs-hosted.com/)
-- [Pulumi Documentation](https://www.pulumi.com/docs/)
+- [FastMCP documentation](https://github.com/jlowin/fastmcp)
+- [Model context protocol specification](https://modelcontextprotocol.io/)
+- [DataRobot API documentation](https://docs.datarobot.com/)
+- [DataRobot Python client](https://datarobot-public-api-client.readthedocs-hosted.com/)
+- [Pulumi documentation](https://www.pulumi.com/docs/)
 - [OpenTelemetry Python](https://opentelemetry.io/docs/instrumentation/python/)
 
 # License
