@@ -136,7 +136,9 @@ tasks:
           docker stop jaeger || true
       # Run tests
       - echo "Running ETE tests"
-      - DR_MCP_SERVER_URL=http://localhost:8082/mcp/ uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/tests/ete/{{end}} -s -vv
+      - >-
+        DR_MCP_SERVER_URL=http://localhost:8082/mcp/ uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/tests/ete/{{end}}
+        -s -vv
     silent: true
   integration:
     desc: "Run integration tests"
@@ -192,5 +194,7 @@ tasks:
   release_files:
     desc: "🔨 Make sure to move these files to the root of the repository before a release"
     cmds:
-      - echo "mkdir -p ./docs ./img && mv ./dr_mcp/docs/* ./docs/ && mv ./dr_mcp/img/* ./img/ && mv ./dr_mcp/.env.sample ./.env.sample && mv ./dr_mcp/README.md ./README.md"
+      - >-
+        echo "mkdir -p ./docs ./img && mv ./dr_mcp/docs/* ./docs/ && mv ./dr_mcp/img/* ./img/ && mv ./dr_mcp/.env.sample ./.env.sample
+        && mv ./dr_mcp/README.md ./README.md"
     silent: true
