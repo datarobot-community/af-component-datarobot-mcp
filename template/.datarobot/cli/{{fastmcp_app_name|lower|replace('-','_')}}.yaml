@@ -1,0 +1,6 @@
+root:
+  - env: MCP_SERVER_PORT
+    type: string
+    default: "9000"
+    optional: true
+    help: "The local port to access the MCP Server. Should have a unique port."
