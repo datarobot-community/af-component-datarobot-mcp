@@ -1,3 +1,4 @@
+---
 root:
   - env: MCP_SERVER_PORT
     type: string
