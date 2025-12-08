@@ -14,7 +14,7 @@ mcp_development_port:
   type: int
   default: 8080
   help: "The local port to run your FastMCP development server on"
-  validator: "{% if mcp_development_port < 1 or mcp_development_port > 65536%}Must be in the range 1-65536{% endif %}"
+  validator: "{% if mcp_development_port < 1 or mcp_development_port > 65535%}Must be in the range 1-65535{% endif %}"
 
 _subdirectory: template
 _answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
