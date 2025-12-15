@@ -208,6 +208,7 @@ else:
         programming_language="python",
         use_cases=["customModel"],
         docker_context_path=str(project_dir.parent / "{{fastmcp_app_name}}" / "docker"),
+        opts=pulumi.ResourceOptions(retain_on_delete=False),
     )
 
 # Custom Model
@@ -391,6 +392,12 @@ custom_model = pulumi_datarobot.CustomModel(
     files=custom_model_files,
     use_case_ids=[use_case.id],
     runtime_parameter_values=deployments_model_runtime_parameters,
+    tags=[
+        pulumi_datarobot.CustomModelTagArgs(
+            name="tool",
+            value="MCP",
+        ),
+    ],
 )
 
 # Register the custom model so it can be deployed

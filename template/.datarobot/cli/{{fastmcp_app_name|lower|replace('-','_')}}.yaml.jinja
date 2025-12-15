@@ -5,3 +5,13 @@ root:
     default: "{{ mcp_development_port }}"
     optional: true
     help: "The local port to access the MCP Server. Should have a unique port."
+  - env: MCP_SERVER_REGISTER_DYNAMIC_TOOLS_ON_STARTUP
+    type: boolean
+    default: false
+    optional: true
+    help: "Whether to register DataRobot dynamic tools on startup."
+  - env: MCP_SERVER_REGISTER_DYNAMIC_PROMPTS_ON_STARTUP
+    type: boolean
+    default: false
+    optional: true
+    help: "Whether to register DataRobot dynamic prompts on startup."

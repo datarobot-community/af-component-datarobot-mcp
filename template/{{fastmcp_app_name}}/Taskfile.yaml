@@ -4,12 +4,12 @@ version: '3'
 
 vars:
   # Cross-platform environment cleaning - uses 'env -u' on Unix systems, falls back to empty string on Windows
-  CLEAN_PYTHON_ENV:
+  UV_CMD:
     sh: |
       if command -v env >/dev/null 2>&1; then
-        echo "env -u PYTHONPATH -u VIRTUAL_ENV"
+        echo "env -u PYTHONPATH -u VIRTUAL_ENV uv"
       else
-        echo ""
+        echo "uv"
       fi
 
 tasks:
@@ -17,7 +17,7 @@ tasks:
     desc: "🔧 Install dependencies"
     cmds:
       - echo "🔧 Installing dependencies.."
-      - "{{.CLEAN_PYTHON_ENV}} uv sync --all-extras"
+      - "{{.UV_CMD}} sync --all-extras"
       - task: generate-docker-requirement-file
     silent: true
 
@@ -26,7 +26,7 @@ tasks:
     cmds:
       - echo "🔨 Starting development server"
       - task: install
-      - "{{.CLEAN_PYTHON_ENV}} uv run app/main.py"
+      - "{{.UV_CMD}} run app/main.py"
     silent: true
 
   dev-background:
@@ -49,7 +49,7 @@ tasks:
         OTEL_COLLECTOR_BASE_URL=http://localhost:4318 \
         OTEL_ENTITY_ID=deployment-68924b8b51102f055bef861c \
         MCP_SERVER_PORT={{.PORT}} \
-        uv run app/main.py &
+        {{.UV_CMD}} run app/main.py &
       # Wait for server to be ready
       - |
         for i in {1..30}; do
@@ -78,19 +78,19 @@ tasks:
     desc: "🧹 Run linters"
     cmds:
       - echo "🧹 Running linters.."
-      - "{{.CLEAN_PYTHON_ENV}} uv sync --all-extras"
-      - "{{.CLEAN_PYTHON_ENV}} uv run ruff format ."
-      - "{{.CLEAN_PYTHON_ENV}} uv run ruff check . --fix"
-      - "{{.CLEAN_PYTHON_ENV}} uv run mypy --pretty --exclude 'app/tests' ."
+      - "{{.UV_CMD}} sync --all-extras"
+      - "{{.UV_CMD}} run ruff format ."
+      - "{{.UV_CMD}} run ruff check . --fix"
+      - "{{.UV_CMD}} run mypy --pretty --exclude 'app/tests' ."
     silent: true
 
   lint-check:
     desc: "🧹 Check whether the codebase is linted"
     cmds:
-      - "{{.CLEAN_PYTHON_ENV}} uv sync --all-extras"
-      - "{{.CLEAN_PYTHON_ENV}} uv run ruff format --check ."
-      - "{{.CLEAN_PYTHON_ENV}} uv run ruff check ."
-      - "{{.CLEAN_PYTHON_ENV}} uv run mypy --pretty --exclude 'app/tests' ."
+      - "{{.UV_CMD}} sync --all-extras"
+      - "{{.UV_CMD}} run ruff format --check ."
+      - "{{.UV_CMD}} run ruff check ."
+      - "{{.UV_CMD}} run mypy --pretty --exclude 'app/tests' ."
     silent: true
 
   test:
@@ -137,7 +137,7 @@ tasks:
       # Run tests
       - echo "Running ETE tests"
       - >-
-        DR_MCP_SERVER_URL=http://localhost:8082/mcp/ uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/tests/ete/{{end}}
+        DR_MCP_SERVER_URL=http://localhost:8082/mcp/ {{.UV_CMD}} run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/tests/ete/{{end}}
         -s -vv
     silent: true
   integration:
@@ -145,7 +145,8 @@ tasks:
     cmds:
       - echo "Running integration tests"
       - >-
-        uv sync --all-extras && uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/tests/integration/{{end}} -s -vv
+        {{.UV_CMD}} sync --all-extras && {{.UV_CMD}} run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/tests/integration/{{end}}
+        -s -vv
     silent: true
   unit:
     desc: "Run unit tests"
@@ -153,8 +154,8 @@ tasks:
       - rm -rf .coverage .coverage.xml htmlcov
       - echo "Running unit tests"
       - >-
-        uv sync --all-extras && uv run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/tests/unit/{{end}} --cov=app --cov-report=xml
-        --cov-report=html --cov-report=term-missing -s -vv
+        {{.UV_CMD}} sync --all-extras && {{.UV_CMD}} run pytest {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}app/tests/unit/{{end}}
+        --cov=app --cov-report=xml --cov-report=html --cov-report=term-missing -s -vv
     silent: true
 
   test-interactive:
@@ -177,7 +178,7 @@ tasks:
           task dev-background
         fi
         echo ""
-        uv run python test_interactive.py
+        {{.UV_CMD}} run python test_interactive.py
     silent: true
 
   generate-docker-requirement-file:
@@ -186,9 +187,9 @@ tasks:
       - echo "🔨 Generating docker requirements.txt file..."
       # If the content of the requirement.txt file doesn't change, don't trigger an update
       - >-
-        uv export --format requirements-txt --no-emit-project --project . > ./docker/requirements.txt.tmp && if ! cmp -s ./docker/requirements.txt.tmp
-        ./docker/requirements.txt; then mv ./docker/requirements.txt.tmp ./docker/requirements.txt; else rm ./docker/requirements.txt.tmp;
-        fi
+        {{.UV_CMD}} export --format requirements-txt --no-emit-project --project . > ./docker/requirements.txt.tmp && if !
+        cmp -s ./docker/requirements.txt.tmp ./docker/requirements.txt; then mv ./docker/requirements.txt.tmp ./docker/requirements.txt;
+        else rm ./docker/requirements.txt.tmp; fi
     silent: true
 
   release_files:
