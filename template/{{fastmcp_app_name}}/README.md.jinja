@@ -148,9 +148,10 @@ task install
 
 ## Configure environment variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the `{{fastmcp_app_name}}/` directory:
 
 ```bash
+cd {{fastmcp_app_name}}
 vim .env # or your preferred editor
 ```
 
@@ -160,6 +161,10 @@ Copy and paste the following into the `.env` file:
 # Required
 DATAROBOT_API_TOKEN=[YOUR_DATAROBOT_API_KEY]
 DATAROBOT_ENDPOINT=[YOUR_DATAROBOT_ENDPOINT]
+
+# Required: Random string for application security. Use a long password generated securely such as:
+# `python -c "import os, binascii; print(binascii.hexlify(os.urandom(64)).decode('utf-8'))"`
+SESSION_SECRET_KEY=[YOUR_SESSION_SECRET_KEY]
 
 # Optional - Server configuration
 # MCP_SERVER_NAME=datarobot-mcp-server
@@ -201,12 +206,19 @@ Open the DataRobot UI to locate and copy your DataRobot API key and endpoint to 
 
   <img src="./img/api-key.png" width="400" />
 
+### Generate Session Secret Key (for DataRobot Codespaces)
+
+1. Generate a session secret key with Python.
+`python -c "import os, binascii; print(binascii.hexlify(os.urandom(64)).decode('utf-8'))"`
+
+2. Copy the string and paste it into the `.env` file in place of `[YOUR_SESSION_SECRET_KEY]`.
+
 ## Run locally
 
-Start the server locally using the `task dev` command:
+From `/{{fastmcp_app_name}}/`, start the server locally using the `task dev` command:
 
 ```bash
-task mcp:dev
+task dev
 ```
 
 The server will start on `http://localhost:8080` with the MCP endpoint at `http://localhost:8080/mcp/`.
@@ -291,8 +303,12 @@ more details. For production CI/CD information see our comprehensive
 
 ## Deploy to DataRobot
 
-1. Create the `.env` file in the root directory.
+1. Copy the `.env` file from the `{{fastmcp_app_name}}` directory to the root directory:
 
+```bash
+cd .. # Previous steps left off in the {{fastmcp_app_name}} directory
+cp {{fastmcp_app_name}}/.env .env
+```
 
 2. Deploy to DataRobot using Pulumi:
 
@@ -475,8 +491,8 @@ DataRobot welcomes contributions. Please see [CONTRIBUTING.md](./CONTRIBUTING.md
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes following our code standards
-4. Run tests: `task mcp:test`
-5. Run linters: `task mcp:lint`
+4. Run tests: `cd {{fastmcp_app_name}} && task test`
+5. Run linters: `cd {{fastmcp_app_name}} && task lint`
 6. Commit with proper license headers
 7. Push and create a pull request
 
