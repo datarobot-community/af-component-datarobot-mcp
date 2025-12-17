@@ -21,11 +21,13 @@ import pulumi
 import pulumi_datarobot
 import datarobot as dr
 from datarobot_pulumi_utils.pulumi.stack import PROJECT_NAME
+from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironments
 
 from . import project_dir, use_case
 
 from .{{fastmcp_app_name}}_user_params import MCP_USER_RUNTIME_PARAMETERS
 
+DEFAULT_EXECUTION_ENVIRONMENT = "Python 3.11 GenAI Agents"
 
 EXCLUDE_PATTERNS = [
     re.compile(pattern)
@@ -190,14 +192,35 @@ def get_deployments_app_files(
     return unique_source_files
 
 
-# Execution Environment
+# Start of Pulumi settings and application infrastructure
 if len(os.environ.get("DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "")) > 0:
+    # Get the default execution environment from environment variable
     execution_environment_id = os.environ["DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT"]
+    if DEFAULT_EXECUTION_ENVIRONMENT in execution_environment_id:
+        pulumi.info("Using default GenAI Agentic Execution Environment.")
+        execution_environment_id = RuntimeEnvironments.PYTHON_311_GENAI_AGENTS.value.id
 
-    pulumi.info("Using existing execution environment: " + execution_environment_id)
+    # Get the pinned version ID if provided
+    execution_environment_version_id = os.environ.get(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID", None
+    )
+    if not re.match("^[a-f\d]{24}$", str(execution_environment_version_id)):
+        pulumi.info(
+            "No valid execution environment version ID provided, using latest version."
+        )
+        execution_environment_version_id = None
+
+    pulumi.info(
+        "Using existing execution environment: "
+        + execution_environment_id
+        + " Version ID: "
+        + str(execution_environment_version_id)
+    )
+
     execution_environment = pulumi_datarobot.ExecutionEnvironment.get(
         id=execution_environment_id,
-        resource_name=mcp_server_asset_name + " Execution Environment [PRE-EXISTING]",
+        version_id=execution_environment_version_id,
+        resource_name=mcp_server_asset_name + " Execution Environment",
     )
 else:
     pulumi.info("Using docker folder to compile the execution environment")
