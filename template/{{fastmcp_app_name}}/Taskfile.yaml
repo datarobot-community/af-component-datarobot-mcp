@@ -196,6 +196,6 @@ tasks:
     desc: "🔨 Make sure to move these files to the root of the repository before a release"
     cmds:
       - >-
-        echo "mkdir -p ./docs ./img && mv ./dr_mcp/docs/* ./docs/ && mv ./dr_mcp/img/* ./img/ && mv ./dr_mcp/.env.sample ./.env.sample
+        echo "mkdir -p ./docs ./img && mv ./dr_mcp/docs/* ./docs/ && mv ./dr_mcp/img/* ./img/ && mv ./dr_mcp/.env.template ./.env.template
         && mv ./dr_mcp/README.md ./README.md"
     silent: true
