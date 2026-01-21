@@ -1,0 +1,61 @@
+---
+name: Test {{ fastmcp_app_name }}
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - '{{ fastmcp_app_name }}/**.py'
+
+  pull_request:
+    branches: ["main"]
+    paths:
+      - '{{ fastmcp_app_name }}/**.py'
+
+jobs:
+  tests:
+    name: "FastMCP: {{ fastmcp_app_name }} {% raw %}${{ matrix.python-version }}{% endraw %}"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        working-directory: {{ fastmcp_app_name }}
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: "actions/checkout@v6"
+
+      # Ref: https://docs.astral.sh/uv/guides/integration/github/#installation
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          working-directory: {{ fastmcp_app_name }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: {% raw %}${{ matrix.python-version }}{% endraw %}
+
+      - name: Install Taskfile
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
+
+      - name: Install Dependencies
+        working-directory: {{ fastmcp_app_name }}
+        run: task install
+
+      - name: Run Static Checks
+        working-directory: {{ fastmcp_app_name }}
+        run: task lint-check
+
+      - name: Run Unit Tests
+        working-directory: {{ fastmcp_app_name }}
+        run: task unit
+
+      - name: Get Cover
+        uses: orgoro/coverage@v3.2
+        with:
+          coverageFile: {{ fastmcp_app_name }}/coverage.xml
+          token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}

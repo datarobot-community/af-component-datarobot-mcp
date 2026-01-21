@@ -1,0 +1,58 @@
+---
+version: '3'
+
+env:
+  APPDIR: ./template/{{"{{"}}fastmcp_app_name{{"}}"}}
+  SRCDIR: ./template/{{"{{"}}fastmcp_app_name{{"}}"}}/app
+  TESTDIR: ./template/{{"{{"}}fastmcp_app_name{{"}}"}}/tests
+
+tasks:
+  copy:
+    desc: 🔧 Render the template
+    cmds:
+      - echo "🔧 Rendering template"
+      - rm -rf ./tmp/template
+      - uv run copier copy --defaults --overwrite . ./tmp/template
+  lint:
+    desc: 🧹 Lint the codebase
+    cmds:
+      - echo "🧹 Linting"
+      - uv run ruff format "$SRCDIR"
+      - uv run ruff check --fix "$SRCDIR"
+      - uv run mypy --pretty "$SRCDIR"
+
+  lint-yaml:
+    desc: 🧹 Lint YAML files
+    silent: true
+    cmds:
+      - echo "🧹 Linting YAML files.."
+      - |
+        if ! command -v yamlfmt >/dev/null 2>&1; then
+          echo "❌ yamlfmt is not installed. Install it via `brew install yamlfmt` or `go install github.com/google/yamlfmt/cmd/yamlfmt@latest`.";
+          exit 1;
+        fi
+      - yamlfmt -conf .yamlfmt.yaml -lint ./tmp/template/
+
+  lint-check:
+    desc: 🧹 Check whether the codebase is linted
+    cmds:
+      - echo "🧹 Linting"
+      - uv run ruff format --check --diff "$SRCDIR" --config "$APPDIR"/pyproject.toml "$SRCDIR"
+      - uv run ruff check "$SRCDIR" --config "$APPDIR"/pyproject.toml "$SRCDIR"
+      - uv run mypy --pretty "$SRCDIR"
+
+  copyright:
+    aliases: [license]
+    desc: 📜 Apply license headers
+    cmds:
+      - echo "📜 Applying license headers"
+      - docker run  --rm -v $PWD:/github/workspace ghcr.io/apache/skywalking-eyes/license-eye:eb0e0b091ea41213f712f622797e37526ca1e5d6
+        -v info -c .licenserc.yaml header fix
+
+  copyright-check:
+    aliases: [license-check]
+    desc: 📜 Checking for license headers
+    cmds:
+      - echo "📜 Checking license headers"
+      - docker run  --rm -v $PWD:/github/workspace ghcr.io/apache/skywalking-eyes/license-eye:eb0e0b091ea41213f712f622797e37526ca1e5d6
+        -v info -c .licenserc.yaml header check
