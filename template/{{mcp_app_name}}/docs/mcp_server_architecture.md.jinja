@@ -3,8 +3,7 @@
 ## Project structure
 
 ```
-recipe-fastmcp-template/
-├── {{ fastmcp_app_name }}/                    # Main application code
+├── {{ mcp_app_name }}/        # Main application code
 │   ├── app/
 │   │   ├── core/              # Core server logic, config, telemetry
 │   │   │   ├── server_lifecycle.py
@@ -134,7 +133,7 @@ This structure allows you to:
 
 ## Custom configuration
 
-Add custom configuration in `{{ fastmcp_app_name }}/app/core/user_config.py`:
+Add custom configuration in `{{ mcp_app_name }}/app/core/user_config.py`:
 
 ```python
 from pydantic import Field

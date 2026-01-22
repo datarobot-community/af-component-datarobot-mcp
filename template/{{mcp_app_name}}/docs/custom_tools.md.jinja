@@ -2,14 +2,14 @@
 
 ### Create a tool
 
-Add your custom tools in `{{ fastmcp_app_name }}/app/recipe/tools/`:
+Add your custom tools in `{{ mcp_app_name }}/app/recipe/tools/`:
 
 ```python
-# {{ fastmcp_app_name }}/app/recipe/tools/my_custom_tool.py
-from app.base.core.mcp_instance import {{ fastmcp_app_name }}_tool
+# {{ mcp_app_name }}/app/recipe/tools/my_custom_tool.py
+from app.base.core.mcp_instance import {{ mcp_app_name }}_tool
 from app.base.core.common import get_sdk_client
 
-@{{ fastmcp_app_name }}_tool(tags={"custom", "recipe", "your-domain"})
+@{{ mcp_app_name }}_tool(tags={"custom", "recipe", "your-domain"})
 async def my_custom_tool(input_param: str, optional_param: int = 10) -> str:
     """
     Brief description of what your tool does.
@@ -50,7 +50,7 @@ async def my_custom_tool(input_param: str, optional_param: int = 10) -> str:
 Resources provide static data or context to the AI agent:
 
 ```python
-# {{ fastmcp_app_name }}/app/recipe/resources/my_resource.py
+# {{ mcp_app_name }}/app/recipe/resources/my_resource.py
 from app.base.core.mcp_instance import mcp
 
 @mcp.resource(uri="custom://my-data")
@@ -72,7 +72,7 @@ async def my_custom_resource() -> str:
 Prompt templates provide reusable instructions:
 
 ```python
-# {{ fastmcp_app_name }}/app/recipe/prompts/my_prompt.py
+# {{ mcp_app_name }}/app/recipe/prompts/my_prompt.py
 from app.base.core.mcp_instance import mcp
 
 @mcp.prompt
@@ -93,8 +93,8 @@ async def my_custom_prompt(context: str) -> str:
 Customize server startup and shutdown behavior:
 
 ```python
-# {{ fastmcp_app_name }}/app/recipe/core/server_lifecycle.py
-from app.base.core.{{ fastmcp_app_name }}_server import ServerLifecycle
+# {{ mcp_app_name }}/app/recipe/core/server_lifecycle.py
+from app.base.core.{{ mcp_app_name }}_server import ServerLifecycle
 
 class RecipeServerLifecycle(ServerLifecycle):
     async def on_startup(self) -> None:

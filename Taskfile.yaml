@@ -2,9 +2,9 @@
 version: '3'
 
 env:
-  APPDIR: ./template/{{"{{"}}fastmcp_app_name{{"}}"}}
-  SRCDIR: ./template/{{"{{"}}fastmcp_app_name{{"}}"}}/app
-  TESTDIR: ./template/{{"{{"}}fastmcp_app_name{{"}}"}}/tests
+  APPDIR: ./template/{{"{{"}}mcp_app_name{{"}}"}}
+  SRCDIR: ./template/{{"{{"}}mcp_app_name{{"}}"}}/app
+  TESTDIR: ./template/{{"{{"}}mcp_app_name{{"}}"}}/tests
 
 tasks:
   copy:

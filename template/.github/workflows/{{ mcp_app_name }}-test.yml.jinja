@@ -1,24 +1,24 @@
 ---
-name: Test {{ fastmcp_app_name }}
+name: Test {{ mcp_app_name }}
 
 on:
   push:
     branches: ["main"]
     paths:
-      - '{{ fastmcp_app_name }}/**.py'
+      - '{{ mcp_app_name }}/**.py'
 
   pull_request:
     branches: ["main"]
     paths:
-      - '{{ fastmcp_app_name }}/**.py'
+      - '{{ mcp_app_name }}/**.py'
 
 jobs:
   tests:
-    name: "FastMCP: {{ fastmcp_app_name }} {% raw %}${{ matrix.python-version }}{% endraw %}"
+    name: "DataRobot MCP: {{ mcp_app_name }} {% raw %}${{ matrix.python-version }}{% endraw %}"
     runs-on: "ubuntu-latest"
     defaults:
       run:
-        working-directory: {{ fastmcp_app_name }}
+        working-directory: {{ mcp_app_name }}
 
     strategy:
       matrix:
@@ -31,7 +31,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v7
         with:
-          working-directory: {{ fastmcp_app_name }}
+          working-directory: {{ mcp_app_name }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
           python-version: {% raw %}${{ matrix.python-version }}{% endraw %}
@@ -43,19 +43,19 @@ jobs:
           repo-token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
 
       - name: Install Dependencies
-        working-directory: {{ fastmcp_app_name }}
+        working-directory: {{ mcp_app_name }}
         run: task install
 
       - name: Run Static Checks
-        working-directory: {{ fastmcp_app_name }}
+        working-directory: {{ mcp_app_name }}
         run: task lint-check
 
       - name: Run Unit Tests
-        working-directory: {{ fastmcp_app_name }}
+        working-directory: {{ mcp_app_name }}
         run: task unit
 
       - name: Get Cover
         uses: orgoro/coverage@v3.2
         with:
-          coverageFile: {{ fastmcp_app_name }}/coverage.xml
+          coverageFile: {{ mcp_app_name }}/coverage.xml
           token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}

@@ -1,9 +1,9 @@
 ---
 # questions
-fastmcp_app_name:
+mcp_app_name:
   type: str
   default: "mcp_server"
-  help: "The name/folder of your FastMCP Web App. Required to use a python friendly name like mcp_server or mcp_deployments"
+  help: "The name/folder of your DataRobot MCP Web App. Required to use a python friendly name like mcp_server or mcp_deployments"
 
 copyright_year:
   type: int
@@ -13,11 +13,11 @@ copyright_year:
 mcp_development_port:
   type: int
   default: 8080
-  help: "The local port to run your FastMCP development server on"
+  help: "The local port to run your DataRobot MCP development server on"
   validator: "{% if mcp_development_port < 1 or mcp_development_port > 65535%}Must be in the range 1-65535{% endif %}"
 
 _subdirectory: template
-_answers_file: ".datarobot/answers/fastmcp-{{ fastmcp_app_name }}.yml"
+_answers_file: ".datarobot/answers/drmcp-{{ mcp_app_name }}.yml"
 
 
 # Files to be excluded

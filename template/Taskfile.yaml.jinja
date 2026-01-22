@@ -8,8 +8,8 @@ env:
 
 includes:
   mcp:
-    taskfile: ./{{fastmcp_app_name}}/Taskfile.yaml
-    dir: ./{{fastmcp_app_name}}
+    taskfile: ./{{mcp_app_name}}/Taskfile.yaml
+    dir: ./{{mcp_app_name}}
     env:
       PARENT_ENV: '{% raw %}{{.PARENT_ENV}}{% endraw %}'
   infra:

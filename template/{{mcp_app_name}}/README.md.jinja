@@ -4,7 +4,7 @@
   </a>
 </p>
 <p align="center">
-    <span style="font-size: 1.5em; font-weight: bold; display: block;">FastMCP Server Template for DataRobot</span>
+    <span style="font-size: 1.5em; font-weight: bold; display: block;">MCP Server Template for DataRobot</span>
 </p>
 
 <p align="center">
@@ -37,7 +37,7 @@ The template includes pre-built tools for common DataRobot operations, a structu
 
 ---
 
-# FastMCP template navigation
+# DataRobot MCP template navigation
 
 - [Prerequisites](#prerequisites)
 - [Get started](#getting-started)
@@ -134,8 +134,8 @@ git config --global core.symlink true
 ## Clone the repository
 
 ```bash
-git clone https://github.com/datarobot/recipe-fastmcp-template.git
-cd recipe-fastmcp-template
+git clone https://github.com/datarobot-community/datarobot-mcp-template.git
+cd datarobot-mcp-template
 ```
 
 ## Install dependencies
@@ -148,10 +148,10 @@ task install
 
 ## Configure environment variables
 
-Create a `.env` file in the `{{fastmcp_app_name}}/` directory:
+Create a `.env` file in the `{{mcp_app_name}}/` directory:
 
 ```bash
-cd {{fastmcp_app_name}}
+cd {{mcp_app_name}}
 vim .env # or your preferred editor
 ```
 
@@ -215,16 +215,16 @@ Open the DataRobot UI to locate and copy your DataRobot API key and endpoint to 
 
 ## Run locally
 
-From `/{{fastmcp_app_name}}/`, start the server locally using the `task dev` command:
+From `/{{mcp_app_name}}/`, start the server locally using the `task dev` command:
 
 ```bash
 task dev
 ```
 
 The server will start on `http://localhost:8080` with the MCP endpoint at `http://localhost:8080/mcp/`.
-Once the FastMCP logo appears, the server is running properly.
+Once the DataRobot logo appears, the server is running properly.
 
-<img src="./img/fastmcp-logo.png" width="300" />
+<img src="./img/mcp-logo.png" width="300" />
 
 > **Note**: When finished, press `Ctrl+C` to stop the server.
 
@@ -303,11 +303,11 @@ more details. For production CI/CD information see our comprehensive
 
 ## Deploy to DataRobot
 
-1. Copy the `.env` file from the `{{fastmcp_app_name}}` directory to the root directory:
+1. Copy the `.env` file from the `{{mcp_app_name}}` directory to the root directory:
 
 ```bash
-cd .. # Previous steps left off in the {{fastmcp_app_name}} directory
-cp {{fastmcp_app_name}}/.env .env
+cd .. # Previous steps left off in the {{mcp_app_name}} directory
+cp {{mcp_app_name}}/.env .env
 ```
 
 2. Deploy to DataRobot using Pulumi:
@@ -376,7 +376,7 @@ USE_MCP_TARGET_TYPE=false task deploy
 
 Customize deployment parameters by modifying the following files:
 
-### infra/infra/{{fastmcp_app_name}}_user_params.py
+### infra/infra/{{mcp_app_name}}_user_params.py
 
 Add your custom runtime parameters in the infrastructure:
 
@@ -391,7 +391,7 @@ MCP_RECIPE_RUNTIME_PARAMETERS = [
 ]
 ```
 
-### {{fastmcp_app_name}}/user-metadata.yaml
+### {{mcp_app_name}}/user-metadata.yaml
 
 Add your custom runtime parameters to the schema:
 
@@ -402,7 +402,7 @@ runtimeParameterDefinitions:
   # Add your custom runtime parameters here
 ```
 
-### {{fastmcp_app_name}}/app/core/user_config.py
+### {{mcp_app_name}}/app/core/user_config.py
 
 Update the parameter handling:
 
@@ -446,7 +446,7 @@ These parameters will be available as environment variables in the deployed serv
 Another process is using port 8080. Either kill that process or change the port:
 
 ```bash
-cd {{fastmcp_app_name}}
+cd {{mcp_app_name}}
 export MCP_SERVER_PORT=8081
 task dev
 ```
@@ -491,8 +491,8 @@ DataRobot welcomes contributions. Please see [CONTRIBUTING.md](./CONTRIBUTING.md
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes following our code standards
-4. Run tests: `cd {{fastmcp_app_name}} && task test`
-5. Run linters: `cd {{fastmcp_app_name}} && task lint`
+4. Run tests: `cd {{mcp_app_name}} && task test`
+5. Run linters: `cd {{mcp_app_name}} && task lint`
 6. Commit with proper license headers
 7. Push and create a pull request
 
