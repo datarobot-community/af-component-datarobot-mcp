@@ -322,12 +322,12 @@ deployments_model_runtime_parameters: list[
     pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="enable_gdrive_tools",
         type="boolean",
-        value=str(os.getenv("ENABLE_GDRIVE_TOOLS", "false")).lower(),
+        value=str(os.getenv("ENABLE_GDRIVE_TOOLS", "true")).lower(),
     ),
     pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="enable_microsoft_graph_tools",
         type="boolean",
-        value=str(os.getenv("ENABLE_MICROSOFT_GRAPH_TOOLS", "false")).lower(),
+        value=str(os.getenv("ENABLE_MICROSOFT_GRAPH_TOOLS", "true")).lower(),
     ),
 ]
 
