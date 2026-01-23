@@ -1,0 +1,28 @@
+---
+name: af-component-datarobot-mcp Repo
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-license:
+    name: "Test License"
+    runs-on: "ubuntu-latest"
+    container:
+      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+    steps:
+      - name: Checkout
+        uses: "actions/checkout@v5"
+      - name: Render copier instance
+        if: steps.setup-cache.outputs.cache-hit != 'true'
+        uses: ./.github/actions/render-copier-instance
+        with:
+          copier-args: '--defaults'
+      - name: License Header Check
+        uses: apache/skywalking-eyes/header@main
+        with:
+          config: .github/.licenserc.yaml
