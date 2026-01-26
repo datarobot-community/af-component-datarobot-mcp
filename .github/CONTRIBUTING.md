@@ -5,8 +5,7 @@ Guidelines for developing and contributing to this project.
 ## List of project maintainers
 
 - [DataRobot](https://www.datarobot.com)
-- [Matt Nitzken](https://github.com/mjnitz02)
-- [Carson Gee](https://github.com/carsongee)
+- [Rabih Abou Fakher](https://github.com/rabih-datarobot)
 
 
 ## Opening new issues

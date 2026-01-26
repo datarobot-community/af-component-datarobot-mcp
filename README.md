@@ -56,7 +56,7 @@ The MCP server provides a wide range of tools organized into the following categ
 #### Predictions
 - **`predict_by_file_path`** — Make batch predictions using a DataRobot deployment and a local CSV file (for large datasets)
 - **`predict_by_ai_catalog`** — Make batch predictions using a DataRobot deployment and an AI Catalog dataset
-- **`predict_from_project_data`** — Make predictions using training data associated with a project (holdout, validation, or allBacktest partitions)
+- **`predict_from_project_data`** — Make predictions using training data associated with a project (holdout, validation, or all backtest partitions)
 - **`predict_realtime`** — Make real-time predictions using a deployment and a local CSV file or dataset string (supports time series, explanations, and custom thresholds)
 - **`predict_by_ai_catalog_rt`** — Make real-time predictions using a deployment and an AI Catalog dataset
 
@@ -108,7 +108,7 @@ The following integration tools require authentication to be configured via Data
 Before you begin, ensure you have the following:
 
 - **uv**: Python package installer and project manager
-- **DataRobot Account**: Active DataRobot account with API credentials
+- **DataRobot Account**: Active DataRobot account with [API credentials](https://docs.datarobot.com/en/docs/platform/acct-settings/api-key-mgmt.html#api-keys-and-tools)
 - **Python 3.11+**: Required Python version
 
 ## Getting Started
@@ -116,14 +116,12 @@ Before you begin, ensure you have the following:
 To use this template, it expects the base component https://github.com/datarobot/af-component-base has already been
 installed. To do that first, run:
 ```bash
-uvx copier copy https://github.com/datarobot/af-component-base .
-# uvx copier copy git@github.com:datarobot/af-component-base.git .
+uvx copier copy git@github.com:datarobot/af-component-base.git .
 ```
 
 To add the MCP component to your project, you can use the `uvx copier` command to copy the template from this repository:
 ```bash
-uvx copier copy https://github.com/datarobot-community/af-component-datarobot-mcp .
-# uvx copier copy git@github.com:datarobot-community/af-component-datarobot-mcp.git .
+uvx copier copy git@github.com:datarobot-community/af-component-datarobot-mcp.git .
 ```
 
 If a template requires multiple MCP backends, it can be used multiple times with a different answer to the `mcp_app_name` question.
