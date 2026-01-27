@@ -9,8 +9,6 @@
 <p align="center">
   <a href="https://datarobot.com">Homepage</a>
   ·
-  <a href="https://datarobot.atlassian.net/wiki/spaces/BOPS/pages/6542032899/App+Framework+-+Studio">App Framework Documentation</a>
-  ·
   <a href="https://docs.datarobot.com/en/docs/get-started/troubleshooting/general-help.html">Support</a>
 </p>
 
@@ -151,6 +149,5 @@ Please see the [Development Documentation](template/{{mcp_app_name}}/dev.md).
 
 If you encounter issues or have questions, try the following:
 
-- Check [the documentation](https://datarobot.atlassian.net/wiki/spaces/BOPS/pages/6542032899/App+Framework+-+Studio) for App Framework Studio.
 - [Contact DataRobot](https://docs.datarobot.com/en/docs/get-started/troubleshooting/general-help.html) for support.
 - Open an issue on the [GitHub repository](https://github.com/datarobot-community/af-component-datarobot-mcp).
