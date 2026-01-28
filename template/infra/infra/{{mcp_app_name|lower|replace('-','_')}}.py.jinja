@@ -158,6 +158,8 @@ def get_deployments_app_files(
     essential_files = [
         "app/",
         "model-metadata.yaml",
+        "pyproject.toml",
+        "uv.lock",
     ]
     source_files = []
     # Add essential files
@@ -494,7 +496,7 @@ base_prediction_environment = pulumi_datarobot.PredictionEnvironment(
     resource_name=mcp_server_asset_name + " Prediction Environment",
     name=mcp_server_asset_name,
     platform=dr.enums.PredictionEnvironmentPlatform.DATAROBOT_SERVERLESS,
-    opts=pulumi.ResourceOptions(retain_on_delete=True),
+    opts=pulumi.ResourceOptions(retain_on_delete=False),
 )
 
 # Deploy the registered custom model
