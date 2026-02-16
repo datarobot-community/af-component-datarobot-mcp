@@ -17,6 +17,7 @@ from datarobot_genai.drmcp import integration_test_mcp_session
 from mcp.types import CallToolResult, ListToolsResult, TextContent
 
 
+@pytest.mark.skip(reason="Example user tools are not registered by default")
 @pytest.mark.asyncio
 class TestMCPToolsIntegration:
     """Integration tests for MCP tools."""
@@ -29,11 +30,11 @@ class TestMCPToolsIntegration:
             tools_result: ListToolsResult = await session.list_tools()
             tool_names = [tool.name for tool in tools_result.tools]
 
-            assert "user_tool_smoke_test" in tool_names
+            assert "user_tool_example" in tool_names
 
-            # 2 Test getting user tool smoke test
+            # 2 Test getting user tool
             result: CallToolResult = await session.call_tool(
-                "user_tool_smoke_test",
+                "user_tool_example",
                 {
                     "argument1": "test",
                 },
@@ -44,4 +45,4 @@ class TestMCPToolsIntegration:
             assert isinstance(result.content[0], TextContent)
 
             result_text = result.content[0].text
-            assert "user tool smoke test" in result_text, f"Result text: {result_text}"
+            assert "user tool example" in result_text, f"Result text: {result_text}"

@@ -11,3 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+import os
+
+import pytest
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _integration_disable_datarobot_api_at_startup() -> None:
+    """Disable dynamic tools/prompts registration so the server does not call DataRobot API at startup."""
+    os.environ["MCP_SERVER_REGISTER_DYNAMIC_TOOLS_ON_STARTUP"] = "false"
+    os.environ["MCP_SERVER_REGISTER_DYNAMIC_PROMPTS_ON_STARTUP"] = "false"

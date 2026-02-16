@@ -50,6 +50,10 @@ runtimeParameterDefinitions:
     type: boolean
   - fieldName: enable_microsoft_graph_tools
     type: boolean
+  - fieldName: enable_perplexity_tools
+    type: boolean
+  - fieldName: enable_tavily_tools
+    type: boolean
   - fieldName: is_atlassian_oauth_provider_configured
     type: boolean
   - fieldName: is_google_oauth_provider_configured
