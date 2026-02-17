@@ -234,8 +234,10 @@ From here, you can perform some optional interactive testing on the local server
 
 Once the server is running, you can immediately test your tools with an AI agent using the interactive testing mode:
 
+From `/{{mcp_app_name}}/`, run:
+
 ```bash
-task mcp:test-interactive
+task test-interactive
 ```
 
 This command will:
@@ -319,6 +321,8 @@ cp {{mcp_app_name}}/.env .env
 
 # Optional: Use existing execution environment
 # export DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT="[DataRobot] Python 3.11 GenAI Agents"
+# If empty, the latest version of the execution environment will be used
+# DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID="698360476c9b9255ca8abeef"
 
 task deploy
 ```

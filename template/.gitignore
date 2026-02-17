@@ -183,3 +183,5 @@ temp.txt
 # DataRobot CLI stuff:
 #  .dr/state contains user-specific history and audit-trail while working with the CLI
 .datarobot/state/
+Taskfile.gen.yaml
+.datarobot/cli/state.yaml

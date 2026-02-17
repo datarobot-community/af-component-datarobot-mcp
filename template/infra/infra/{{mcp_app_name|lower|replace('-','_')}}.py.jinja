@@ -195,18 +195,24 @@ def get_deployments_app_files(
 
 
 # Start of Pulumi settings and application infrastructure
-if len(os.environ.get("DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "")) > 0:
+_dr_exec_env = os.environ.get("DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "").strip()
+if _dr_exec_env:
     # Get the default execution environment from environment variable
-    execution_environment_id = os.environ["DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT"]
+    execution_environment_id = _dr_exec_env
     if DEFAULT_EXECUTION_ENVIRONMENT in execution_environment_id:
         pulumi.info("Using default GenAI Agentic Execution Environment.")
         execution_environment_id = RuntimeEnvironments.PYTHON_311_GENAI_AGENTS.value.id
 
-    # Get the pinned version ID if provided
-    execution_environment_version_id = os.environ.get(
-        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID", None
+    # Get the pinned version ID if provided (empty or whitespace = use latest)
+    _dr_exec_env_version = os.environ.get(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID", ""
+    ).strip()
+    execution_environment_version_id = (
+        _dr_exec_env_version if _dr_exec_env_version else None
     )
-    if not re.match("^[a-f\d]{24}$", str(execution_environment_version_id)):
+    if execution_environment_version_id and not re.match(
+        "^[a-f\d]{24}$", execution_environment_version_id
+    ):
         pulumi.info(
             "No valid execution environment version ID provided, using latest version."
         )
@@ -236,6 +242,101 @@ else:
         opts=pulumi.ResourceOptions(retain_on_delete=False),
     )
 
+
+def _parse_mcp_cli_enabled_set() -> set[str] | None:
+    raw = os.getenv("MCP_CLI_CONFIGS", "").strip()
+    return {s.strip().lower() for s in raw.split(",") if s.strip()} if raw else None
+
+
+_mcp_cli_enabled_set: set[str] | None = _parse_mcp_cli_enabled_set()
+
+
+def _bool_from_env_or_cli(env_key: str, mcp_opt: str, default: str) -> str:
+    """Use individual env var if set, else derive from MCP_CLI_CONFIGS, else default."""
+    if env_key in os.environ and os.environ[env_key].strip():
+        return str(os.environ[env_key]).lower()
+    if _mcp_cli_enabled_set is not None:
+        return "true" if mcp_opt in _mcp_cli_enabled_set else default
+    return default
+
+
+def _enabled_tools_runtime_params() -> list[
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs
+]:
+    """Build enable_* tool params; individual ENABLE_* env vars take precedence over MCP_CLI_CONFIGS."""
+    return [
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="enable_predictive_tools",
+            type="boolean",
+            value=_bool_from_env_or_cli(
+                "ENABLE_PREDICTIVE_TOOLS", "predictive", "true"
+            ),
+        ),
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="enable_jira_tools",
+            type="boolean",
+            value=_bool_from_env_or_cli("ENABLE_JIRA_TOOLS", "jira", "false"),
+        ),
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="enable_confluence_tools",
+            type="boolean",
+            value=_bool_from_env_or_cli(
+                "ENABLE_CONFLUENCE_TOOLS", "confluence", "false"
+            ),
+        ),
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="enable_gdrive_tools",
+            type="boolean",
+            value=_bool_from_env_or_cli("ENABLE_GDRIVE_TOOLS", "gdrive", "false"),
+        ),
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="enable_microsoft_graph_tools",
+            type="boolean",
+            value=_bool_from_env_or_cli(
+                "ENABLE_MICROSOFT_GRAPH_TOOLS", "microsoft_graph", "false"
+            ),
+        ),
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="enable_perplexity_tools",
+            type="boolean",
+            value=_bool_from_env_or_cli(
+                "ENABLE_PERPLEXITY_TOOLS", "perplexity", "false"
+            ),
+        ),
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="enable_tavily_tools",
+            type="boolean",
+            value=_bool_from_env_or_cli("ENABLE_TAVILY_TOOLS", "tavily", "false"),
+        ),
+    ]
+
+
+def _dynamic_registration_runtime_params() -> list[
+    pulumi_datarobot.CustomModelRuntimeParameterValueArgs
+]:
+    """Build dynamic tools/prompts params; individual env vars take precedence over MCP_CLI_CONFIGS."""
+    return [
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="mcp_server_register_dynamic_tools_on_startup",
+            type="boolean",
+            value=_bool_from_env_or_cli(
+                "MCP_SERVER_REGISTER_DYNAMIC_TOOLS_ON_STARTUP",
+                "dynamic_tools",
+                "false",
+            ),
+        ),
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="mcp_server_register_dynamic_prompts_on_startup",
+            type="boolean",
+            value=_bool_from_env_or_cli(
+                "MCP_SERVER_REGISTER_DYNAMIC_PROMPTS_ON_STARTUP",
+                "dynamic_prompts",
+                "false",
+            ),
+        ),
+    ]
+
+
 # Custom Model
 deployments_model_runtime_parameters: list[
     pulumi_datarobot.CustomModelRuntimeParameterValueArgs
@@ -250,13 +351,7 @@ deployments_model_runtime_parameters: list[
         type="string",
         value=os.getenv("MCP_SERVER_LOG_LEVEL", "WARNING"),
     ),
-    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-        key="mcp_server_register_dynamic_tools_on_startup",
-        type="boolean",
-        value=str(
-            os.getenv("MCP_SERVER_REGISTER_DYNAMIC_TOOLS_ON_STARTUP", "false")
-        ).lower(),
-    ),
+    *_dynamic_registration_runtime_params(),
     pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
         key="tool_registration_duplicate_behavior",
         type="string",
@@ -269,13 +364,6 @@ deployments_model_runtime_parameters: list[
         type="boolean",
         value=str(
             os.getenv("MCP_SERVER_TOOL_REGISTRATION_ALLOW_EMPTY_SCHEMA", "false")
-        ).lower(),
-    ),
-    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-        key="mcp_server_register_dynamic_prompts_on_startup",
-        type="boolean",
-        value=str(
-            os.getenv("MCP_SERVER_REGISTER_DYNAMIC_PROMPTS_ON_STARTUP", "false")
         ).lower(),
     ),
     pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
@@ -306,31 +394,7 @@ deployments_model_runtime_parameters: list[
         type="boolean",
         value=str(os.getenv("ENABLE_MEMORY_MANAGEMENT", "false")).lower(),
     ),
-    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-        key="enable_predictive_tools",
-        type="boolean",
-        value=str(os.getenv("ENABLE_PREDICTIVE_TOOLS", "true")).lower(),
-    ),
-    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-        key="enable_jira_tools",
-        type="boolean",
-        value=str(os.getenv("ENABLE_JIRA_TOOLS", "false")).lower(),
-    ),
-    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-        key="enable_confluence_tools",
-        type="boolean",
-        value=str(os.getenv("ENABLE_CONFLUENCE_TOOLS", "false")).lower(),
-    ),
-    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-        key="enable_gdrive_tools",
-        type="boolean",
-        value=str(os.getenv("ENABLE_GDRIVE_TOOLS", "false")).lower(),
-    ),
-    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-        key="enable_microsoft_graph_tools",
-        type="boolean",
-        value=str(os.getenv("ENABLE_MICROSOFT_GRAPH_TOOLS", "false")).lower(),
-    ),
+    *_enabled_tools_runtime_params(),
 ]
 
 
