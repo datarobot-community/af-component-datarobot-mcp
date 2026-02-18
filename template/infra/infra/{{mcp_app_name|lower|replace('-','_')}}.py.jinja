@@ -256,7 +256,7 @@ def _bool_from_env_or_cli(env_key: str, mcp_opt: str, default: str) -> str:
     if env_key in os.environ and os.environ[env_key].strip():
         return str(os.environ[env_key]).lower()
     if _mcp_cli_enabled_set is not None:
-        return "true" if mcp_opt in _mcp_cli_enabled_set else default
+        return "true" if mcp_opt in _mcp_cli_enabled_set else "false"
     return default
 
 

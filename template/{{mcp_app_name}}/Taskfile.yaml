@@ -38,7 +38,8 @@ tasks:
       - echo "MCP Server running on port {{.PORT}}"
       # Kill any existing process on the port
       - echo "Killing existing process on port {{.PORT}}"
-      - lsof -i :{{.PORT}} > /dev/null 2>&1 && echo "Killing existing process on port {{.PORT}}" && lsof -i :{{.PORT}} | grep LISTEN | awk '{print $2}' | xargs kill -9 2>/dev/null || true
+      - lsof -i :{{.PORT}} > /dev/null 2>&1 && echo "Killing existing process on port {{.PORT}}" && lsof -i :{{.PORT}} | grep
+        LISTEN | awk '{print $2}' | xargs kill -9 2>/dev/null || true
       - task: install
       # Start server (OTEL disabled so no collector required)
       - |
