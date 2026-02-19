@@ -211,7 +211,7 @@ if _dr_exec_env:
         _dr_exec_env_version if _dr_exec_env_version else None
     )
     if execution_environment_version_id and not re.match(
-        "^[a-f\d]{24}$", execution_environment_version_id
+        r"^[a-f\d]{24}$", execution_environment_version_id
     ):
         pulumi.info(
             "No valid execution environment version ID provided, using latest version."
