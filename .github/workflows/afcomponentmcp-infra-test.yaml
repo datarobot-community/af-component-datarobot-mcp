@@ -45,6 +45,7 @@ jobs:
         working-directory: ./rendered/infra
         run: |
           cp ../../fixtures/infra/pyproject.toml ./pyproject.toml
+          cp ../../fixtures/infra/Pulumi.yaml ./Pulumi.yaml
           cp ../../fixtures/infra/infra/__init__.py ./infra/__init__.py
           uv sync --extra dev
         env:
