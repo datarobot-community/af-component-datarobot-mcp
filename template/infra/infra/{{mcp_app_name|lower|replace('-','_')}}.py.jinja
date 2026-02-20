@@ -197,7 +197,7 @@ def get_deployments_app_files(
 
 # Start of Pulumi settings and application infrastructure
 _dr_exec_env = os.environ.get("DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "").strip()
-if _dr_exec_env:
+if len(_dr_exec_env) > 0:
     # Get the default execution environment from environment variable
     execution_environment_id = _dr_exec_env
     if DEFAULT_EXECUTION_ENVIRONMENT in execution_environment_id:
