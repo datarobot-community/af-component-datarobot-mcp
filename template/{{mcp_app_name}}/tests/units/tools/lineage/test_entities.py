@@ -13,12 +13,13 @@
 # limitations under the License.
 from unittest.mock import Mock
 
-from dr_mcp.tools.lineage.entities import (
+from pydantic import AnyUrl
+
+from tools.lineage.entities import (
     UserMCPPromptMetadata,
     UserMCPResourceMetadata,
     UserMCPToolMetadata,
 )
-from pydantic import AnyUrl
 
 
 class TestUserMCPToolMetadata:

@@ -17,12 +17,16 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import yaml  # type: ignore[import-untyped]
-from dr_mcp.tools.lineage.entities import (
+from fastmcp.prompts import Prompt
+from fastmcp.resources import Resource
+from fastmcp.tools import Tool
+
+from tools.lineage.entities import (
     UserMCPPromptMetadata,
     UserMCPResourceMetadata,
     UserMCPToolMetadata,
 )
-from dr_mcp.tools.lineage.utils import (
+from tools.lineage.utils import (
     get_dr_mcp_server_instance,
     get_mcp_item_metadata_dir_path,
     get_mcp_prompt_dir_path,
@@ -35,15 +39,12 @@ from dr_mcp.tools.lineage.utils import (
     save_mcp_resources,
     save_mcp_tools,
 )
-from fastmcp.prompts import Prompt
-from fastmcp.resources import Resource
-from fastmcp.tools import Tool
 
 
 class TestLineageUtils:
     @pytest.fixture
     def module_under_testing(self) -> str:
-        return "dr_mcp.tools.lineage.utils"
+        return "tools.lineage.utils"
 
     @pytest.fixture
     def mock_mcp(self, module_under_testing: str) -> Iterator[Mock]:
