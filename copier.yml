@@ -5,6 +5,11 @@ mcp_app_name:
   default: "mcp_server"
   help: "The name/folder of your DataRobot MCP Web App. Required to use a python friendly name like mcp_server or mcp_deployments"
 
+mcp_app_name_file:
+  type: str
+  default: "{{mcp_app_name|lower|replace('-','_')}}"
+  when: false
+
 copyright_year:
   type: int
   default: 2025
