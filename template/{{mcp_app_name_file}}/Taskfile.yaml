@@ -213,3 +213,10 @@ tasks:
         echo "mkdir -p ./docs ./img && mv ./dr_mcp/docs/* ./docs/ && mv ./dr_mcp/img/* ./img/ && mv ./dr_mcp/.env.template
         ./.env.template && mv ./dr_mcp/README.md ./README.md"
     silent: true
+
+  load-and-save-mcp-item-metadata:
+    desc: "Load and save MCP item metadata"
+    cmds:
+      - echo "🔧 Loading and saving MCP item metadata.."
+      - "{{.UV_CMD}} sync --all-extras"
+      - "{{.UV_CMD}} run tools/lineage/cli.py load-and-save-mcp-item-metadata"

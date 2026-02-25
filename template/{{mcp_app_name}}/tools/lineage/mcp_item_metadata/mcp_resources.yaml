@@ -1,0 +1,3 @@
+- name: user_resource_example
+  type: USER_RESOURCE
+  uri: uri://aa
