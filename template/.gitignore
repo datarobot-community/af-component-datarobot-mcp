@@ -185,3 +185,7 @@ temp.txt
 .datarobot/state/
 Taskfile.gen.yaml
 .datarobot/cli/state.yaml
+
+# This is the folder of MCP item metadata which is extracted before deployment (pulumi/Terraform). It will be saved to
+# DB through the pulumi/Terraform-based MCP deployment automation.
+/{{ mcp_app_name_file }}/dev_tools/lineage/mcp_item_metadata/
