@@ -69,6 +69,7 @@ def get_dr_mcp_server_instance() -> DataRobotMCPServer:
             (str(get_mcp_prompt_dir_path()), "app.prompts"),
             (str(get_mcp_resource_dir_path()), "app.resources"),
         ],
+        load_native_mcp_tools=True,
     )
     return mcp_server
 
