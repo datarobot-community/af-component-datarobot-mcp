@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from click.testing import CliRunner
 
-from tools.lineage.cli import (
+from dev_tools.lineage.cli import (
     load_and_save_mcp_item_metadata,
     run_load_and_save_mcp_item_metadata,
 )
@@ -26,7 +26,7 @@ from tools.lineage.cli import (
 
 @pytest.fixture
 def module_under_test() -> str:
-    return "tools.lineage.cli"
+    return "dev_tools.lineage.cli"
 
 
 class TestLoadAndSaveMCPItemMetadata:

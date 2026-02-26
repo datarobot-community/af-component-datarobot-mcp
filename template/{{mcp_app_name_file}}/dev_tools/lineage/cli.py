@@ -15,7 +15,7 @@ import asyncio
 
 import click
 
-from tools.lineage.utils import (
+from dev_tools.lineage.utils import (
     get_dr_mcp_server_instance,
     load_and_save_mcp_prompts_metadata,
     load_and_save_mcp_resources_metadata,

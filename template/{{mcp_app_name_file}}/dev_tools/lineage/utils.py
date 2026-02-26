@@ -20,7 +20,7 @@ import yaml  # type: ignore[import-untyped]
 from datarobot_genai.drmcp.core.dr_mcp_server import DataRobotMCPServer
 from datarobot_genai.drmcp.core.mcp_instance import mcp
 
-from tools.lineage.entities import (
+from dev_tools.lineage.entities import (
     UserMCPPromptMetadata,
     UserMCPResourceMetadata,
     UserMCPToolMetadata,

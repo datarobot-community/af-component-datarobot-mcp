@@ -21,12 +21,12 @@ from fastmcp.prompts import Prompt
 from fastmcp.resources import Resource
 from fastmcp.tools import Tool
 
-from tools.lineage.entities import (
+from dev_tools.lineage.entities import (
     UserMCPPromptMetadata,
     UserMCPResourceMetadata,
     UserMCPToolMetadata,
 )
-from tools.lineage.utils import (
+from dev_tools.lineage.utils import (
     get_dr_mcp_server_instance,
     get_mcp_item_metadata_dir_path,
     get_mcp_prompt_dir_path,
@@ -44,7 +44,7 @@ from tools.lineage.utils import (
 class TestLineageUtils:
     @pytest.fixture
     def module_under_testing(self) -> str:
-        return "tools.lineage.utils"
+        return "dev_tools.lineage.utils"
 
     @pytest.fixture
     def mock_mcp(self, module_under_testing: str) -> Iterator[Mock]:
@@ -163,6 +163,7 @@ class TestLineageUtils:
                 (str(mock_get_mcp_prompt_dir_path.return_value), "app.prompts"),
                 (str(mock_get_mcp_resource_dir_path.return_value), "app.resources"),
             ],
+            load_native_mcp_tools=True,
         )
         assert dr_mcp_server == mock_dr_mcp_server_cls.return_value
 

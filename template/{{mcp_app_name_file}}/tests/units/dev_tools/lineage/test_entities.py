@@ -15,7 +15,7 @@ from unittest.mock import Mock
 
 from pydantic import AnyUrl
 
-from tools.lineage.entities import (
+from dev_tools.lineage.entities import (
     UserMCPPromptMetadata,
     UserMCPResourceMetadata,
     UserMCPToolMetadata,
