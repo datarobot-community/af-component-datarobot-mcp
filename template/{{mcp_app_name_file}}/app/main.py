@@ -22,8 +22,7 @@ from typing import Any
 
 import requests
 from datarobot.errors import ClientError
-from datarobot_genai.drmcp import create_mcp_server
-from datarobot_genai.drmcp import get_config
+from datarobot_genai.drmcp import create_mcp_server, get_config
 
 from app.core.server_lifecycle import ServerLifecycle
 from app.core.user_config import get_user_config
@@ -44,13 +43,15 @@ def _get_server_port() -> int:
 
 
 def _is_port_in_use(port: int, host: str = "0.0.0.0") -> bool:
-    """Return True if the given host:port is already in use."""
+    """Return True if the given host:port is already in use (EADDRINUSE only)."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.bind((host, port))
             return False
-        except OSError:
-            return True
+        except OSError as e:
+            if e.errno == errno.EADDRINUSE:
+                return True
+            raise
 
 
 def _format_port_in_use_message(port: int) -> str:
@@ -92,9 +93,10 @@ def handle_asyncio_exception(
         # Suppress KeyboardInterrupt tracebacks during shutdown
         return
     # User-friendly message for port-already-in-use (e.g. from uvicorn bind)
-    if isinstance(exception, OSError) and getattr(
-        exception, "errno", None
-    ) == errno.EADDRINUSE:
+    if (
+        isinstance(exception, OSError)
+        and getattr(exception, "errno", None) == errno.EADDRINUSE
+    ):
         port = _get_server_port()
         logger.error("%s", _format_port_in_use_message(port))
         sys.exit(1)
@@ -146,14 +148,16 @@ if __name__ == "__main__":
 
     try:
         server.run(show_banner=True)
+    except requests.exceptions.ConnectionError:
+        # Handle before OSError: ConnectionError is a subclass of OSError; if we
+        # caught OSError first we would re-raise (errno is None) and this would never run.
+        logger.error("%s", _CONNECTION_ERROR_MSG)
+        sys.exit(1)
     except OSError as e:
         if e.errno == errno.EADDRINUSE:
             logger.error("%s", _format_port_in_use_message(port))
         else:
             raise
-        sys.exit(1)
-    except requests.exceptions.ConnectionError:
-        logger.error("%s", _CONNECTION_ERROR_MSG)
         sys.exit(1)
     except ClientError as e:
         if e.status_code == 401:
