@@ -50,6 +50,7 @@ def _is_port_in_use(port: int, host: str = "0.0.0.0") -> bool:
             return False
         except OSError as e:
             if e.errno == errno.EADDRINUSE:
+                logger.error("%s", _format_port_in_use_message(port))
                 return True
             raise
 
@@ -129,7 +130,6 @@ if __name__ == "__main__":
     # Check if port is already in use before starting (avoids noisy traceback)
     port = _get_server_port()
     if _is_port_in_use(port):
-        logger.error("%s", _format_port_in_use_message(port))
         sys.exit(1)
 
     # Create server with user extensions
