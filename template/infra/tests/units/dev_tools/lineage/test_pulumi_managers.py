@@ -20,22 +20,22 @@ from typing import Iterator
 import yaml  # type: ignore[import-untyped]
 import pulumi
 
-from tools.lineage.entities import MCPToolMetadata
-from tools.lineage.entities import MCPPromptMetadata
-from tools.lineage.entities import MCPResourceMetadata
-from tools.lineage.pulumi_managers import MCPToolMetadataPulumiManager
-from tools.lineage.pulumi_managers import MCPPromptMetadataPulumiManager
-from tools.lineage.pulumi_managers import MCPResourceMetadataPulumiManager
-from tools.lineage.pulumi_managers import get_mcp_item_metadata_dir_path
-from tools.lineage.pulumi_managers import get_mcp_tool_metadata_file_path
-from tools.lineage.pulumi_managers import get_mcp_prompt_metadata_file_path
-from tools.lineage.pulumi_managers import get_mcp_resource_metadata_file_path
-from tools.lineage.pulumi_managers import load_from_yaml
+from dev_tools.lineage.entities import MCPToolMetadata
+from dev_tools.lineage.entities import MCPPromptMetadata
+from dev_tools.lineage.entities import MCPResourceMetadata
+from dev_tools.lineage.pulumi_managers import MCPToolMetadataPulumiManager
+from dev_tools.lineage.pulumi_managers import MCPPromptMetadataPulumiManager
+from dev_tools.lineage.pulumi_managers import MCPResourceMetadataPulumiManager
+from dev_tools.lineage.pulumi_managers import get_mcp_item_metadata_dir_path
+from dev_tools.lineage.pulumi_managers import get_mcp_tool_metadata_file_path
+from dev_tools.lineage.pulumi_managers import get_mcp_prompt_metadata_file_path
+from dev_tools.lineage.pulumi_managers import get_mcp_resource_metadata_file_path
+from dev_tools.lineage.pulumi_managers import load_from_yaml
 
 
 @pytest.fixture
 def module_under_test() -> str:
-    return "tools.lineage.pulumi_managers"
+    return "dev_tools.lineage.pulumi_managers"
 
 
 @pytest.fixture

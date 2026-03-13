@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from tools.lineage.entities import MCPPromptMetadata
-from tools.lineage.entities import MCPToolMetadata
-from tools.lineage.entities import MCPResourceMetadata
-from tools.lineage.enums import DataRobotMCPToolCategory
-from tools.lineage.enums import DataRobotMCPPromptCategory
-from tools.lineage.enums import DataRobotMCPResourceCategory
+from dev_tools.lineage.entities import MCPPromptMetadata
+from dev_tools.lineage.entities import MCPToolMetadata
+from dev_tools.lineage.entities import MCPResourceMetadata
+from dev_tools.lineage.enums import DataRobotMCPToolCategory
+from dev_tools.lineage.enums import DataRobotMCPPromptCategory
+from dev_tools.lineage.enums import DataRobotMCPResourceCategory
 
 
 class TestMCPToolMetadata:

@@ -17,12 +17,12 @@ from typing import Iterator
 from unittest.mock import Mock
 from unittest.mock import patch
 
-from tools.lineage.utils import is_lineage_feature_enabled
+from dev_tools.lineage.utils import is_lineage_feature_enabled
 
 
 @pytest.fixture
 def module_under_test() -> str:
-    return "tools.lineage.utils"
+    return "dev_tools.lineage.utils"
 
 
 @pytest.fixture

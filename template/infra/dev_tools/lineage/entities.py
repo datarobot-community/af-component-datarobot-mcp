@@ -22,9 +22,9 @@ from pulumi_datarobot import (
     UserMcpResourceMetadata as UserMcpResourceMetadataPulumiResource,
 )
 
-from tools.lineage.enums import DataRobotMCPToolCategory
-from tools.lineage.enums import DataRobotMCPPromptCategory
-from tools.lineage.enums import DataRobotMCPResourceCategory
+from dev_tools.lineage.enums import DataRobotMCPToolCategory
+from dev_tools.lineage.enums import DataRobotMCPPromptCategory
+from dev_tools.lineage.enums import DataRobotMCPResourceCategory
 
 
 class MCPToolMetadataDictType(TypedDict):

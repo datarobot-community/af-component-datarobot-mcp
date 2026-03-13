@@ -27,19 +27,19 @@ from pulumi_datarobot import (
     UserMcpResourceMetadata as UserMcpResourceMetadataPulumiResource,
 )
 
-from tools.lineage.entities import MCPToolMetadata
-from tools.lineage.entities import MCPPromptMetadata
-from tools.lineage.entities import MCPResourceMetadata
-from tools.lineage.entities import MCPToolMetadataPulumiResourceCreateOutput
-from tools.lineage.entities import MCPPromptMetadataPulumiResourceCreateOutput
-from tools.lineage.entities import MCPResourceMetadataPulumiResourceCreateOutput
+from dev_tools.lineage.entities import MCPToolMetadata
+from dev_tools.lineage.entities import MCPPromptMetadata
+from dev_tools.lineage.entities import MCPResourceMetadata
+from dev_tools.lineage.entities import MCPToolMetadataPulumiResourceCreateOutput
+from dev_tools.lineage.entities import MCPPromptMetadataPulumiResourceCreateOutput
+from dev_tools.lineage.entities import MCPResourceMetadataPulumiResourceCreateOutput
 
 
 def get_mcp_item_metadata_dir_path() -> Path:
     current_path = Path(os.path.dirname(__file__))
     return (
         current_path.parent.parent.parent
-        / "dr_mcp"
+        / "{{mcp_app_name}}"
         / "dev_tools"
         / "lineage"
         / "mcp_item_metadata"

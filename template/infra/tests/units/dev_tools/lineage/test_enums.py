@@ -13,9 +13,9 @@
 # limitations under the License.
 import pytest
 
-from tools.lineage.enums import DataRobotMCPPromptCategory
-from tools.lineage.enums import DataRobotMCPResourceCategory
-from tools.lineage.enums import DataRobotMCPToolCategory
+from dev_tools.lineage.enums import DataRobotMCPPromptCategory
+from dev_tools.lineage.enums import DataRobotMCPResourceCategory
+from dev_tools.lineage.enums import DataRobotMCPToolCategory
 
 
 class TestDataRobotMCPToolCategory:
