@@ -19,13 +19,13 @@ from datarobot.utils import camelize
 
 class DataRobotMCPToolCategory(Enum):
     USER_TOOL = auto()  # tools created as mcp tool decorated python function by users
-    BUILD_IN_TOOL = auto()  # tools as a wrapper of external service
+    BUILT_IN_TOOL = auto()  # tools as a wrapper of external service
 
     @staticmethod
     def from_string(enum_str: str) -> "DataRobotMCPToolCategory":
         enum_str_map = {
             "USER_TOOL": DataRobotMCPToolCategory.USER_TOOL,
-            "BUILD_IN_TOOL": DataRobotMCPToolCategory.BUILD_IN_TOOL,
+            "BUILT_IN_TOOL": DataRobotMCPToolCategory.BUILT_IN_TOOL,
         }
         if enum_str not in enum_str_map:
             error_msg = f"Enum string should be one of {', '.join(enum_str_map.keys())}"
