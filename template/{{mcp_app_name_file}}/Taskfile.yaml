@@ -25,6 +25,8 @@ tasks:
       - echo "🔧 Installing dependencies.."
       - "{{.UV_CMD}} sync --all-extras"
       - task: generate-docker-requirement-file
+      - echo "🔧 Collecting and saving MCP item metadata.."
+      - task: load-and-save-mcp-item-metadata
     silent: true
 
   dev:
