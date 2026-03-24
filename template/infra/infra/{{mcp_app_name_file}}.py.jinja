@@ -28,7 +28,7 @@ from dev_tools.lineage.pulumi_managers import MCPPromptMetadataPulumiManager
 from dev_tools.lineage.pulumi_managers import MCPResourceMetadataPulumiManager
 from dev_tools.lineage.utils import is_lineage_feature_enabled
 
-from . import project_dir, use_case
+from . import project_dir, use_case, prediction_environment
 
 from .{{mcp_app_name}}_user_params import MCP_USER_RUNTIME_PARAMETERS
 
@@ -560,21 +560,13 @@ registerd_model = pulumi_datarobot.RegisteredModel(
     use_case_ids=[use_case.id],
 )
 
-# Where to run the custom model
-base_prediction_environment = pulumi_datarobot.PredictionEnvironment(
-    resource_name=mcp_server_asset_name + " Prediction Environment",
-    name=mcp_server_asset_name,
-    platform=dr.enums.PredictionEnvironmentPlatform.DATAROBOT_SERVERLESS,
-    opts=pulumi.ResourceOptions(retain_on_delete=False),
-)
-
 # Deploy the registered custom model
 deployment = pulumi_datarobot.Deployment(
     resource_name=mcp_server_asset_name + " Deployment",
     label=mcp_server_asset_name,
     use_case_ids=[use_case.id],
     registered_model_version_id=registerd_model.version_id,
-    prediction_environment_id=base_prediction_environment.id,
+    prediction_environment_id=prediction_environment.id,
 )
 
 datarobot_endpoint = os.getenv("DATAROBOT_ENDPOINT", "").rstrip("/")
