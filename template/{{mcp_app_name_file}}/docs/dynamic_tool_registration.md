@@ -222,7 +222,7 @@ Use these commands to inspect the deployment and, for DRUM or custom servers, te
 ```bash
 # Check that the deployment is active and tagged correctly.
 curl -H "Authorization: Bearer $DATAROBOT_API_TOKEN" \
-  "$DATAROBOT_ENDPOINT/deployments/{deployment-id}/" | jq .
+  "$DATAROBOT_ENDPOINT/api/v2/deployments/{deployment-id}/" | jq .
 
 # Check the /info/ endpoint for DRUM and custom server deployments.
 curl -H "Authorization: Bearer $DATAROBOT_API_TOKEN" \

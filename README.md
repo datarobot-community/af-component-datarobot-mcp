@@ -152,11 +152,11 @@ The following integration tools require authentication to be configured via Data
 
 - **`microsoft_graph_search_content`** — Search for SharePoint and OneDrive content using Microsoft Graph Search API with pagination, filtering, and entity type selection
 
-> **Note:** Integration tools require OAuth authentication to be configured via DataRobot OAuth providers. See the [Development Documentation](template/{{mcp_app_name}}/dev.md) for configuration details.
+> **Note:** Integration tools require OAuth authentication to be configured via DataRobot OAuth providers. See the [Development Documentation](template/{{mcp_app_name_file}}/dev.md) for configuration details.
 
 ## Developer guide
 
-Refer to the [Development Documentation](template/{{mcp_app_name}}/dev.md) for more details on the developer guide.
+Refer to the [Development Documentation](template/{{mcp_app_name_file}}/dev.md) for more details on the developer guide.
 
 # Get help
 
