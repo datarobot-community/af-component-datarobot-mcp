@@ -116,7 +116,10 @@ For FastAPI, Flask, and similar services, expose an `/info/` endpoint that retur
 {
   "endpoint": "/weather/{city}",
   "method": "GET",
-  "input_schema": {}
+  "input_schema": {
+    "type": "object",
+    "properties": {}
+  }
 }
 ```
 
@@ -223,7 +226,7 @@ curl -H "Authorization: Bearer $DATAROBOT_API_TOKEN" \
 
 # Check the /info/ endpoint for DRUM and custom server deployments.
 curl -H "Authorization: Bearer $DATAROBOT_API_TOKEN" \
-  "$DATAROBOT_ENDPOINT/deployments/{deployment-id}/directAccess/info/" | jq .
+  "$DATAROBOT_ENDPOINT/api/v2/deployments/{deployment-id}/directAccess/info/" | jq .
 ```
 
 ### Common errors

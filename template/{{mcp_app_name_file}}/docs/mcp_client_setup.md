@@ -26,9 +26,9 @@ It includes:
 
 Before you begin, make sure you have:
 
-- A [running MCP server](../README.md#getting-started) (locally or deployed to DataRobot)
-- Your [DataRobot API token](../README.md#api-keys) (for remote connections)
-- The [MCP endpoint URL](../README.md#mcp-endpoint)
+- A [running MCP server](../README.md#run-locally) (locally or deployed to DataRobot)
+- Your [DataRobot API token](../README.md#add-api-credentials) (for remote connections)
+- The [MCP endpoint URL](../README.md)
 
 By default, this template serves MCP locally at `http://localhost:8080/mcp/`. If you set `MCP_SERVER_PORT`, replace `8080` in the examples below with your configured port.
 
@@ -135,7 +135,7 @@ brew install node
 # Or download Node.js from https://nodejs.org/
 ```
 
-1. Edit `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, or the equivalent path on your OS.
+2. Edit `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, or the equivalent path on your OS.
 
 #### Local MCP server
 
