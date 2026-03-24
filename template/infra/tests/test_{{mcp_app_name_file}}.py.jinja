@@ -35,8 +35,11 @@ def pulumi_mocks(monkeypatch, tmp_path):
     mock_use_case = MagicMock()
     mock_use_case.id = "mock-use-case-id"
     mock_project_dir = tmp_path
+    mock_prediction_environment = MagicMock()
+    mock_prediction_environment.id = "mock-prediction-environment-id"
     monkeypatch.setattr("infra.use_case", mock_use_case)
     monkeypatch.setattr("infra.project_dir", mock_project_dir)
+    monkeypatch.setattr("infra.prediction_environment", mock_prediction_environment)
 
     # Create the mcp app directory structure expected by module-level code.
     # deployments_application_path = project_dir.parent / "{{mcp_app_name}}"
@@ -58,7 +61,6 @@ def pulumi_mocks(monkeypatch, tmp_path):
     monkeypatch.setattr("pulumi_datarobot.ExecutionEnvironment", MagicMock())
     monkeypatch.setattr("pulumi_datarobot.CustomModel", MagicMock())
     monkeypatch.setattr("pulumi_datarobot.RegisteredModel", MagicMock())
-    monkeypatch.setattr("pulumi_datarobot.PredictionEnvironment", MagicMock())
     monkeypatch.setattr("pulumi_datarobot.Deployment", MagicMock())
     monkeypatch.setattr("pulumi_datarobot.ApiTokenCredential", MagicMock())
     monkeypatch.setattr("pulumi_datarobot.ApiTokenCredentialArgs", MagicMock())
