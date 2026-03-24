@@ -32,7 +32,7 @@ Before you begin, ensure you have the following:
 
 ## Getting started
 
-This template requires the base component https://github.com/datarobot/af-component-base to be installed.
+This template requires the [base component](https://github.com/datarobot/af-component-base) to be installed.
 Use the following command to install the base component:
 
 ```bash
@@ -46,19 +46,19 @@ uvx copier copy git@github.com:datarobot-community/af-component-datarobot-mcp.gi
 ```
 
 If a template requires multiple MCP backends, it can be used multiple times with a different answer to the `mcp_app_name` question.
-To update an existing MCP template, use the following command to update the template files:
+To update an existing MCP template in the project, use the following command to update the template files:
 
 ```bash
 uvx copier update -a .datarobot/answers/drmcp-{{ mcp_app_name }}.yml -A
 ```
 
-To update all templates that are copied, use the following command:
+To update all templates in the project, use the following command:
 
 ```bash
 uvx copier update -a .datarobot/answers/* -A
 ```
 
-To update just the MCP template, use the following command:
+To update all files in the project, use the following command:
 
 ```bash
 uvx copier update -a .datarobot/*
