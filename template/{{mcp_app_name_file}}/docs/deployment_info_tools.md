@@ -1,19 +1,23 @@
-# Deployment Information Tools for Building Prediction Datasets
+# Deployment information tools for building prediction datasets
 
-The Deployments MCP Server provides several tools to help AI agents understand deployment data requirements and build prediction datasets on the fly. These tools are essential for the use cases described in the tech spec where agents need to dynamically create prediction data.
+These tools help AI agents understand what input data a deployment expects and create valid prediction datasets at runtime. They are especially useful when an agent must generate prediction data without human help.
 
-## Tools Overview
+## Tools overview
 
-### 1. `get_deployment_features`
-**Purpose**: Get comprehensive information about the features required by a deployment.
+### `get_deployment_features`
 
-**Returns**:
-- Feature names and types (numeric, categorical, text, date)
-- Feature importance scores (0-1 scale)
-- Target information
-- Time series configuration (if applicable)
+Use this tool to inspect the features required by a deployment.
 
-**Example Use Case**: Agent needs to know what columns and data types are required to make predictions.
+It returns:
+
+- feature names and types, such as numeric, categorical, text, and date
+- feature importance scores
+- target information
+- time series settings, when applicable
+
+Typical use case: an agent needs to determine which columns and data types are required before generating input data.
+
+Example response:
 
 ```json
 {
@@ -44,85 +48,113 @@ The Deployments MCP Server provides several tools to help AI agents understand d
 }
 ```
 
-### 2. `get_deployment_training_data_sample`
-**Purpose**: Get actual examples of training data to understand the expected format.
+### `get_deployment_training_data_sample`
 
-**Returns**: Sample CSV with metadata about the full dataset.
+Use this tool to retrieve sample training data for the deployment.
 
-**Example Use Case**: Agent needs to see real examples of valid input data to understand formatting, value ranges, and patterns.
+It returns:
 
-### 3. `generate_prediction_data_template`
-**Purpose**: Generate a ready-to-use CSV template with proper structure.
+- example rows from the training data
+- metadata about the full dataset
 
-**Returns**: CSV template with:
-- All required columns in correct order
-- Sample values appropriate for each feature type
-- Metadata comments explaining the model
+Typical use case: an agent needs real examples of valid input values, formats, or patterns.
 
-**Example Use Case**: Agent needs to quickly create a valid prediction dataset structure that can be filled with specific values.
+### `generate_prediction_data_template`
 
-### 4. `validate_prediction_data`
-**Purpose**: Check if a dataset is valid for making predictions.
+Use this tool to create a prediction template with the correct structure.
 
-**Returns**: Validation report with:
-- Errors (missing required features, wrong types)
-- Warnings (missing low-importance features)
-- Info (extra columns that will be ignored)
+It returns:
 
-**Example Use Case**: Before making predictions, agent validates the generated data to ensure it will work.
+- all required columns in the expected order
+- sample values based on feature types
+- metadata comments that explain the model
 
-## Example Agent Workflow
+Typical use case: an agent needs a valid starting point that it can fill in with user-specific values.
 
-Here's how an agent might use these tools to handle a user request:
+### `validate_prediction_data`
 
-**User**: "I want to predict sales for next week for store_A with temperatures of 75°F each day and no promotions."
+Use this tool to confirm that a dataset can be used for prediction.
 
-**Agent Workflow**:
+It returns:
 
-1. **Get deployment features**:
-   ```
+- errors, such as missing required features or invalid types
+- warnings, such as missing low-importance features
+- informational messages, such as extra columns that will be ignored
+
+Typical use case: an agent validates generated data before submitting it for prediction.
+
+## Example agent workflow
+
+Suppose a user says:
+
+`I want to predict sales for next week for store_A with temperatures of 75F each day and no promotions.`
+
+An agent could respond by following this workflow:
+
+1. Retrieve the deployment requirements:
+
+   ```text
    get_deployment_features(deployment_id="sales_forecast_deployment")
    ```
-   → Learns it needs: date, temperature, promotion, store_id columns
 
-2. **Generate template**:
-   ```
-   generate_prediction_data_template(deployment_id="sales_forecast_deployment", n_rows=7)
-   ```
-   → Gets CSV structure with 7 rows
+   The agent learns that it needs `date`, `temperature`, `promotion`, and `store_id`.
 
-3. **Modify template with user's values**:
-   - Set temperature = 75 for all rows
-   - Set promotion = 0 for all rows  
-   - Set store_id = "store_A" for all rows
-   - Set dates for next 7 days
+2. Generate a template:
 
-4. **Validate the data**:
-   ```
-   validate_prediction_data(deployment_id="sales_forecast_deployment", file_path="prediction_data.csv")
-   ```
-   → Confirms data is valid
-
-5. **Make predictions**:
-   ```
-   predict_realtime(deployment_id="sales_forecast_deployment", file_path="prediction_data.csv", forecast_point="2024-06-01")
+   ```text
+   generate_prediction_data_template(
+       deployment_id="sales_forecast_deployment",
+       n_rows=7
+   )
    ```
 
-## Benefits for AI Agents
+   The agent receives a seven-row CSV template.
 
-1. **Self-documenting**: Agents can discover what data is needed without external documentation
-2. **Type safety**: Feature type information prevents data type errors
-3. **Validation**: Catch issues before attempting predictions
-4. **Examples**: Training data samples show real-world valid inputs
-5. **Templates**: Quick starting point for data generation
+3. Fill in the user-specific values:
 
-## Integration with LLMs
+   - set `temperature` to `75` for all rows
+   - set `promotion` to `0` for all rows
+   - set `store_id` to `"store_A"` for all rows
+   - set the dates for the next seven days
 
-These tools are designed to provide information in formats that LLMs can easily understand and use:
+4. Validate the completed data:
 
-- JSON responses for structured information
-- CSV formats for tabular data
-- Clear error messages for troubleshooting
-- Metadata comments in generated templates
+   ```text
+   validate_prediction_data(
+       deployment_id="sales_forecast_deployment",
+       file_path="prediction_data.csv"
+   )
+   ```
 
-This enables agents to autonomously handle complex prediction scenarios without human intervention. 
+   The agent confirms that the data is valid.
+
+5. Submit the prediction request:
+
+   ```text
+   predict_realtime(
+       deployment_id="sales_forecast_deployment",
+       file_path="prediction_data.csv",
+       forecast_point="2024-06-01"
+   )
+   ```
+
+## Why these tools matter for agents
+
+These tools make the prediction workflow easier for agents because they provide:
+
+- self-documenting metadata about required inputs
+- type information that helps prevent formatting errors
+- validation before prediction requests are sent
+- sample data that shows realistic input values
+- templates that reduce the amount of data assembly an agent must do
+
+## Why these tools work well with LLMs
+
+The outputs are designed to be easy for LLMs to interpret and reuse:
+
+- JSON for structured metadata
+- CSV for tabular data
+- validation messages for troubleshooting
+- template comments for additional context
+
+Together, these tools enable agents to build and validate prediction datasets with less manual intervention.

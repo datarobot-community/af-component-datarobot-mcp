@@ -1,77 +1,69 @@
-## Dynamic Tool Registration
+# Dynamic tool registration
 
-Turn DataRobot deployments into LLM tools automatically. The MCP server proxies tool calls to your deployments.
+Dynamic tool registration lets the MCP server discover DataRobot deployments and expose them as MCP tools automatically. When a tool is invoked, the server proxies the request to the registered deployment.
 
-### Quick Start
+## Quick start
 
-1. Deploy your model/service to DataRobot
-2. Tag deployment with `tool` (both name and value)
-3. **Done!** (DataRobot native models and DRUM work with zero config)
+1. Deploy your model or service to DataRobot.
+2. Tag the deployment with `tool` as both the tag name and the tag value.
+3. Start the server with dynamic tool registration enabled, if needed.
 
-**Enable auto-discovery on startup (optional):**
+*Enable auto-discovery on startup (optional):*
+
 ```bash
 MCP_SERVER_REGISTER_DYNAMIC_TOOLS_ON_STARTUP=true
 ```
 
+For most deployment types, no additional configuration is needed.
 
----
+## Supported deployment types
 
-## What Works Out of the Box
+| Deployment type | Configuration needed |
+|---|---|
+| DataRobot native predictive models | None. Tag the deployment as `tool`. |
+| DRUM structured predictions | None. Optionally define `inputSchema` in `model-metadata.yaml`. |
+| DRUM agentic workflows | None. Optionally define `inputSchema` in `model-metadata.yaml`. |
+| DRUM unstructured models | Define `inputSchema` in `model-metadata.yaml`. |
+| Custom servers, such as FastAPI services | Expose an `/info/` endpoint with tool metadata. |
 
-| Deployment Type                                                   | Configuration Needed                                                     |
-|-------------------------------------------------------------------|--------------------------------------------------------------------------|
-| **DataRobot native predictive models** (binary, regression, etc.) | ✅ None - just tag as `tool`                                              |
-| **DRUM structured predictions**                                   | ✅ None (optional: add customized `inputSchema` in `model-metadata.yaml`) |
-| **DRUM agentic workflows**                                        | ✅ None (optional: add customized `inputSchema` in `model-metadata.yaml`) |
-| **DRUM unstructured**                                             | ⚠️ Must define `inputSchema` in `model-metadata.yaml`                    |
-| **Custom servers** (FastAPI, etc.)                                | ⚠️ Must expose `/info/` endpoint with metadata                           |
+Registering other MCP servers as tools through dynamic tool registration is not supported.
 
+## Registration requirements
 
-**Note**: Registering other MCP Servers as tools, using dynamic tool registration, is not supported.
+All deployments must:
 
----
+- be active
+- be tagged with `tool` as both the name and value
 
-## Registration Requirements
+Additional requirements depend on the deployment type:
 
-**All deployments must:**
-- Be tagged with `tool` (both name and value)
-- Be active
-
-**DataRobot native models:**
-- No additional requirements
-
-**DRUM deployments:**
-- For unstructured: Define `inputSchema` in `model-metadata.yaml`
-- For others: Optional, fallback schemas provided
-
-**Custom servers:**
-- Must expose `/info/` endpoint returning: `endpoint`, `method`, `input_schema`
-
---- 
+- DataRobot native models: no extra requirements
+- DRUM unstructured models: define `inputSchema` in `model-metadata.yaml`
+- custom servers: expose `/info/` and return `endpoint`, `method`, and `input_schema`
 
 ### Runtime API
-To manage tool registrations at runtime, use the following endpoints:
 
-- `GET /registeredDeployments/` - List tools
-- `PUT /registeredDeployments/{deployment_id}` - Register tool
-- `DELETE /registeredDeployments/{deployment_id}` - Remove tool
+Use these endpoints to manage registrations at runtime:
 
----
+- `GET /registeredDeployments/` to list registered tools
+- `PUT /registeredDeployments/{deployment_id}` to register a tool
+- `DELETE /registeredDeployments/{deployment_id}` to remove a tool
 
-## DRUM Deployments
+## DRUM deployments
 
-[DataRobot DRUM](https://pypi.org/project/datarobot-drum/) deployments work with minimal configuration.
+[DataRobot DRUM](https://pypi.org/project/datarobot-drum/) deployments usually work with little or no additional configuration.
 
-### Zero Configuration (Most Cases)
+### Zero configuration (for most cases)
 
-Deploy your model, tag as `tool`, and you're done:
-- **Structured predictions** (binary, regression, multiclass, etc.): Auto-configured
-- **Agentic workflows**: Auto-configured
-- **DataRobot native models**: Auto-configured
+For these deployment types, tag the deployment as `tool` and the server can register it automatically:
 
-### Unstructured Models (Configuration Required)
+- structured predictions, including binary, regression, and multiclass models
+- agentic workflows
+- DataRobot native predictive models
 
-For `unstructured` target type, add `inputSchema` to `model-metadata.yaml`:
+### Unstructured models
+
+For an `unstructured` target type, add `inputSchema` to `model-metadata.yaml`:
 
 ```yaml
 name: "Fetch dataset"
@@ -94,13 +86,14 @@ inputSchema:
         - dataset_id
 ```
 
-**Notes:** 
-    - All parameters must be under `json` property for unstructured models (see Input Schema Reference below).
-    - Exposing input schemas as metadata from `model-metadata.yaml` is supported in `datarobot-drum` version 1.17.2 and later.
+*Notes:*
 
-### Custom Schema (Optional)
+- For unstructured models, define request parameters under the `json` property.
+- Exposing input schemas from `model-metadata.yaml` requires `datarobot-drum` version `1.17.2` or later.
 
-Override fallback schemas for better LLM guidance and more control over request structure:
+### Optional custom schema
+
+You can override fallback schemas to give the LLM better guidance or tighter control over the request shape:
 
 ```yaml
 inputSchema:
@@ -113,23 +106,21 @@ inputSchema:
     - data
 ```
 
----
+## Custom server deployments
 
-## Custom Servers
+For FastAPI, Flask, and similar services, expose an `/info/` endpoint that returns tool metadata.
 
-For FastAPI, Flask, or other frameworks, expose an `/info/` endpoint with metadata.
-
-### Required `/info/` Response
+### Required `/info/` response
 
 ```json
 {
   "endpoint": "/weather/{city}",
   "method": "GET",
-  "input_schema": { /* JSON schema */ }
+  "input_schema": {}
 }
 ```
 
-### FastAPI Example
+### FastAPI example
 
 ```python
 from fastapi import FastAPI
@@ -137,33 +128,37 @@ from pydantic import BaseModel, Field
 
 app = FastAPI()
 
+
 class WeatherRequest(BaseModel):
     class PathParams(BaseModel):
         city: str = Field(description="City name")
-    
+
     class QueryParams(BaseModel):
         units: str = Field(default="metric", description="metric or imperial")
-    
+
     path_params: PathParams
     query_params: QueryParams | None = None
+
 
 @app.get("/info/")
 async def metadata():
     return {
-        #  Note: custom model deployments expose custom server endpoints behind 'directAccess/'
-        "endpoint": "directAccess/weather/{city}",       
+        # Custom model deployments expose custom server routes behind directAccess/.
+        "endpoint": "directAccess/weather/{city}",
         "method": "GET",
-        "input_schema": WeatherRequest.model_json_schema()
+        "input_schema": WeatherRequest.model_json_schema(),
     }
+
 
 @app.get("/weather/{city}")
 async def get_weather(city: str, units: str = "metric"):
     return {"city": city, "temp": 22, "units": units}
 ```
 
-### How the Weather Tool Works
+### Request mapping
 
-**LLM calls the tool:**
+Given this tool call:
+
 ```json
 {
   "path_params": {"city": "paris"},
@@ -171,81 +166,71 @@ async def get_weather(city: str, units: str = "metric"):
 }
 ```
 
-**MCP server makes HTTP request:**
-```
+the MCP server generates a request like:
+
+```text
 GET <base_url>/directAccess/weather/paris?units=imperial
 ```
 
-Notes: 
- - **base_url**: Address will be determined automatically based on your DataRobot deployment (e.g. `https://app.datarobot.com/api/v2/deployments/<deployment-id>`)
- - **directAccess/**: When deployed in custom models, custom server endpoints are exposed under this path prefix.
+Where:
 
----
+- `base_url` is derived from the DataRobot deployment URL
+- `directAccess/` is the prefix used for custom server endpoints in custom model deployments
 
-## Input Schema Reference
+## Input schema reference
 
-### Parameter Groups
+### Parameter groups
 
-The weather example above demonstrates how parameters map to HTTP requests:
+Parameters map to HTTP requests as follows:
 
-| Group | Purpose                     | Example from above |
-|-------|-----------------------------|-------------------|
-| `path_params` | URL path substitution       | `{city}` → `"paris"` |
-| `query_params` | URL query string            | `?units=metric` |
-| `data` | Raw request body (i.e. CSV) | Not used in weather example |
-| `json` | JSON request body           | Not used in weather example |
+| Group | Purpose | Example |
+|---|---|---|
+| `path_params` | Substitutes values into the URL path | `{city}` -> `"paris"` |
+| `query_params` | Adds query-string parameters | `?units=imperial` |
+| `data` | Sends a raw request body, such as CSV | Not used in the weather example |
+| `json` | Sends a JSON request body | Not used in the weather example |
 
 ### Rules
 
-- `path_params` and `query_params` must be flat (no nested objects)
-- `data` and `json` support nesting
-- All `{param}` in endpoint must exist in `path_params`
-- Empty schemas allowed with: `MCP_SERVER_TOOL_REGISTRATION_ALLOW_EMPTY_SCHEMA=true`
+- `path_params` and `query_params` must be flat objects
+- `data` and `json` can contain nested structures
+- every `{param}` in the endpoint must be present in `path_params`
+- empty schemas are allowed only when `MCP_SERVER_TOOL_REGISTRATION_ALLOW_EMPTY_SCHEMA=true`
 
-### Under the Hood
+### What the server does
 
-When an LLM calls the weather tool, the MCP server transforms it into an HTTP request:
+Internally, the MCP server transforms tool calls into HTTP requests. For the weather example, the request looks like this:
 
 ```python
-# What the MCP server does internally
 async with session.request(
-    method="GET",                                    # from /info/ metadata
-    url="<base_url>/directAccess/weather/paris",    # base_url + endpoint with path_params
-    params={"units": "imperial"}                    # query_params
+    method="GET",
+    url="<base_url>/directAccess/weather/paris",
+    params={"units": "imperial"},
 ) as response:
     return await response.json()
 ```
 
-**General mapping for all parameter types:**
-- `path_params` → substituted into URL path: `/weather/{city}` → `/weather/paris`
-- `query_params` → appended as query string: `?units=imperial`
-- `data` → sent as raw body (CSV, form data, etc.)
-- `json` → sent as JSON body (mutually exclusive with `data`)
-
----
-
 ## Troubleshooting
 
-### Tool Not Registering
+### Tool does not register
+
+Use these commands to inspect the deployment and, for DRUM or custom servers, test the `/info/` endpoint:
 
 ```bash
-# Check deployment is active and tagged
+# Check that the deployment is active and tagged correctly.
 curl -H "Authorization: Bearer $DATAROBOT_API_TOKEN" \
   "$DATAROBOT_ENDPOINT/deployments/{deployment-id}/" | jq .
 
-# Test /info/ endpoint (DRUM/Custom servers only)
+# Check the /info/ endpoint for DRUM and custom server deployments.
 curl -H "Authorization: Bearer $DATAROBOT_API_TOKEN" \
   "$DATAROBOT_ENDPOINT/deployments/{deployment-id}/directAccess/info/" | jq .
-
 ```
 
-### Common Errors
+### Common errors
 
 | Error | Fix |
-|-------|-----|
-| Missing `input_schema` | Custom servers: add to `/info/` response<br>DRUM unstructured: add to `model-metadata.yaml` |
-| Unsupported top-level property | Use only: `path_params`, `query_params`, `data`, `json` |
-| Nested structure in path_params | Flatten it or move to `json` property |
-| Missing path parameter | Define all `{variables}` in `path_params` |
-
-
+|---|---|
+| Missing `input_schema` | Add `input_schema` to the `/info/` response for custom servers, or add `inputSchema` to `model-metadata.yaml` for DRUM unstructured models. |
+| Unsupported top-level property | Use only `path_params`, `query_params`, `data`, and `json`. |
+| Nested structure in `path_params` | Flatten the structure or move it to `json`. |
+| Missing path parameter | Define every path variable from the endpoint in `path_params`. |
