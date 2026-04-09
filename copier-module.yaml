@@ -1,0 +1,7 @@
+module: af-component-fastmcp-backend
+short_description: "The FastMCP Component. Deploys a DataRobot MCP server with a variety of baked-in tools"
+repeatable: true
+depends_on:
+  base:
+    url: https://github.com/datarobot-community/af-component-fastmcp-backend
+
