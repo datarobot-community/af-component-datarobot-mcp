@@ -3,4 +3,4 @@ short_description: "The FastMCP Component. Deploys a DataRobot MCP server with a
 repeatable: true
 depends_on:
   base:
-    url: https://github.com/datarobot-community/af-component-datarobot-mcp
+    url: https://github.com/datarobot-community/af-component-base

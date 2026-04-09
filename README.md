@@ -88,7 +88,7 @@ The following components must be applied to the project **before** this componen
 
 | Name | Repository | Repeatable |
 |------|-----------|------------|
-| `base` | [https://github.com/datarobot-community/af-component-datarobot-mcp](https://github.com/datarobot-community/af-component-datarobot-mcp) | No |
+| `base` | [https://github.com/datarobot-community/af-component-base](https://github.com/datarobot-community/af-component-base) | No |
 
 # Available tools
 
