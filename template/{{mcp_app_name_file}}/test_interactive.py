@@ -84,7 +84,7 @@ async def test_mcp_interactive() -> None:
     ) -> ElicitResult:
         print(f"\n📋 Elicitation Request: {params.message}")
         if hasattr(params, "requestedSchema") and params.requestedSchema:
-            print(f"   Schema: {params.requestedSchema}")  # type: ignore[union-attr]
+            print(f"   Schema: {params.requestedSchema}")
 
         while True:
             try:
