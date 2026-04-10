@@ -24,8 +24,6 @@
   </a>
 </p>
 
-The FastMCP Component. Deploys a DataRobot MCP server with a variety of baked-in tools
-
 This component is part of the [DataRobot App Framework](https://af.datarobot.com) and deploys a DataRobot MCP (Model Context Protocol) server as a DataRobot custom model application. It is designed for app developers and platform engineers who need to expose DataRobot ML/AI capabilities to LLM-based agents and tools.
 
 The component ships a ready-to-deploy MCP server that includes a comprehensive set of DataRobot predictive tools (project management, model training, deployments, and batch/real-time predictions) as well as integrations for popular collaboration platforms (Google Drive, Jira, Confluence, and Microsoft Graph). It runs as a FastMCP server and can be applied multiple times in the same project under different names to support one-to-many MCP backends in a single template.
