@@ -5,7 +5,8 @@ By default it provides tools for DataRobot operations, but can be extended with 
 
 ## MCP Server Development Guidelines
 
-IMPORTANT: The MCP server runs as an independent service. Agents connect to it via MCP protocol (HTTP), not direct Python imports.
+IMPORTANT: Do NOT import code from outside of the `{{ mcp_app_name_file }}/` directory. The MCP server has independent dependencies to avoid conflicts. 
+           The MCP server runs as an independent service. Agents connect to it via MCP protocol (HTTP), not direct Python imports.
 
 - You may modify files ONLY inside `{{ mcp_app_name_file }}/` directory.
 - The MCP server is a standard FastMCP application:
