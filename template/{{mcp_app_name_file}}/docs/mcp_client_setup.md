@@ -6,12 +6,14 @@ It includes:
 - Cursor, VS Code, and Claude Desktop setup
 - local and deployed connection examples
 - authentication guidance for DataRobot direct-access endpoints
+- security practices for API tokens and client configuration
 - verification steps
 - troubleshooting tips
 
 ## Table of contents
 
 - [Prerequisites](#prerequisites)
+- [Security and API tokens](#security-and-api-tokens)
 - [Quick start](#quick-start)
   - [Cursor](#cursor)
   - [VS Code](#vs-code)
@@ -34,13 +36,28 @@ By default, this template serves MCP locally at `http://localhost:8080/mcp/`. If
 
 For more information about DataRobot API keys, see the [DataRobot API keys documentation](https://docs.datarobot.com/en/docs/get-started/acct-mgmt/acct-settings/api-key-mgmt.html).
 
+## Security and API tokens
+
+Treat your DataRobot API key like a password.
+
+- **Do not hardcode real keys** in examples, screenshots, chat logs, or source control. Use placeholders in docs and samples; store real values separately.
+- **Prefer prompting or indirect configuration** so the key is not sitting in plain text when avoidable:
+  - **VS Code**: use [input variables](https://code.visualstudio.com/docs/copilot/reference/mcp-configuration#_input-variables-for-sensitive-data) (`promptString` with `"password": true`). VS Code prompts once and stores the value for later use (see the deployed VS Code example below).
+  - **Cursor**: use [config interpolation](https://cursor.com/docs/context/mcp) with `${env:VAR}` in `headers` so the token lives in your environment, not in `mcp.json` (see the deployed Cursor example below).
+- **Protect client config files** on disk: restrict permissions where applicable (for example `chmod 600` on Unix-like systems for files that contain secrets).
+- **Use least privilege**: create keys with only the access your integration needs, and rotate or revoke a key if it may have been exposed.
+- **Project vs user config**: if you use a project-level `.vscode/mcp.json` or `.cursor/mcp.json`, avoid committing secrets. Use user-level configuration, `inputs`, or environment variables instead.
+
+For remote connections, DataRobot expects `Authorization: Bearer <token>`. When the client supports custom headers, also send `x-datarobot-api-key` with the same key value.
+
 ## Quick start
 
 In the examples below, replace:
 
 - `[YOUR_DATA_ROBOT_ENDPOINT]` with your DataRobot endpoint
 - `[YOUR_DEPLOYMENT_ID]` with your deployment ID
-- `[YOUR_DATA_ROBOT_API_KEY]` with your DataRobot API key
+
+For clients that read the token from the environment (Cursor), set `DATAROBOT_API_TOKEN` to your API key in the environment used to start the editor, or export it in your shell profile. For VS Code input-based setup, you will be prompted for the key when the server first starts.
 
 ### Cursor
 
@@ -60,14 +77,16 @@ Edit `~/.cursor/mcp.json`.
 
 #### Deployed MCP server
 
+Use [config interpolation](https://cursor.com/docs/context/mcp) so the API key is not stored in `mcp.json`. Set `DATAROBOT_API_TOKEN` in the environment before starting Cursor (for example export it in your shell profile, or launch Cursor from a terminal session where it is already set).
+
 ```json
 {
   "mcpServers": {
     "datarobot-production": {
       "url": "https://[YOUR_DATA_ROBOT_ENDPOINT]/deployments/[YOUR_DEPLOYMENT_ID]/directAccess/mcp/",
       "headers": {
-        "Authorization": "Bearer [YOUR_DATA_ROBOT_API_KEY]",
-        "x-datarobot-api-key": "[YOUR_DATA_ROBOT_API_KEY]"
+        "Authorization": "Bearer ${env:DATAROBOT_API_TOKEN}",
+        "x-datarobot-api-key": "${env:DATAROBOT_API_TOKEN}"
       }
     }
   }
@@ -81,18 +100,18 @@ After you update the file:
 
 ### VS Code
 
-Edit `~/Library/Application Support/Code/User/mcp.json` on macOS, `%APPDATA%\Code\User\mcp.json` on Windows, or the equivalent path on Linux.
+Open your MCP configuration with **MCP: Open User Configuration** (or edit `.vscode/mcp.json` for workspace scope). VS Code expects `servers` at the top level of `mcp.json`; see the [MCP configuration reference](https://code.visualstudio.com/docs/copilot/reference/mcp-configuration).
+
+Avoid hardcoding API keys. For deployed servers, use [input variables](https://code.visualstudio.com/docs/copilot/reference/mcp-configuration#_input-variables-for-sensitive-data) so VS Code prompts for the key (with optional masked input) instead of storing it verbatim in the file.
 
 #### Local MCP server
 
 ```json
 {
-  "mcp": {
-    "servers": {
-      "datarobot-local": {
-        "url": "http://localhost:8080/mcp/",
-        "type": "http"
-      }
+  "servers": {
+    "datarobot-local": {
+      "type": "http",
+      "url": "http://localhost:8080/mcp/"
     }
   }
 }
@@ -100,17 +119,25 @@ Edit `~/Library/Application Support/Code/User/mcp.json` on macOS, `%APPDATA%\Cod
 
 #### Deployed MCP server
 
+The first time this server starts, VS Code prompts for your DataRobot API key. The value is stored securely for later sessions (see VS Code documentation for where and how).
+
 ```json
 {
-  "mcp": {
-    "servers": {
-      "datarobot-production": {
-        "url": "https://[YOUR_DATA_ROBOT_ENDPOINT]/deployments/[YOUR_DEPLOYMENT_ID]/directAccess/mcp/",
-        "type": "http",
-        "headers": {
-          "Authorization": "Bearer [YOUR_DATA_ROBOT_API_KEY]",
-          "x-datarobot-api-key": "[YOUR_DATA_ROBOT_API_KEY]"
-        }
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "datarobot-api-key",
+      "description": "DataRobot API key (direct access / MCP)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "datarobot-production": {
+      "type": "http",
+      "url": "https://[YOUR_DATA_ROBOT_ENDPOINT]/deployments/[YOUR_DEPLOYMENT_ID]/directAccess/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${input:datarobot-api-key}",
+        "x-datarobot-api-key": "${input:datarobot-api-key}"
       }
     }
   }
@@ -158,6 +185,8 @@ brew install node
 
 #### Deployed MCP server
 
+Keep the bearer token out of the `args` array. Set `AUTH_HEADER` to `Bearer <your-api-key>` in the `env` block. That value is still sensitive: treat `claude_desktop_config.json` like a secrets file (strict file permissions, do not commit it, rotate the key if the file is ever copied or shared).
+
 ```json
 {
   "mcpServers": {
@@ -180,6 +209,8 @@ brew install node
 }
 ```
 
+Replace `[YOUR_DATA_ROBOT_API_KEY]` once when you edit the file, or manage the value outside version control (for example a private copy of the config) if you share your dotfiles.
+
 After you update the file:
 
 1. Completely quit Claude Desktop.
@@ -201,8 +232,8 @@ You can define multiple MCP servers in the same client configuration, such as lo
     "production": {
       "url": "https://[YOUR_DATA_ROBOT_ENDPOINT]/deployments/[YOUR_DEPLOYMENT_ID]/directAccess/mcp/",
       "headers": {
-        "Authorization": "Bearer [YOUR_DATA_ROBOT_API_KEY]",
-        "x-datarobot-api-key": "[YOUR_DATA_ROBOT_API_KEY]"
+        "Authorization": "Bearer ${env:DATAROBOT_API_TOKEN}",
+        "x-datarobot-api-key": "${env:DATAROBOT_API_TOKEN}"
       }
     }
   }
@@ -315,6 +346,9 @@ If authentication fails:
 - confirm that the `Bearer` header is formatted correctly
 - confirm that the deployment ID is correct
 - make sure your account has access to the deployment
+- **Cursor**: confirm `DATAROBOT_API_TOKEN` is set in the environment of the Cursor process (fully quit and relaunch from a shell where it is exported, if needed)
+- **VS Code**: confirm you completed the input prompt for `${input:datarobot-api-key}` (or reset inputs if you entered the wrong value; see VS Code MCP documentation)
+- avoid pasting live tokens into chat, tickets, or screen shares; rotate the key if it may have leaked
 
 ### Claude Desktop issues
 
@@ -327,7 +361,7 @@ If Claude Desktop cannot launch `mcp-remote`:
 
 ### Quick diagnostic commands
 
-Test your API token:
+Test your API token (run only in a trusted shell; avoid echoing the token or logging it):
 
 ```bash
 curl -H "Authorization: Bearer $DATAROBOT_API_TOKEN" \
