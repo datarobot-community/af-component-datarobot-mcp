@@ -26,7 +26,8 @@ root:
     env: MCP_CLI_CONFIGS
     multiple: true
     help: "Select which tool integrations and features to enable (space to toggle, enter to confirm)."
-    default: "predictive,gdrive,microsoft_graph"
+    default: ""
+    optional: true
     always_prompt: true
     options:
       - name: "Enable Predictive tools"
