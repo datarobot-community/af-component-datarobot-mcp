@@ -25,28 +25,25 @@ jobs:
     steps:
       - name: Checkout
         uses: "actions/checkout@v5"
-      - name: Setup caching
-        uses: ./.github/actions/setup-caching
-        id: setup-cache
-        with:
-          python-version: python3.11
-          cache-key-suffix: infra
       - name: Install pulumi
         run: |
           curl -fsSL https://get.pulumi.com | sh
           echo "/github/home/.pulumi/bin" >> $GITHUB_PATH
-      - name: Render copier instance
-        if: steps.setup-cache.outputs.cache-hit != 'true'
-        uses: ./.github/actions/render-copier-instance
+      - name: Render template
+        uses: datarobot-oss/copier-template-validator@main
         with:
-          copier-args: '--defaults'
-      - name: Setup infra fixtures and install dependencies
+          working-directory: .
+          rendered-dir: ./rendered
+      - name: Copy fixture files
+        shell: sh
+        run: |
+          cp ./fixtures/infra/pyproject.toml ./rendered/infra/pyproject.toml
+          cp ./fixtures/infra/Pulumi.yaml ./rendered/infra/Pulumi.yaml
+          cp ./fixtures/infra/infra/__init__.py ./rendered/infra/infra/__init__.py
+      - name: Install dependencies
         shell: sh
         working-directory: ./rendered/infra
         run: |
-          cp ../../fixtures/infra/pyproject.toml ./pyproject.toml
-          cp ../../fixtures/infra/Pulumi.yaml ./Pulumi.yaml
-          cp ../../fixtures/infra/infra/__init__.py ./infra/__init__.py
           uv sync --extra dev
         env:
           UV_CACHE_DIR: /.uv_cache
