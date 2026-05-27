@@ -411,19 +411,13 @@ runtimeParameterDefinitions:
 Update the parameter handling:
 
 ```python
-class UserAppConfig(BaseSettings):
+class UserAppConfig(DataRobotAppFrameworkBaseSettings):
     """User-specific application configuration."""
 
-    # Example of adding user-specific configuration
-    user_name: str = Field(
-        default="default-user",
-        validation_alias=AliasChoices(
-            RUNTIME_PARAM_ENV_VAR_NAME_PREFIX + "USER_NAME",
-            "USER_NAME",
-        ),
-        description="Name of the user account in use.",
-    )
+    user_name: str = "default-user"
 ```
+
+`DataRobotAppFrameworkBaseSettings` automatically handles runtime parameters (`MLOPS_RUNTIME_PARAM_*`), environment variables, `.env` files, and `pulumi_config.json`. Fields are matched by name — a field `user_name` reads from `USER_NAME` env var automatically.
 
 These parameters will be available as environment variables in the deployed server and can be accessed through the `get_user_config()` function.
 
