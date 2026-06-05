@@ -24,6 +24,10 @@ mcp_development_port:
 _subdirectory: template
 _answers_file: ".datarobot/answers/drmcp-{{ mcp_app_name }}.yml"
 
+# Regenerate uv.lock so the root package name matches the chosen mcp_app_name.
+_tasks:
+  - command: ["uv", "lock"]
+    working_directory: "{{ mcp_app_name }}"
 
 # Files to be excluded
 _exclude:

@@ -34,6 +34,7 @@ jobs:
         with:
           working-directory: .
           rendered-dir: ./rendered
+          copier-args: "--trust --vcs-ref=HEAD"
       - name: Copy fixture files
         shell: sh
         run: |
