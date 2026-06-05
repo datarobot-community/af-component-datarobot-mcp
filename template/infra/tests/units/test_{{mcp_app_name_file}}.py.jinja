@@ -42,10 +42,6 @@ def pulumi_mocks(monkeypatch, tmp_path):
     # deployments_application_path = project_dir.parent / "{{mcp_app_name}}"
     mcp_app_dir = tmp_path.parent / "{{mcp_app_name}}"
     mcp_app_dir.mkdir(exist_ok=True)
-    (mcp_app_dir / "metadata.yaml").write_text(
-        "---\nname: runtime-params\nruntimeParameterDefinitions:\n"
-        "{% raw %}{{ additional_params }}{% endraw %}\n"
-    )
 
     # Mock user params module
     mock_user_params_module = MagicMock()
@@ -62,7 +58,6 @@ def pulumi_mocks(monkeypatch, tmp_path):
     monkeypatch.setattr("pulumi_datarobot.Deployment", MagicMock())
     monkeypatch.setattr("pulumi_datarobot.ApiTokenCredential", MagicMock())
     monkeypatch.setattr("pulumi_datarobot.ApiTokenCredentialArgs", MagicMock())
-    monkeypatch.setattr("pulumi_datarobot.AwsCredential", MagicMock())
 
     # Mock CustomModelRuntimeParameterValueArgs to return simple namedtuple objects
     RuntimeParam = namedtuple(

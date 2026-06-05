@@ -87,6 +87,8 @@ After applying the component, the following paths contain the key files for deve
 | `template/{{mcp_app_name_file}}/` | Generated MCP server source (tools, server entrypoint). |
 | `.datarobot/answers/drmcp-{{ mcp_app_name }}.yml` | Copier answers file for this instance. |
 
+On `dr component add` and `dr component update`, copier runs `uv lock` in `{mcp_app_name}/` so `uv.lock` matches your chosen app name and current dependencies.
+
 To run the MCP server locally:
 
 ```bash
@@ -112,92 +114,138 @@ you can run this to have more control over the process:
 uvx copier update -a .datarobot/answers/drmcp-<mcp_app_name>.yml -A
 ```
 
+### Recipe release version (`pyproject.toml`)
+
+The component template ships `version = "0.0.0"` as a placeholder. **Release versioning is owned by each recipe**, not by the component (for example via your recipe `CHANGELOG` and release pipeline on `{mcp_app_name}/pyproject.toml`).
+
+The template includes a `# copier: skip` marker above `version`. After you set a real release version in the recipe, copier updates merge dependency and template changes but **do not overwrite** that line.
+
+**Existing recipes (one-time):** If `{mcp_app_name}/pyproject.toml` does not yet have `# copier: skip` above `version`, add it before the next `dr component update`:
+
+```toml
+# Recipe release pipeline owns this version (not the component template).
+# copier: skip
+version = "11.9.0"
+```
+
+**Example — recipe already at `11.9.0`, you pull a new component template:**
+
+1. You run `dr component update …`.
+2. Copier refreshes files from the template (new tools, deps, infra, and so on).
+3. `version` stays **`11.9.0`** because of `# copier: skip`.
+4. Copier runs `uv lock` in `{mcp_app_name}/`; the lock picks up dependency changes and still records project version **`11.9.0`** in lock metadata.
+5. Later, your recipe release pipeline bumps `version` to **`12.0.0`** and refreshes `uv.lock` — unchanged from today; the component update path does not participate in tagging.
+
+**New recipes:** Start at `0.0.0` until the first recipe release sets the real version.
+
 # Available tools
 
-The MCP server provides tools organized into two categories: DataRobot predictive tools and third-party integration tools.
+The MCP server provides tools organized into DataRobot platform tools and third-party integration tools (data connectors and web search).
 
-## Predictive tools (DataRobot ML/AI)
+## Data Connectors — Confluence
 
-These tools expose DataRobot's core machine learning capabilities to LLM-based agents.
+- **`confluence_get_page`**&mdash;Retrieve Confluence page contents by ID or by exact title within a space.
+- **`confluence_create_page`**&mdash;Create a new Confluence page in a space, optionally under a parent page.
+- **`confluence_add_comment`**&mdash;Add a comment to an existing Confluence page.
+- **`confluence_search_space`**&mdash;Search Confluence content using Confluence Query Language (CQL).
+- **`confluence_update_page`**&mdash;Update the body of an existing Confluence page (requires current page version number).
 
-### Data management
+## Data Connectors — Jira
 
-- **`upload_dataset_to_ai_catalog`**&mdash;Upload a dataset to the DataRobot AI Catalog/Data Registry from a local file or URL.
-- **`list_ai_catalog_items`**&mdash;List all AI Catalog items (datasets) for the authenticated user.
+- **`jira_search_issues`**&mdash;Find Jira issues matching a JQL query.
+- **`jira_get_issue`**&mdash;Get full details for a single Jira issue (requires issue key, e.g., PROJ-123).
+- **`jira_create_issue`**&mdash;Create a new Jira issue in a project.
+- **`jira_update_issue`**&mdash;Update fields on an existing Jira issue.
+- **`jira_transition_issue`**&mdash;Move a Jira issue to a new workflow status.
 
-### Deployment information
+## Data Connectors — Google Drive
 
-- **`get_deployment_info`**&mdash;Retrieve deployment information, including required features and model metadata.
-- **`generate_prediction_data_template`**&mdash;Generate a CSV template with the correct structure for making predictions.
-- **`validate_prediction_data`**&mdash;Validate if a CSV file is suitable for making predictions with a deployment.
-- **`get_deployment_features`**&mdash;Retrieve only the features list for a deployment as JSON.
+- **`gdrive_find_contents`**&mdash;Search Google Drive for files and folders, using optional query and pagination parameters.
+- **`gdrive_read_and_export_content`**&mdash;Read and export the text content of a Google Drive file.
+- **`gdrive_create_file`**&mdash;Create a new file or folder in Google Drive.
+- **`gdrive_update_metadata`**&mdash;Rename, star, or delete a Google Drive file.
+- **`gdrive_manage_access`**&mdash;Add, update, or remove sharing permissions on a Google Drive file.
 
-### Deployment management
+## Data Connectors — Microsoft 365
 
-- **`list_deployments`**&mdash;List all DataRobot deployments for the authenticated user.
-- **`get_model_info_from_deployment`**&mdash;Get model info associated with a given deployment ID.
-- **`deploy_model`**&mdash;Deploy a model by creating a new DataRobot deployment.
+- **`microsoft_graph_search_content`**&mdash;Search SharePoint and OneDrive for files and list items.
+- **`microsoft_graph_share_item`**&mdash;Share a SharePoint or OneDrive file or folder.
+- **`microsoft_graph_create_file`**&mdash;Create a new plain-text file in OneDrive or SharePoint.
+- **`microsoft_graph_update_metadata`**&mdash;Update name or metadata on a SharePoint list item or drive item.
 
-### Model management
+## Web Search — Perplexity
 
-- **`get_best_model`**&mdash;Get the best model for a DataRobot project, optionally by a specific metric.
-- **`score_dataset_with_model`**&mdash;Score a dataset using a specific DataRobot model.
-- **`list_models`**&mdash;List all models in a project.
+- **`perplexity_search`**&mdash;Search the public web and return ranked sources and snippets for a question.
+- **`perplexity_sonar`**&mdash;Get a cited AI-generated answer or research report from Perplexity; available model options are `sonar`, `sonar-reasoning-pro`, and `sonar-deep-research`.
 
-### Predictions
+## Web Search — Tavily
 
-- **`predict_by_file_path`**&mdash;Make batch predictions using a DataRobot deployment and a local CSV file (for large datasets).
-- **`predict_by_ai_catalog`**&mdash;Make batch predictions using a DataRobot deployment and an AI Catalog dataset.
-- **`predict_from_project_data`**&mdash;Make predictions using training data associated with a project (holdout, validation, or all backtest partitions).
-- **`predict_realtime`**&mdash;Make real-time predictions using a deployment and a local CSV file or dataset string (supports time series, explanations, and custom thresholds).
-- **`predict_by_ai_catalog_rt`**&mdash;Make real-time predictions using a deployment and an AI Catalog dataset.
+- **`tavily_search_web`**&mdash;Search the public web by keyword and return ranked results.
+- **`tavily_extract_text`**&mdash;Extract clean text from one or more web page URLs.
+- **`tavily_list_links`**&mdash;List links discovered under a website URL.
+- **`tavily_crawl_site`**&mdash;Crawl a website to collect multiple related pages.
 
-### Project management
+## DataRobot Documentation
 
-- **`list_projects`**&mdash;List all DataRobot projects for the authenticated user.
-- **`get_project_dataset_by_name`**&mdash;Get a dataset ID by name for a given project.
+- **`datarobot_docs_fetch_page`**&mdash;Retrieve the full text of a DataRobot documentation page by URL.
 
-### Training and analysis
+## DataRobot — Use Cases
 
-- **`analyze_dataset`**&mdash;Analyze a dataset to understand its structure and potential use cases.
-- **`suggest_use_cases`**&mdash;Analyze a dataset and suggest potential machine learning use cases.
-- **`get_exploratory_insights`**&mdash;Generate exploratory data insights for a dataset.
-- **`start_autopilot`**&mdash;Start automated model training (Autopilot) for a project.
-- **`get_model_roc_curve`**&mdash;Get the detailed ROC curve for a specific model.
-- **`get_model_feature_impact`**&mdash;Get the detailed feature impact for a specific model.
-- **`get_model_lift_chart`**&mdash;Get the detailed lift chart for a specific model.
+- **`datarobot_usecases_list`**&mdash;List DataRobot Use Cases with optional name filter.
+- **`usecases_list_assets`**&mdash;List datasets, deployments, and experiments linked to use cases.
 
-## Integration tools
+## DataRobot — Catalog (Datasets & Datastores)
 
-Integration tools require OAuth authentication configured via DataRobot OAuth providers. See the [Development Documentation](template/{{mcp_app_name_file}}/dev.md) for configuration details.
+- **`catalog_upload_dataset`**&mdash;Upload or register a dataset from a local file or URL.
+- **`catalog_list_datasets`**&mdash;List datasets registered in DataRobot.
+- **`catalog_get_preview`**&mdash;Get metadata and optional sample rows for a dataset.
+- **`catalog_list_datastores`**&mdash;List external database and storage connections configured in DataRobot.
+- **`catalog_browse_datastore`**&mdash;Browse schemas, tables, or folders inside an external datastore.
+- **`catalog_query_datastore`**&mdash;Run SQL against an external datastore.
+- **`catalog_check_timeseries_eligibility`**&mdash;Check whether a dataset is ready for time series modeling.
+- **`catalog_analyze_dataset`**&mdash;Return profile of an AI Catalog dataset (columns, types, and missing values).
+- **`catalog_suggest_ml_problems`**&mdash;Recommend a target, which defines a problem type, from a dataset.
+- **`catalog_get_eda_insights`**&mdash;Run exploratory data analysis (EDA) on a dataset and return summary statistics.
 
-### Google Drive
+## DataRobot — Modeling (Projects & Models)
 
-- **`gdrive_find_contents`**&mdash;Search or list files in Google Drive with pagination and filtering (currently disabled).
-- **`gdrive_read_content`**&mdash;Retrieve the content of a specific file by its ID (auto-converts Google Workspace files to readable formats).
-- **`gdrive_create_file`**&mdash;Create a new file or folder in Google Drive (currently disabled).
-- **`gdrive_update_metadata`**&mdash;Update non-content metadata fields (rename, star, trash) (currently disabled).
-- **`gdrive_manage_access`**&mdash;Manage file/folder sharing and permissions (add, update, remove access).
+- **`models_get_bestmodel`**&mdash;Get the top-performing model on a model leaderboard.
+- **`modeling_score_dataset`**&mdash;Score a catalog dataset with a trained model from a project leaderboard (async job).
+- **`modeling_list_models`**&mdash;List all leaderboard models.
+- **`modeling_get_modeldetails`**&mdash;Get training metrics and diagnostics for a leaderboard model.
+- **`modeling_list_projects`**&mdash;List all modeling projects associated with the user's organization.
+- **`modeling_get_project_dataset`**&mdash;Find a project dataset (requires project name).
+- **`modeling_start_autopilot`**&mdash;Start or resume Autopilot training for a modeling project.
+- **`modeling_get_model_roc`**&mdash;Get ROC curve data&mdash;classification, performance, and statistics&mdash;for a binary classification model.
+- **`modeling_get_model_feature_impact`**&mdash;Get model feature impact, which identifies the features most strongly driving model decisions.
+- **`modeling_get_model_lift_chart`**&mdash;Get lift chart data for a binary or multiclass classification model.
 
-### Jira
+## DataRobot — Deployments
 
-- **`jira_search_issues`**&mdash;Search for Jira issues using JQL (Jira Query Language).
-- **`jira_get_issue`**&mdash;Retrieve all fields and details for a single Jira issue by its key.
-- **`jira_create_issue`**&mdash;Create a new Jira issue with mandatory project, summary, and type information.
-- **`jira_update_issue`**&mdash;Modify descriptive fields or custom fields on an existing Jira issue.
-- **`jira_transition_issue`**&mdash;Move a Jira issue through its workflow to a new status.
+- **`deployment_get_list`**&mdash;List MLOps deployments in DataRobot.
+- **`deployment_get_model_info`**&mdash;Get the model record linked to a deployment (requires deployment ID).
+- **`deployment_create_deployment`**&mdash;Create a new deployment from a trained leaderboard model.
+- **`deployment_get_prediction_history`**&mdash;Retrieve logged prediction history for a deployment.
+- **`deployment_get_info`**&mdash;Get deployment scoring information: feature details, model settings, and deployment ID.
+- **`deployment_generate_prediction_sample`**&mdash;Generate sample prediction rows with required columns for valid prediction output.
+- **`deployment_validate_prediction_data`**&mdash;Validate inline CSV prediction data against a deployment schema.
+- **`deployment_get_features`**&mdash;Get input features, including target summary, for a deployment.
 
-### Confluence
+## DataRobot — Predictions
 
-- **`confluence_get_page`**&mdash;Retrieve the content of a specific Confluence page by ID or title.
-- **`confluence_create_page`**&mdash;Create a new documentation page in a specified Confluence space.
-- **`confluence_add_comment`**&mdash;Add a new comment to a specified Confluence page.
-- **`confluence_search`**&mdash;Search Confluence pages and content using CQL (Confluence Query Language).
-- **`confluence_update_page`**&mdash;Update the content of an existing Confluence page.
+- **`predict_batch_predictions_from_dataset`**&mdash;Generate batch predictions from a deployment using a supplied dataset.
+- **`predict_batch_predictions_from_holdout_data`**&mdash;Generate batch predictions from a deployment using the holdout partition data.
+- **`predict_get_batch_job_status`**&mdash;Check status of a batch prediction job.
+- **`predict_get_batch_results`**&mdash;Download scored results from a completed batch prediction job.
+- **`predict_score_catalog_realtime`**&mdash;Score a catalog dataset through a deployment and return rows immediately.
+- **`predict_score_inline_realtime`**&mdash;Score inline CSV or JSON rows through a deployment immediately.
 
-### Microsoft Graph
+## DataRobot — Vector Databases (VDB)
 
-- **`microsoft_graph_search_content`**&mdash;Search for SharePoint and OneDrive content using Microsoft Graph Search API with pagination, filtering, and entity type selection.
+- **`vdb_list`**&mdash;List deployed vector database (VDB) deployments.
+- **`vdb_query`**&mdash;Run semantic search against a vector database deployment.
+
+Integration tools (Google Drive, Jira, Confluence, Microsoft 365) require OAuth authentication configured via DataRobot OAuth providers. Perplexity and Tavily tools require API keys. See the [Development Documentation](template/{{mcp_app_name_file}}/dev.md) for configuration details.
 
 # Troubleshooting
 

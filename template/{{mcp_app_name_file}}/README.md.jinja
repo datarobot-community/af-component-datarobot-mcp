@@ -395,31 +395,34 @@ MCP_RECIPE_RUNTIME_PARAMETERS = [
 ]
 ```
 
-### {{mcp_app_name}}/user-metadata.yaml
-
-Add your custom runtime parameters to the schema:
-
-```yaml
-runtimeParameterDefinitions:
-  - fieldName: user_name
-    type: string
-  # Add your custom runtime parameters here
-```
-
 ### {{mcp_app_name}}/app/core/user_config.py
 
-Update the parameter handling:
+Add matching fields to read runtime parameters at runtime. `DataRobotAppFrameworkBaseSettings` loads values automatically from deployment runtime parameters (`MLOPS_RUNTIME_PARAM_*`), `.env`, and `pulumi_config.json`:
 
 ```python
+from typing import Optional
+
+from datarobot.core.config import DataRobotAppFrameworkBaseSettings
+
+
 class UserAppConfig(DataRobotAppFrameworkBaseSettings):
     """User-specific application configuration."""
 
     user_name: str = "default-user"
+
+
+_user_config: Optional[UserAppConfig] = None
+
+
+def get_user_config() -> UserAppConfig:
+    """Get the global user configuration instance."""
+    global _user_config
+    if _user_config is None:
+        _user_config = UserAppConfig()
+    return _user_config
 ```
 
-`DataRobotAppFrameworkBaseSettings` automatically handles runtime parameters (`MLOPS_RUNTIME_PARAM_*`), environment variables, `.env` files, and `pulumi_config.json`. Fields are matched by name — a field `user_name` reads from `USER_NAME` env var automatically.
-
-These parameters will be available as environment variables in the deployed server and can be accessed through the `get_user_config()` function.
+Access configuration in your app via `get_user_config()` (for example, `get_user_config().user_name`).
 
 ## Debugging
 
