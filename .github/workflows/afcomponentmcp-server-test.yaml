@@ -87,7 +87,7 @@ jobs:
           set -a
           source .env
           set +a
-          uv run app/main.py &
+          uv run python "${GITHUB_WORKSPACE}/fixtures/mcp/smoke_start_server.py" &
           echo $! > /tmp/mcp-server.pid
           for i in $(seq 1 60); do
             if curl -sf "http://localhost:${MCP_SERVER_PORT}/" >/dev/null 2>&1; then
@@ -119,4 +119,5 @@ jobs:
           if [ -f /tmp/mcp-server.pid ]; then
             kill "$(cat /tmp/mcp-server.pid)" 2>/dev/null || true
           fi
+          pkill -f "smoke_start_server.py" 2>/dev/null || true
           pkill -f "app/main.py" 2>/dev/null || true
