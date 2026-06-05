@@ -4,17 +4,17 @@ on:
   push:
     branches: ["main"]
     paths:
-  - "fixtures/**"
-  - "template/**"
-  - "copier.yml"
-  - ".github/workflows/afcomponentmcp-server-test.yaml"
+      - "fixtures/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/afcomponentmcp-server-test.yaml"
   pull_request:
     branches: ["main"]
     paths:
-  - "fixtures/**"
-  - "template/**"
-  - "copier.yml"
-  - ".github/workflows/afcomponentmcp-server-test.yaml"
+      - "fixtures/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/afcomponentmcp-server-test.yaml"
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -43,7 +43,7 @@ jobs:
       - name: Render template
         uses: ./.github/actions/render-copier-instance
         with:
-          copier-args: "--defaults"
+          copier-args: "--defaults --trust --vcs-ref=HEAD"
 
       - name: Check lock file
         working-directory: ./rendered/mcp_server
