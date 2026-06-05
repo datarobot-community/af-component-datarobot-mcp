@@ -36,6 +36,7 @@ The component ships a ready-to-deploy MCP server that includes a comprehensive s
 - [Prerequisites](#prerequisites)
 - [Quick start](#quick-start)
 - [Component dependencies](#component-dependencies)
+- [Documentation](#documentation)
 - [Available tools](#available-tools)
 - [Troubleshooting](#troubleshooting)
 - [Next steps and cross-links](#next-steps-and-cross-links)
@@ -85,6 +86,7 @@ After applying the component, the following paths contain the key files for deve
 | Path | Purpose |
 |------|---------|
 | `template/{{mcp_app_name_file}}/` | Generated MCP server source (tools, server entrypoint). |
+| `template/docs/datarobot-mcp/` | MCP server documentation (rendered to `docs/datarobot-mcp/` in the target project). |
 | `.datarobot/answers/drmcp-{{ mcp_app_name }}.yml` | Copier answers file for this instance. |
 
 On `dr component add` and `dr component update`, copier runs `uv lock` in `{mcp_app_name}/` so `uv.lock` matches your chosen app name and current dependencies.
@@ -95,7 +97,20 @@ To run the MCP server locally:
 uv run python -m MCP_APP_NAME
 ```
 
-Refer to the [Development Documentation](template/{{mcp_app_name_file}}/dev.md) for the full developer guide, including OAuth provider configuration for integration tools.
+Refer to the [MCP server documentation](template/docs/datarobot-mcp/README.md) for the full developer guide, including OAuth provider configuration for integration tools.
+
+# Documentation
+
+After applying this component, MCP guides are available under `docs/datarobot-mcp/` in your project. In this repository, the template sources live under [`template/docs/datarobot-mcp/`](template/docs/datarobot-mcp/README.md):
+
+| Document | Description |
+|---|---|
+| [Overview](template/docs/datarobot-mcp/README.md) | Getting started, local dev, and deployment overview |
+| [MCP client setup](template/docs/datarobot-mcp/mcp_client_setup.md) | Configure Cursor, VS Code, and Claude Desktop |
+| [Server architecture](template/docs/datarobot-mcp/mcp_server_architecture.md.jinja) | Project structure and configuration reference |
+| [Dynamic tool registration](template/docs/datarobot-mcp/dynamic_tool_registration.md) | Turn DataRobot deployments into tools automatically |
+| [Custom tools](template/docs/datarobot-mcp/custom_tools.md.jinja) | Author domain-specific tools |
+| [Deployment info tools](template/docs/datarobot-mcp/deployment_info_tools.md) | Query deployment features and build prediction datasets |
 
 ## Updating
 
@@ -113,30 +128,6 @@ you can run this to have more control over the process:
 ```bash
 uvx copier update -a .datarobot/answers/drmcp-<mcp_app_name>.yml -A
 ```
-
-### Recipe release version (`pyproject.toml`)
-
-The component template ships `version = "0.0.0"` as a placeholder. **Release versioning is owned by each recipe**, not by the component (for example via your recipe `CHANGELOG` and release pipeline on `{mcp_app_name}/pyproject.toml`).
-
-The template includes a `# copier: skip` marker above `version`. After you set a real release version in the recipe, copier updates merge dependency and template changes but **do not overwrite** that line.
-
-**Existing recipes (one-time):** If `{mcp_app_name}/pyproject.toml` does not yet have `# copier: skip` above `version`, add it before the next `dr component update`:
-
-```toml
-# Recipe release pipeline owns this version (not the component template).
-# copier: skip
-version = "11.9.0"
-```
-
-**Example — recipe already at `11.9.0`, you pull a new component template:**
-
-1. You run `dr component update …`.
-2. Copier refreshes files from the template (new tools, deps, infra, and so on).
-3. `version` stays **`11.9.0`** because of `# copier: skip`.
-4. Copier runs `uv lock` in `{mcp_app_name}/`; the lock picks up dependency changes and still records project version **`11.9.0`** in lock metadata.
-5. Later, your recipe release pipeline bumps `version` to **`12.0.0`** and refreshes `uv.lock` — unchanged from today; the component update path does not participate in tagging.
-
-**New recipes:** Start at `0.0.0` until the first recipe release sets the real version.
 
 # Available tools
 
@@ -245,7 +236,7 @@ The MCP server provides tools organized into DataRobot platform tools and third-
 - **`vdb_list`**&mdash;List deployed vector database (VDB) deployments.
 - **`vdb_query`**&mdash;Run semantic search against a vector database deployment.
 
-Integration tools (Google Drive, Jira, Confluence, Microsoft 365) require OAuth authentication configured via DataRobot OAuth providers. Perplexity and Tavily tools require API keys. See the [Development Documentation](template/{{mcp_app_name_file}}/dev.md) for configuration details.
+Integration tools (Google Drive, Jira, Confluence, Microsoft 365) require OAuth authentication configured via DataRobot OAuth providers. Perplexity and Tavily tools require API keys. See [MCP client setup](template/docs/datarobot-mcp/mcp_client_setup.md) and [server architecture](template/docs/datarobot-mcp/mcp_server_architecture.md.jinja) for configuration details.
 
 # Troubleshooting
 
@@ -255,7 +246,7 @@ Common issues and their solutions are listed below.
 
 **Copier prompts fail or produce unexpected output** — Confirm you are running `uv` 0.4+ and that `copier` resolves via `uvx`. Run `uvx copier --version` to verify.
 
-**Integration tools return auth errors** — OAuth providers must be configured in DataRobot before integration tools (Google Drive, Jira, Confluence, Microsoft Graph) will work. See the `dev.md` guide inside the generated template directory.
+**Integration tools return auth errors** — OAuth providers must be configured in DataRobot before integration tools (Google Drive, Jira, Confluence, Microsoft Graph) will work. See [MCP client setup](template/docs/datarobot-mcp/mcp_client_setup.md).
 
 **Multiple instances conflict** — Each instance must use a unique `mcp_app_name`. If two instances share a name, their answers files and generated directories will collide.
 
@@ -269,7 +260,7 @@ Explore the following resources to learn more or extend this component.
 - [DataRobot API docs](https://docs.datarobot.com)&mdash;reference for the DataRobot platform APIs used by the predictive tools.
 - [FastMCP documentation](https://github.com/jlowin/fastmcp)&mdash;the MCP server framework underlying this component.
 - [af-component-base](https://github.com/datarobot-community/af-component-base)&mdash;required base component.
-- [Development Documentation](template/{{mcp_app_name_file}}/dev.md)&mdash;local dev guide, OAuth setup, and advanced configuration.
+- [MCP server documentation](template/docs/datarobot-mcp/README.md)&mdash;local dev guide, client setup, OAuth configuration, and advanced topics.
 
 # Contributing, changelog, support, and legal
 

@@ -27,7 +27,7 @@ This component provides:
 
 ### 1. Configure environment variables
 
-Copy `.env.sample` to `.env` and set the required values:
+Copy `.env.template` to `.env` and set the required values:
 
 ```bash
 DATAROBOT_API_TOKEN=your_api_token
