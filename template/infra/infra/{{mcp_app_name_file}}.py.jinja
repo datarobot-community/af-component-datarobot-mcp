@@ -495,8 +495,9 @@ if is_lineage_feature_enabled():
             custom_model.version_id,
         )
     )
-    mcp_tool_metadata_pulumi_manager.export_to_pulumi_stack(
-        mcp_tool_metadata_pulumi_resources
+    mcp_tool_metadata_pulumi_manager.export_summary_to_pulumi_stack(
+        mcp_server_asset_name,
+        mcp_tool_metadata_pulumi_resources,
     )
 
     mcp_prompt_metadata_pulumi_manager = MCPPromptMetadataPulumiManager()
@@ -508,8 +509,9 @@ if is_lineage_feature_enabled():
             custom_model.version_id,
         )
     )
-    mcp_prompt_metadata_pulumi_manager.export_to_pulumi_stack(
-        mcp_prompt_metadata_pulumi_resources
+    mcp_prompt_metadata_pulumi_manager.export_summary_to_pulumi_stack(
+        mcp_server_asset_name,
+        mcp_prompt_metadata_pulumi_resources,
     )
 
     mcp_resource_metadata_pulumi_manager = MCPResourceMetadataPulumiManager()
@@ -523,6 +525,7 @@ if is_lineage_feature_enabled():
             custom_model.version_id,
         )
     )
-    mcp_resource_metadata_pulumi_manager.export_to_pulumi_stack(
-        mcp_resource_metadata_pulumi_resources
+    mcp_resource_metadata_pulumi_manager.export_summary_to_pulumi_stack(
+        mcp_server_asset_name,
+        mcp_resource_metadata_pulumi_resources,
     )
