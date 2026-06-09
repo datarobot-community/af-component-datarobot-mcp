@@ -1,0 +1,6 @@
+display_name: "DataRobot MCP"
+description: "Deploys a DataRobot MCP server with a variety of baked-in tools."
+tags: []
+repeatable: mcp_app_name
+dependencies:
+  - base
