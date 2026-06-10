@@ -114,10 +114,6 @@ def pulumi_mocks(monkeypatch, tmp_path):
     monkeypatch.setattr("pulumi.Output", MockOutput)
 
     # Mock MCP metadata related module
-    monkeypatch.setattr(
-        "dev_tools.lineage.utils.is_lineage_feature_enabled",
-        Mock(return_value=True),
-    )
     monkeypatch.setattr(MCPToolMetadataPulumiManager, "load_metadata", Mock())
     monkeypatch.setattr(MCPToolMetadataPulumiManager, "create_pulumi_resources", Mock())
     monkeypatch.setattr(
