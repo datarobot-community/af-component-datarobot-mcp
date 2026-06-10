@@ -4,3 +4,7 @@ tags: []
 repeatable: mcp_app_name
 dependencies:
   - base
+agent_guidance:
+  summary: >-
+    Exposes DataRobot capabilities (deployments, models, data) as MCP tools for the agent.
+    Include this for every agent project that needs tool access to DataRobot resources.
