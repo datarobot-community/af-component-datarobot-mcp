@@ -513,9 +513,7 @@ mcp_prompt_metadata_pulumi_manager.export_summary_to_pulumi_stack(
 )
 
 mcp_resource_metadata_pulumi_manager = MCPResourceMetadataPulumiManager()
-mcp_resource_metadata_entities = (
-    mcp_resource_metadata_pulumi_manager.load_metadata()
-)
+mcp_resource_metadata_entities = mcp_resource_metadata_pulumi_manager.load_metadata()
 mcp_resource_metadata_pulumi_resources = (
     mcp_resource_metadata_pulumi_manager.create_pulumi_resources(
         mcp_resource_metadata_entities,
