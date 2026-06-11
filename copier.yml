@@ -23,11 +23,11 @@ copyright_year:
 
 mcp_development_port:
   type: int
-  default: 8080
+  default: 9000
   help: "The local port to run your DataRobot MCP development server on"
   agent_guidance:
     ask_user: false
-    reason: "8080 is a safe local development default; only ask if the user reports a port conflict."
+    reason: "9000 as typically fastapi uses 8080; only ask if the user reports a port conflict."
   validator: "{% if mcp_development_port < 1 or mcp_development_port > 65535%}Must be in the range 1-65535{% endif %}"
 
 _subdirectory: template
