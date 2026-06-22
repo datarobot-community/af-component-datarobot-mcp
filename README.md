@@ -89,7 +89,6 @@ After applying the component, the following paths contain the key files for deve
 | `template/docs/datarobot-mcp/` | MCP server documentation (rendered to `docs/datarobot-mcp/` in the target project). |
 | `.datarobot/answers/drmcp-{{ mcp_app_name }}.yml` | Copier answers file for this instance. |
 
-On `dr component add` and `dr component update`, copier runs `uv lock` in `{mcp_app_name}/` so `uv.lock` matches your chosen app name and current dependencies.
 
 To run the MCP server locally:
 
