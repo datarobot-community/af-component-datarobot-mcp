@@ -12,7 +12,6 @@ inputs:
     required: false
     default: |
       template/{{mcp_app_name_file}}/pyproject.toml.jinja
-      template/{{mcp_app_name_file}}/uv.lock
 runs:
   using: 'composite'
   steps:
