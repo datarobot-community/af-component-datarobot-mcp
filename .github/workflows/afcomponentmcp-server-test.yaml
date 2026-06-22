@@ -54,6 +54,7 @@ jobs:
         working-directory: ./rendered/mcp_server
         run: |
           cat > .env <<EOF
+          DATAROBOT_ENDPOINT=${DATAROBOT_ENDPOINT}
           SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
           MCP_SERVER_PORT=${MCP_SERVER_PORT}
           MCP_SERVER_REGISTER_DYNAMIC_TOOLS_ON_STARTUP=false
@@ -62,6 +63,7 @@ jobs:
           OTEL_ENABLED=false
           EOF
         env:
+          DATAROBOT_ENDPOINT: https://app.datarobot.com
           SESSION_SECRET_KEY: ci-smoke-test-session-secret
           MCP_SERVER_PORT: "8082"
 
