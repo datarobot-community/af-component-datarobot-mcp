@@ -32,6 +32,7 @@ tasks:
     cmds:
       - echo "🔨 Starting development server"
       - task: install
+      - (cd .. && DR_SKIP_PLUGIN_UPDATE_CHECK=true dr xp --plain-output &)
       - "{{.UV_CMD}} run app/main.py"
     silent: true
 
