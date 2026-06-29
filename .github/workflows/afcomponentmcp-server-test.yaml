@@ -23,7 +23,7 @@ jobs:
     name: "Test MCP Server Startup & Tools"
     runs-on: "ubuntu-latest"
     container:
-      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+      image: ghcr.io/astral-sh/uv:python3.12-bookworm
     defaults:
       run:
         shell: bash
@@ -34,7 +34,7 @@ jobs:
       - name: Setup caching
         uses: ./.github/actions/setup-caching
         with:
-          python-version: python3.11
+          python-version: python3.12
           cache-key-suffix: mcp-server
           dependency-files: |
             template/{{mcp_app_name_file}}/pyproject.toml.jinja

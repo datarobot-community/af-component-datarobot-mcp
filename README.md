@@ -46,7 +46,7 @@ The component ships a ready-to-deploy MCP server that includes a comprehensive s
 
 The following tools must be installed before using this component.
 
-- Python 3.11+
+- Python 3.12+
 - [`uv`](https://docs.astral.sh/uv/) installed
 - [`dr`](https://cli.datarobot.com) installed
 - An active DataRobot account with [API credentials](https://docs.datarobot.com/en/docs/platform/acct-settings/api-key-mgmt.html#api-keys-and-tools)
