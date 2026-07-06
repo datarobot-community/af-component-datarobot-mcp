@@ -61,7 +61,6 @@ class ServerLifecycle(BaseServerLifecycle):
             mcp: The running FastMCP instance
         """
         self._logger.info("Executing post-server start user actions...")
-        self._logger.info("Post-server start user actions completed.")
 
         # Example post-start tasks:
         # - Register additional runtime handlers
@@ -72,6 +71,8 @@ class ServerLifecycle(BaseServerLifecycle):
         # Uncomment and implement as needed:
         # asyncio.create_task(self._background_task())
         # await self._send_startup_notification()
+
+        self._logger.info("Post-server start user actions completed.")
 
     async def pre_server_shutdown(self, mcp: FastMCP) -> None:
         """
