@@ -61,6 +61,7 @@ class ServerLifecycle(BaseServerLifecycle):
             mcp: The running FastMCP instance
         """
         self._logger.info("Executing post-server start user actions...")
+        self._logger.info("Post-server start user actions completed.")
 
         # Example post-start tasks:
         # - Register additional runtime handlers
