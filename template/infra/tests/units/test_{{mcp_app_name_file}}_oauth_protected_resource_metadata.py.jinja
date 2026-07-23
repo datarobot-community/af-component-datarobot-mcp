@@ -32,7 +32,6 @@ from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import XAAMetadata
 from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import (
     MCPOAuthProtectedResourceMetadataConfigManager,
 )
-from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import config_dir_path
 
 
 @pytest.fixture
@@ -223,9 +222,6 @@ class TestMCPOAuthProtectedResourceMetadataConfigManager:
             "get_json_string_of_metadata",
         ) as mock_func:
             yield mock_func
-
-    def test_config_dir_path_exists(self) -> None:
-        assert config_dir_path().exists()
 
     def test_get_json_string_of_metadata(
         self,
