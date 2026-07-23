@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
+from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any
 from typing import Iterator
@@ -22,14 +23,16 @@ import pytest
 
 import pulumi_datarobot
 from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import (
-    MCPOAuthProtectedResourceMetadata,
+    MCPOAuthProtectedResourceMetadataConfig,
+    BaseDataClass,
 )
 from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import XAATokenExchangeParams
 from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import XAATokenRequestParams
 from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import XAAMetadata
 from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import (
-    MCPOAuthProtectedResourceMetadataManager,
+    MCPOAuthProtectedResourceMetadataConfigManager,
 )
+from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import config_dir_path
 
 
 @pytest.fixture
@@ -115,6 +118,22 @@ def metadata_in_json(
     }
 
 
+@dataclass
+class DummyDataClassInheritingBaseDataClass(BaseDataClass):
+    attribute: int
+    nullable_attribute: int | None
+
+
+class TestBaseDataClass:
+    def test_to_json_without_null_attribute(self) -> None:
+        dataclass_object = DummyDataClassInheritingBaseDataClass(1, None)
+        assert dataclass_object.to_json_without_null_attribute() == {"attribute": 1}
+
+    def test_to_json_string(self) -> None:
+        dataclass_object = DummyDataClassInheritingBaseDataClass(1, None)
+        assert dataclass_object.to_json_string() == '{"attribute": 1}'
+
+
 class TestXAAMetadata:
     @pytest.fixture
     def metadata_without_token_request_audience(
@@ -164,7 +183,7 @@ class TestXAAMetadata:
         assert metadata.to_json_string() == json.dumps(xaa_metadata_in_json)
 
 
-class TestMCPOAuthProtectedResourceMetadata:
+class TestMCPOAuthProtectedResourceMetadataConfig:
     def test_load_from_json(
         self,
         metadata_in_json: dict[str, Any],
@@ -173,7 +192,7 @@ class TestMCPOAuthProtectedResourceMetadata:
         mock_scopes_supported: list[str],
         xaa_metadata_in_json: dict[str, Any],
     ) -> None:
-        metadata = MCPOAuthProtectedResourceMetadata.from_json(metadata_in_json)
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_json(metadata_in_json)
 
         assert metadata.resource == mock_mcp_as_resource_server_url
         assert metadata.authorization_servers == mock_authorization_server_urls
@@ -181,17 +200,17 @@ class TestMCPOAuthProtectedResourceMetadata:
         assert isinstance(metadata.xaa_metadata, XAAMetadata)
 
     def test_to_json_string(self, metadata_in_json: dict[str, Any]) -> None:
-        metadata = MCPOAuthProtectedResourceMetadata.from_json(metadata_in_json)
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_json(metadata_in_json)
         assert metadata.to_json_string() == json.dumps(metadata_in_json)
 
 
-class TestMCPOAuthProtectedResourceMetadataManager:
+class TestMCPOAuthProtectedResourceMetadataConfigManager:
     @pytest.fixture
     def mock_load_metadata_config(
         self, metadata_in_json: dict[str, Any]
     ) -> Iterator[Mock]:
         with patch.object(
-            MCPOAuthProtectedResourceMetadataManager,
+            MCPOAuthProtectedResourceMetadataConfigManager,
             "load_metadata_config",
         ) as mock_func:
             mock_func.return_value = metadata_in_json
@@ -200,19 +219,20 @@ class TestMCPOAuthProtectedResourceMetadataManager:
     @pytest.fixture
     def mock_get_json_string_of_metadata(self) -> Iterator[Mock]:
         with patch.object(
-            MCPOAuthProtectedResourceMetadataManager,
+            MCPOAuthProtectedResourceMetadataConfigManager,
             "get_json_string_of_metadata",
         ) as mock_func:
             yield mock_func
+
+    def test_config_dir_path_exists(self) -> None:
+        assert config_dir_path().exists()
 
     def test_get_json_string_of_metadata(
         self,
         metadata_in_json: dict[str, Any],
         mock_load_metadata_config: Mock,
     ) -> None:
-        output = (
-            MCPOAuthProtectedResourceMetadataManager().get_json_string_of_metadata()
-        )
+        output = MCPOAuthProtectedResourceMetadataConfigManager().get_json_string_of_metadata()
 
         mock_load_metadata_config.assert_called_once_with()
         assert output == json.dumps(metadata_in_json)
@@ -229,9 +249,7 @@ class TestMCPOAuthProtectedResourceMetadataManager:
     ) -> None:
         mock_load_metadata_config.side_effect = raised_error
 
-        output = (
-            MCPOAuthProtectedResourceMetadataManager().get_json_string_of_metadata()
-        )
+        output = MCPOAuthProtectedResourceMetadataConfigManager().get_json_string_of_metadata()
 
         mock_load_metadata_config.assert_called_once_with()
         assert output is None
@@ -243,10 +261,10 @@ class TestMCPOAuthProtectedResourceMetadataManager:
         metadata_config_in_string = "sdafads"
         mock_get_json_string_of_metadata.return_value = metadata_config_in_string
 
-        output = MCPOAuthProtectedResourceMetadataManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
+        output = MCPOAuthProtectedResourceMetadataConfigManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
 
         assert output == pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-            key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA",
+            key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA_CONFIG",
             type="string",
             value=metadata_config_in_string,
         )
@@ -257,6 +275,6 @@ class TestMCPOAuthProtectedResourceMetadataManager:
     ) -> None:
         mock_get_json_string_of_metadata.return_value = None
 
-        output = MCPOAuthProtectedResourceMetadataManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
+        output = MCPOAuthProtectedResourceMetadataConfigManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
 
         assert output is None

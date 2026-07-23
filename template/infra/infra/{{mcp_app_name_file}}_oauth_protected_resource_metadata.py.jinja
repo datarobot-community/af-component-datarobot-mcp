@@ -26,8 +26,19 @@ import pulumi_datarobot
 logger = logging.getLogger(__name__)
 
 
+class BaseDataClass:
+    def to_json_without_null_attribute(self) -> dict[str, Any]:
+        return asdict(
+            self,  # type: ignore[call-overload]  # pyright: ignore[reportArgumentType]
+            dict_factory=lambda x: {k: v for k, v in x if v is not None},
+        )
+
+    def to_json_string(self) -> str:
+        return json.dumps(self.to_json_without_null_attribute())
+
+
 @dataclass
-class XAATokenExchangeParams:
+class XAATokenExchangeParams(BaseDataClass):
     trusted_issuer: str
     audience: str
 
@@ -37,7 +48,7 @@ class XAATokenExchangeParams:
 
 
 @dataclass
-class XAATokenRequestParams:
+class XAATokenRequestParams(BaseDataClass):
     token_url: str
     # audience can be None if it is not setup for AuthN & AuthZ check (as resource) in IdP.
     audience: str | None
@@ -51,7 +62,7 @@ class XAATokenRequestParams:
 
 
 @dataclass
-class XAAMetadata:
+class XAAMetadata(BaseDataClass):
     token_endpoint_auth_method: str
     token_exchange: XAATokenExchangeParams
     token_request: XAATokenRequestParams
@@ -64,30 +75,29 @@ class XAAMetadata:
             XAATokenRequestParams.from_json(metadata_in_json["token_request"]),
         )
 
-    def to_json_string(self) -> str:
-        return json.dumps(asdict(self))
-
 
 @dataclass
-class MCPOAuthProtectedResourceMetadata:
+class MCPOAuthProtectedResourceMetadataConfig(BaseDataClass):
     resource: str
     authorization_servers: list[str]
     scopes_supported: list[str]
-    xaa_metadata: XAAMetadata
+    xaa_metadata: XAAMetadata | None
 
     @classmethod
     def from_json(
         cls, metadata_in_json: dict[str, Any]
-    ) -> "MCPOAuthProtectedResourceMetadata":
+    ) -> "MCPOAuthProtectedResourceMetadataConfig":
+        xaa_metadata = (
+            XAAMetadata.from_json(metadata_in_json["xaa_metadata"])
+            if metadata_in_json.get("xaa_metadata")
+            else None
+        )
         return cls(
             metadata_in_json["resource"],
             metadata_in_json["authorization_servers"],
             metadata_in_json["scopes_supported"],
-            XAAMetadata.from_json(metadata_in_json["xaa_metadata"]),
+            xaa_metadata,
         )
-
-    def to_json_string(self) -> str:
-        return json.dumps(asdict(self))
 
 
 def config_dir_path() -> Path:
@@ -95,7 +105,7 @@ def config_dir_path() -> Path:
     return current_path.parent / "configurations"
 
 
-class MCPOAuthProtectedResourceMetadataManager:
+class MCPOAuthProtectedResourceMetadataConfigManager:
     def __init__(self):
         self.config_dir_path = config_dir_path()
 
@@ -109,7 +119,7 @@ class MCPOAuthProtectedResourceMetadataManager:
         metadata_in_json_string = None
         try:
             metadata_json = self.load_metadata_config()
-            metadata = MCPOAuthProtectedResourceMetadata.from_json(metadata_json)
+            metadata = MCPOAuthProtectedResourceMetadataConfig.from_json(metadata_json)
             metadata_in_json_string = metadata.to_json_string()
         except FileNotFoundError:
             error_message = (
@@ -130,7 +140,7 @@ class MCPOAuthProtectedResourceMetadataManager:
 
         return (
             pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-                key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA",
+                key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA_CONFIG",
                 type="string",
                 value=metadata_in_json_string,
             )
