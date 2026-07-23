@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 import logging
 import os
+import yaml
 from dataclasses import asdict
 from dataclasses import dataclass
-from json import JSONDecodeError
+from yaml import YAMLError
 from typing import Any
 from pathlib import Path
 
@@ -27,14 +27,14 @@ logger = logging.getLogger(__name__)
 
 
 class BaseDataClass:
-    def to_json_without_null_attribute(self) -> dict[str, Any]:
+    def to_dict_without_null_attribute(self) -> dict[str, Any]:
         return asdict(
             self,  # type: ignore[call-overload]  # pyright: ignore[reportArgumentType]
             dict_factory=lambda x: {k: v for k, v in x if v is not None},
         )
 
-    def to_json_string(self) -> str:
-        return json.dumps(self.to_json_without_null_attribute())
+    def to_yaml_string(self) -> str:
+        return yaml.safe_dump(self.to_dict_without_null_attribute())
 
 
 @dataclass
@@ -43,8 +43,8 @@ class XAATokenExchangeParams(BaseDataClass):
     audience: str
 
     @classmethod
-    def from_json(cls, json_dict: dict[str, str]) -> "XAATokenExchangeParams":
-        return cls(json_dict["trusted_issuer"], json_dict["audience"])
+    def from_dict(cls, dict_input: dict[str, str]) -> "XAATokenExchangeParams":
+        return cls(dict_input["trusted_issuer"], dict_input["audience"])
 
 
 @dataclass
@@ -55,9 +55,9 @@ class XAATokenRequestParams(BaseDataClass):
     scopes: list[str]
 
     @classmethod
-    def from_json(cls, json_dict: dict[str, Any]) -> "XAATokenRequestParams":
+    def from_dict(cls, dict_input: dict[str, Any]) -> "XAATokenRequestParams":
         return cls(
-            json_dict["token_url"], json_dict.get("audience"), json_dict["scopes"]
+            dict_input["token_url"], dict_input.get("audience"), dict_input["scopes"]
         )
 
 
@@ -68,11 +68,11 @@ class XAAMetadata(BaseDataClass):
     token_request: XAATokenRequestParams
 
     @classmethod
-    def from_json(cls, metadata_in_json: dict[str, Any]) -> "XAAMetadata":
+    def from_dict(cls, metadata_in_dict: dict[str, Any]) -> "XAAMetadata":
         return cls(
-            metadata_in_json["token_endpoint_auth_method"],
-            XAATokenExchangeParams.from_json(metadata_in_json["token_exchange"]),
-            XAATokenRequestParams.from_json(metadata_in_json["token_request"]),
+            metadata_in_dict["token_endpoint_auth_method"],
+            XAATokenExchangeParams.from_dict(metadata_in_dict["token_exchange"]),
+            XAATokenRequestParams.from_dict(metadata_in_dict["token_request"]),
         )
 
 
@@ -84,25 +84,25 @@ class MCPOAuthProtectedResourceMetadataConfig(BaseDataClass):
     xaa_metadata: XAAMetadata | None
 
     @classmethod
-    def from_json(
-        cls, metadata_in_json: dict[str, Any]
+    def from_dict(
+        cls, metadata_in_dict: dict[str, Any]
     ) -> "MCPOAuthProtectedResourceMetadataConfig":
         xaa_metadata = (
-            XAAMetadata.from_json(metadata_in_json["xaa_metadata"])
-            if metadata_in_json.get("xaa_metadata")
+            XAAMetadata.from_dict(metadata_in_dict["xaa_metadata"])
+            if metadata_in_dict.get("xaa_metadata")
             else None
         )
         return cls(
-            metadata_in_json["resource"],
-            metadata_in_json["authorization_servers"],
-            metadata_in_json["scopes_supported"],
+            metadata_in_dict["resource"],
+            metadata_in_dict["authorization_servers"],
+            metadata_in_dict["scopes_supported"],
             xaa_metadata,
         )
 
 
 def config_dir_path() -> Path:
     current_path = Path(os.path.dirname(__file__))
-    return current_path.parent / "configurations"
+    return current_path.parent.parent / "{{mcp_app_name}}"
 
 
 class MCPOAuthProtectedResourceMetadataConfigManager:
@@ -110,40 +110,44 @@ class MCPOAuthProtectedResourceMetadataConfigManager:
         self.config_dir_path = config_dir_path()
 
     def get_metadata_config_path(self) -> Path:
-        return self.config_dir_path / "mcp_oauth_protected_resource_metadata.json"
+        return (
+            self.config_dir_path / "mcp_oauth_protected_resource_metadata_config.yaml"
+        )
 
     def load_metadata_config(self) -> dict[str, Any]:
-        return json.loads(self.get_metadata_config_path().read_text(encoding="utf-8"))
+        return yaml.safe_load(
+            self.get_metadata_config_path().read_text(encoding="utf-8")
+        )
 
-    def get_json_string_of_metadata(self) -> str | None:
-        metadata_in_json_string = None
+    def get_yaml_string_of_metadata(self) -> str | None:
+        metadata_in_string = None
         try:
-            metadata_json = self.load_metadata_config()
-            metadata = MCPOAuthProtectedResourceMetadataConfig.from_json(metadata_json)
-            metadata_in_json_string = metadata.to_json_string()
+            metadata_dict = self.load_metadata_config()
+            metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict(metadata_dict)
+            metadata_in_string = metadata.to_yaml_string()
         except FileNotFoundError:
             error_message = (
                 "Failed to load MCP OAuth protected resource metadata "
                 f"from {self.get_metadata_config_path()}"
             )
             logger.info(error_message)
-        except (KeyError, TypeError):
+        except (AttributeError, KeyError, TypeError):
             logger.exception("Failed to parse MCP metadata")
-        except JSONDecodeError:
+        except YAMLError:
             logger.exception("Failed to load MCP metadata")
-        return metadata_in_json_string
+        return metadata_in_string
 
     def get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata(
         self,
     ) -> pulumi_datarobot.CustomModelRuntimeParameterValueArgs | None:
-        metadata_in_json_string = self.get_json_string_of_metadata()
+        metadata_in_string = self.get_yaml_string_of_metadata()
 
         return (
             pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
                 key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA_CONFIG",
                 type="string",
-                value=metadata_in_json_string,
+                value=metadata_in_string,
             )
-            if metadata_in_json_string
+            if metadata_in_string
             else None
         )

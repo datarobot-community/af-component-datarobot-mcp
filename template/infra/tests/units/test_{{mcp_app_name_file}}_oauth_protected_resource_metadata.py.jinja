@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
+import yaml
 from dataclasses import dataclass
-from json import JSONDecodeError
 from typing import Any
 from typing import Iterator
 from unittest.mock import patch
 from unittest.mock import Mock
+from yaml import YAMLError
 
 import pytest
 
@@ -32,6 +32,7 @@ from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import XAAMetadata
 from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import (
     MCPOAuthProtectedResourceMetadataConfigManager,
 )
+from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import config_dir_path
 
 
 @pytest.fixture
@@ -80,7 +81,7 @@ def mock_token_request_scopes() -> list[str]:
 
 
 @pytest.fixture
-def xaa_metadata_in_json(
+def xaa_metadata_in_dict(
     mock_token_endpoint_auth_method: str,
     mock_token_exchange_trusted_issuer: str,
     mock_token_exchange_audience: str,
@@ -103,17 +104,17 @@ def xaa_metadata_in_json(
 
 
 @pytest.fixture
-def metadata_in_json(
+def metadata_in_dict(
     mock_mcp_as_resource_server_url: str,
     mock_authorization_server_urls: list[str],
     mock_scopes_supported: list[str],
-    xaa_metadata_in_json: dict[str, Any],
+    xaa_metadata_in_dict: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "resource": mock_mcp_as_resource_server_url,
         "authorization_servers": mock_authorization_server_urls,
         "scopes_supported": mock_scopes_supported,
-        "xaa_metadata": xaa_metadata_in_json,
+        "xaa_metadata": xaa_metadata_in_dict,
     }
 
 
@@ -124,27 +125,27 @@ class DummyDataClassInheritingBaseDataClass(BaseDataClass):
 
 
 class TestBaseDataClass:
-    def test_to_json_without_null_attribute(self) -> None:
+    def test_to_dict_without_null_attribute(self) -> None:
         dataclass_object = DummyDataClassInheritingBaseDataClass(1, None)
-        assert dataclass_object.to_json_without_null_attribute() == {"attribute": 1}
+        assert dataclass_object.to_dict_without_null_attribute() == {"attribute": 1}
 
-    def test_to_json_string(self) -> None:
+    def test_to_yaml_string(self) -> None:
         dataclass_object = DummyDataClassInheritingBaseDataClass(1, None)
-        assert dataclass_object.to_json_string() == '{"attribute": 1}'
+        assert dataclass_object.to_yaml_string() == "attribute: 1\n"
 
 
 class TestXAAMetadata:
     @pytest.fixture
     def metadata_without_token_request_audience(
         self,
-        xaa_metadata_in_json: dict[str, Any],
+        xaa_metadata_in_dict: dict[str, Any],
     ) -> dict[str, Any]:
-        xaa_metadata_in_json["token_request"].pop("audience")
-        return xaa_metadata_in_json
+        xaa_metadata_in_dict["token_request"].pop("audience")
+        return xaa_metadata_in_dict
 
-    def test_load_from_json(
+    def test_load_from_dict(
         self,
-        xaa_metadata_in_json: dict[str, Any],
+        xaa_metadata_in_dict: dict[str, Any],
         mock_token_endpoint_auth_method: str,
         mock_token_exchange_trusted_issuer: str,
         mock_token_exchange_audience: str,
@@ -152,7 +153,7 @@ class TestXAAMetadata:
         mock_token_request_audience: str,
         mock_token_request_scopes: list[str],
     ) -> None:
-        metadata = XAAMetadata.from_json(xaa_metadata_in_json)
+        metadata = XAAMetadata.from_dict(xaa_metadata_in_dict)
 
         assert isinstance(metadata, XAAMetadata)
         assert metadata.token_endpoint_auth_method == mock_token_endpoint_auth_method
@@ -168,94 +169,107 @@ class TestXAAMetadata:
         assert token_request_params.audience == mock_token_request_audience
         assert token_request_params.scopes == mock_token_request_scopes
 
-    def test_load_from_json_without_token_request_audience(
+    def test_load_from_dict_without_token_request_audience(
         self,
         metadata_without_token_request_audience: dict[str, Any],
     ) -> None:
-        metadata = XAAMetadata.from_json(metadata_without_token_request_audience)
+        metadata = XAAMetadata.from_dict(metadata_without_token_request_audience)
 
         assert isinstance(metadata, XAAMetadata)
         assert metadata.token_request.audience is None
 
-    def test_to_json_string(self, xaa_metadata_in_json: dict[str, Any]) -> None:
-        metadata = XAAMetadata.from_json(xaa_metadata_in_json)
-        assert metadata.to_json_string() == json.dumps(xaa_metadata_in_json)
+    def test_to_yaml_string(self, xaa_metadata_in_dict: dict[str, Any]) -> None:
+        metadata = XAAMetadata.from_dict(xaa_metadata_in_dict)
+        assert metadata.to_yaml_string() == yaml.safe_dump(xaa_metadata_in_dict)
 
 
 class TestMCPOAuthProtectedResourceMetadataConfig:
-    def test_load_from_json(
+    def test_load_from_dict(
         self,
-        metadata_in_json: dict[str, Any],
+        metadata_in_dict: dict[str, Any],
         mock_mcp_as_resource_server_url: str,
         mock_authorization_server_urls: list[str],
         mock_scopes_supported: list[str],
-        xaa_metadata_in_json: dict[str, Any],
+        xaa_metadata_in_dict: dict[str, Any],
     ) -> None:
-        metadata = MCPOAuthProtectedResourceMetadataConfig.from_json(metadata_in_json)
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict(metadata_in_dict)
 
         assert metadata.resource == mock_mcp_as_resource_server_url
         assert metadata.authorization_servers == mock_authorization_server_urls
         assert metadata.scopes_supported == mock_scopes_supported
         assert isinstance(metadata.xaa_metadata, XAAMetadata)
 
-    def test_to_json_string(self, metadata_in_json: dict[str, Any]) -> None:
-        metadata = MCPOAuthProtectedResourceMetadataConfig.from_json(metadata_in_json)
-        assert metadata.to_json_string() == json.dumps(metadata_in_json)
+    def test_to_yaml_string(self, metadata_in_dict: dict[str, Any]) -> None:
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict(metadata_in_dict)
+        assert metadata.to_yaml_string() == yaml.safe_dump(metadata_in_dict)
 
 
 class TestMCPOAuthProtectedResourceMetadataConfigManager:
     @pytest.fixture
     def mock_load_metadata_config(
-        self, metadata_in_json: dict[str, Any]
+        self, metadata_in_dict: dict[str, Any]
     ) -> Iterator[Mock]:
         with patch.object(
             MCPOAuthProtectedResourceMetadataConfigManager,
             "load_metadata_config",
         ) as mock_func:
-            mock_func.return_value = metadata_in_json
+            mock_func.return_value = metadata_in_dict
             yield mock_func
 
     @pytest.fixture
-    def mock_get_json_string_of_metadata(self) -> Iterator[Mock]:
+    def mock_get_yaml_string_of_metadata(self) -> Iterator[Mock]:
         with patch.object(
             MCPOAuthProtectedResourceMetadataConfigManager,
-            "get_json_string_of_metadata",
+            "get_yaml_string_of_metadata",
         ) as mock_func:
             yield mock_func
 
-    def test_get_json_string_of_metadata(
+    def test_config_dir_path_exists(self) -> None:
+        assert config_dir_path().exists()
+
+    def test_get_metadata_config_path(self) -> None:
+        config_path = (
+            MCPOAuthProtectedResourceMetadataConfigManager().get_metadata_config_path()
+        )
+        assert config_path.name == "mcp_oauth_protected_resource_metadata_config.yaml"
+
+    def test_get_yaml_string_of_metadata(
         self,
-        metadata_in_json: dict[str, Any],
+        metadata_in_dict: dict[str, Any],
         mock_load_metadata_config: Mock,
     ) -> None:
-        output = MCPOAuthProtectedResourceMetadataConfigManager().get_json_string_of_metadata()
+        output = MCPOAuthProtectedResourceMetadataConfigManager().get_yaml_string_of_metadata()
 
         mock_load_metadata_config.assert_called_once_with()
-        assert output == json.dumps(metadata_in_json)
+        assert output == yaml.safe_dump(metadata_in_dict)
 
     @pytest.mark.parametrize(
         "raised_error",
-        [FileNotFoundError, KeyError, TypeError, JSONDecodeError("dadf", "dsafdsa", 0)],
+        [AttributeError, FileNotFoundError, KeyError, TypeError, YAMLError],
         ids=str,
     )
-    def test_get_json_string_of_metadata_return_none_if_errored(
+    def test_get_yaml_string_of_metadata_return_none_if_errored(
         self,
-        raised_error: FileNotFoundError | KeyError | TypeError | JSONDecodeError,
+        raised_error: AttributeError
+        | FileNotFoundError
+        | KeyError
+        | TypeError
+        | YAMLError,
         mock_load_metadata_config: Mock,
     ) -> None:
         mock_load_metadata_config.side_effect = raised_error
 
-        output = MCPOAuthProtectedResourceMetadataConfigManager().get_json_string_of_metadata()
+        output = MCPOAuthProtectedResourceMetadataConfigManager().get_yaml_string_of_metadata()
 
         mock_load_metadata_config.assert_called_once_with()
         assert output is None
 
     def test_get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata(
         self,
-        mock_get_json_string_of_metadata: Mock,
+        mock_get_yaml_string_of_metadata: Mock,
     ) -> None:
         metadata_config_in_string = "sdafads"
-        mock_get_json_string_of_metadata.return_value = metadata_config_in_string
+        mock_get_yaml_string_of_metadata.return_value = metadata_config_in_string
 
         output = MCPOAuthProtectedResourceMetadataConfigManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
 
@@ -267,9 +281,9 @@ class TestMCPOAuthProtectedResourceMetadataConfigManager:
 
     def test_get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata_return_none(
         self,
-        mock_get_json_string_of_metadata: Mock,
+        mock_get_yaml_string_of_metadata: Mock,
     ) -> None:
-        mock_get_json_string_of_metadata.return_value = None
+        mock_get_yaml_string_of_metadata.return_value = None
 
         output = MCPOAuthProtectedResourceMetadataConfigManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
 
