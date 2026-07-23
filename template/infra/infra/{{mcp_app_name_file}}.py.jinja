@@ -33,6 +33,9 @@ from .{{mcp_app_name}}_api_keys import (
     auth_resolution_strategy,
     custom_model_runtime_parameters as api_keys_runtime_parameters,
 )
+from .{{mcp_app_name}}_oauth_protected_resource_metadata import (
+    MCPOAuthProtectedResourceMetadataManager,
+)
 
 DEFAULT_EXECUTION_ENVIRONMENT = "Python 3.11 GenAI Agents"
 
@@ -387,6 +390,11 @@ if otel_entity_id := os.getenv("OTEL_ENTITY_ID"):
 
 deployments_model_runtime_parameters.extend(MCP_USER_RUNTIME_PARAMETERS)
 deployments_model_runtime_parameters.extend(api_keys_runtime_parameters)
+mcp_oauth_protected_resource_metadata_param = MCPOAuthProtectedResourceMetadataManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
+if mcp_oauth_protected_resource_metadata_param:
+    deployments_model_runtime_parameters.append(
+        mcp_oauth_protected_resource_metadata_param
+    )
 custom_model_files = get_deployments_app_files()
 
 
