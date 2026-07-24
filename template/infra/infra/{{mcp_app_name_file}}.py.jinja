@@ -16,26 +16,30 @@ import os
 import re
 from typing import Final
 
+import datarobot as dr
 import pulumi
 import pulumi_datarobot
-import datarobot as dr
 from datarobot_pulumi_utils.pulumi import resolve_execution_environment_version
 from datarobot_pulumi_utils.pulumi.stack import PROJECT_NAME
 from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironments
-from dev_tools.lineage.pulumi_managers import MCPToolMetadataPulumiManager
-from dev_tools.lineage.pulumi_managers import MCPPromptMetadataPulumiManager
-from dev_tools.lineage.pulumi_managers import MCPResourceMetadataPulumiManager
+
+from dev_tools.lineage.pulumi_managers import (
+    MCPPromptMetadataPulumiManager,
+    MCPResourceMetadataPulumiManager,
+    MCPToolMetadataPulumiManager,
+)
 
 from . import project_dir, use_case
-
-from .{{mcp_app_name}}_user_params import MCP_USER_RUNTIME_PARAMETERS
 from .{{mcp_app_name}}_api_keys import (
     auth_resolution_strategy,
+)
+from .{{mcp_app_name}}_api_keys import (
     custom_model_runtime_parameters as api_keys_runtime_parameters,
 )
 from .{{mcp_app_name}}_oauth_protected_resource_metadata import (
     MCPOAuthProtectedResourceMetadataConfigManager,
 )
+from .{{mcp_app_name}}_user_params import MCP_USER_RUNTIME_PARAMETERS
 
 DEFAULT_EXECUTION_ENVIRONMENT = "Python 3.11 GenAI Agents"
 
@@ -101,9 +105,9 @@ __all__ = [
     "mcp_custom_model_runtime_parameters",
 ]
 
-mcp_server_asset_name: str = f"[{PROJECT_NAME}] [{{mcp_app_name}}]"
+mcp_server_asset_name: str = f"[{PROJECT_NAME}] [dr_mcp]"
 
-deployments_application_path = project_dir.parent / "{{mcp_app_name}}"
+deployments_application_path = project_dir.parent / "dr_mcp"
 
 
 def get_deployments_app_files() -> list[tuple[str, str]]:
@@ -180,7 +184,7 @@ else:
         description="Execution environment for MCP server",
         programming_language="python",
         use_cases=["customModel"],
-        docker_context_path=str(project_dir.parent / "{{mcp_app_name}}" / "docker"),
+        docker_context_path=str(project_dir.parent / "dr_mcp" / "docker"),
         opts=pulumi.ResourceOptions(retain_on_delete=False),
     )
 
@@ -355,7 +359,7 @@ SESSION_SECRET_KEY: Final[str] = "SESSION_SECRET_KEY"
 
 if session_secret_key := os.getenv(SESSION_SECRET_KEY):
     session_secret_cred = pulumi_datarobot.ApiTokenCredential(
-        "MCP Server [{{mcp_app_name}}] Session Secret Key",
+        "MCP Server [dr_mcp] Session Secret Key",
         args=pulumi_datarobot.ApiTokenCredentialArgs(
             api_token=str(session_secret_key),
         ),
