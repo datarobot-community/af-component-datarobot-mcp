@@ -21,7 +21,7 @@ from pathlib import Path
 import pulumi
 import pulumi_datarobot as datarobot
 
-__all__ = ["use_case", "project_dir"]
+__all__ = ["project_dir", "use_case"]
 
 project_dir = Path(__file__).parent.parent
 
