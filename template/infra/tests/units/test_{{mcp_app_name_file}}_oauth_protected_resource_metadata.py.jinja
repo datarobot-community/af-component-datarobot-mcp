@@ -11,28 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import yaml  # type: ignore[import-untyped]
 from dataclasses import dataclass
-from typing import Any
-from typing import Iterator
-from unittest.mock import patch
-from unittest.mock import Mock
-from yaml import YAMLError  # type: ignore[import-untyped]
-
-import pytest
+from typing import Any, Iterator
+from unittest.mock import Mock, patch
 
 import pulumi_datarobot
+import pytest
+import yaml
+from yaml import YAMLError
+
 from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import (
-    MCPOAuthProtectedResourceMetadataConfig,
     BaseDataClass,
-)
-from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import XAATokenExchangeParams
-from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import XAATokenRequestParams
-from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import XAAMetadata
-from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import (
+    MCPOAuthProtectedResourceMetadataConfig,
     MCPOAuthProtectedResourceMetadataConfigManager,
+    XAAMetadata,
+    XAATokenExchangeParams,
+    XAATokenRequestParams,
+    config_dir_path,
 )
-from infra.{{mcp_app_name}}_oauth_protected_resource_metadata import config_dir_path
 
 
 @pytest.fixture
