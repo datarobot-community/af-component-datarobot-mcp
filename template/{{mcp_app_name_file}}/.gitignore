@@ -185,4 +185,4 @@ temp.txt
 /dev_tools/lineage/mcp_item_metadata/*.yaml
 
 # Config of MCP protected resource metadata
-mcp_oauth_protected_resource_metadata_config.yaml
+oauth-config.yaml

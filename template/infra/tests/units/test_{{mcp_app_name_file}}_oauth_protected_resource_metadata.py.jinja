@@ -228,7 +228,7 @@ class TestMCPOAuthProtectedResourceMetadataConfigManager:
         config_path = (
             MCPOAuthProtectedResourceMetadataConfigManager().get_metadata_config_path()
         )
-        assert config_path.name == "mcp_oauth_protected_resource_metadata_config.yaml"
+        assert config_path.name == "oauth-config.yaml"
 
     def test_get_yaml_string_of_metadata(
         self,
@@ -271,7 +271,7 @@ class TestMCPOAuthProtectedResourceMetadataConfigManager:
         output = MCPOAuthProtectedResourceMetadataConfigManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
 
         assert output == pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-            key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA_CONFIG",
+            key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA",
             type="string",
             value=metadata_config_in_string,
         )
