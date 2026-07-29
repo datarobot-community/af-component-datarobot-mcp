@@ -109,7 +109,7 @@ class MCPOAuthProtectedResourceMetadataConfigManager:
 
     def get_metadata_config_path(self) -> Path:
         return (
-            self.config_dir_path / "mcp_oauth_protected_resource_metadata_config.yaml"
+            self.config_dir_path / "oauth-config.yaml"
         )
 
     def load_metadata_config(self) -> dict[str, Any]:
@@ -142,7 +142,7 @@ class MCPOAuthProtectedResourceMetadataConfigManager:
 
         return (
             pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-                key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA_CONFIG",
+                key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA",
                 type="string",
                 value=metadata_in_string,
             )
