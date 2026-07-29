@@ -271,7 +271,7 @@ class TestMCPOAuthProtectedResourceMetadataConfigManager:
         output = MCPOAuthProtectedResourceMetadataConfigManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
 
         assert output == pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-            key="MCP_OAUTH_PROTECTED_RESOURCE_METADATA",
+            key="MCP_OAUTH_METADATA",
             type="string",
             value=metadata_config_in_string,
         )
