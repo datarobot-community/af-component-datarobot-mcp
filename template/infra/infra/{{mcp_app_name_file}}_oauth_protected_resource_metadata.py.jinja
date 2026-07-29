@@ -108,9 +108,7 @@ class MCPOAuthProtectedResourceMetadataConfigManager:
         self.config_dir_path = config_dir_path()
 
     def get_metadata_config_path(self) -> Path:
-        return (
-            self.config_dir_path / "oauth-config.yaml"
-        )
+        return self.config_dir_path / "oauth-config.yaml"
 
     def load_metadata_config(self) -> dict[str, Any]:
         return yaml.safe_load(
