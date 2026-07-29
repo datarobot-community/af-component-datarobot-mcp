@@ -396,9 +396,7 @@ deployments_model_runtime_parameters.extend(MCP_USER_RUNTIME_PARAMETERS)
 deployments_model_runtime_parameters.extend(api_keys_runtime_parameters)
 mcp_oauth_metadata_param = MCPOAuthProtectedResourceMetadataConfigManager().get_pulumi_custom_model_runtime_parameter_value_args_of_mcp_metadata()
 if mcp_oauth_metadata_param:
-    deployments_model_runtime_parameters.append(
-        mcp_oauth_metadata_param
-    )
+    deployments_model_runtime_parameters.append(mcp_oauth_metadata_param)
 custom_model_files = get_deployments_app_files()
 
 
