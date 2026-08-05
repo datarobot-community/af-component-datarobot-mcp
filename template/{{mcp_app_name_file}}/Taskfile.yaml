@@ -12,19 +12,78 @@ vars:
         echo "uv"
       fi
 
+  MCP_LRS_TYPE_RESOLVED:
+    sh: |
+      # 1) OS env (includes root dotenv when invoked via `task dr_mcp:install`)
+      if [ -n "${MCP_LRS_TYPE:-}" ]; then
+        echo "$MCP_LRS_TYPE"
+        exit 0
+      fi
+      # 2) Fallback for standalone `cd dr_mcp && task install`
+      for env_file in ../.env "../.env.${ENV:-testing}" .env; do
+        if [ -f "$env_file" ]; then
+          line="$(grep -E '^[[:space:]]*MCP_LRS_TYPE=' "$env_file" | tail -n 1 || true)"
+          if [ -n "$line" ]; then
+            val="${line#MCP_LRS_TYPE=}"
+            val="${val%\"}"; val="${val#\"}"
+            val="${val%\'}"; val="${val#\'}"
+            echo "$val" | xargs
+            exit 0
+          fi
+        fi
+      done
+      echo ""
+
 tasks:
   load-and-save-mcp-item-metadata:
     desc: "Load and save MCP item metadata"
     cmds:
       - echo "🔧 Loading and saving MCP item metadata.."
       - "{{.UV_CMD}} run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata"
+
+  lrs-type-check:
+    desc: "ℹ️ Validate MCP_LRS_TYPE and print the effective LRS deployment mode"
+    silent: true
+    vars:
+      RAW_MCP_LRS_TYPE: '{{.MCP_LRS_TYPE_RESOLVED}}'
+    cmds:
+      - |
+        case "{{.RAW_MCP_LRS_TYPE}}" in
+          datarobot-deployment|datarobot-workload)
+            echo "✅ LRS deployment is set up as MCP_LRS_TYPE={{.RAW_MCP_LRS_TYPE}}"
+            ;;
+          "")
+            echo "⚠️  MCP_LRS_TYPE is not set; deploy will default to MCP_LRS_TYPE=datarobot-deployment."
+            echo "ℹ️  To choose explicitly, set in .env or your shell:"
+            echo "       MCP_LRS_TYPE=datarobot-deployment"
+            echo "    or MCP_LRS_TYPE=datarobot-workload"
+            ;;
+          *)
+            echo "❌  Invalid MCP_LRS_TYPE '{{.RAW_MCP_LRS_TYPE}}'."
+            echo "ℹ️  Set a valid value in .env or your shell:"
+            echo "       MCP_LRS_TYPE=datarobot-deployment"
+            echo "    or MCP_LRS_TYPE=datarobot-workload"
+            exit 1
+            ;;
+        esac
+
   install:
     desc: "🔧 Install dependencies"
+    vars:
+      EFFECTIVE_LRS_TYPE: '{{.MCP_LRS_TYPE_RESOLVED | default "datarobot-deployment"}}'
+    deps:
+      - lrs-type-check
     cmds:
       - echo "🔧 Installing dependencies.."
       - "{{.UV_CMD}} sync --all-extras"
       - task: generate-docker-requirement-file
-      - task: load-and-save-mcp-item-metadata
+      # MCP item metadata is only consumed by datarobot-deployment provisioning.
+      # (go-task has no `if:` on task calls, so this is a shell conditional.)
+      - |
+        if [ "{{.EFFECTIVE_LRS_TYPE}}" = "datarobot-deployment" ]; then
+          echo "🔧 Loading and saving MCP item metadata.."
+          {{.UV_CMD}} run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata
+        fi
     silent: true
 
   dev:

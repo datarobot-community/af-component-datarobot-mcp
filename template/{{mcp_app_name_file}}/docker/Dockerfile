@@ -60,5 +60,8 @@ USER $UNAME
 # Expose port (adjust if your app uses a different port)
 EXPOSE 8080
 
+# Reset inherited ENTRYPOINT (base image sets it to "python")
+ENTRYPOINT []
+
 # Set the default command
-CMD ["sh", "/opt/code/start_server.sh"]
+CMD ["/bin/sh", "/opt/code/start_server.sh"]
