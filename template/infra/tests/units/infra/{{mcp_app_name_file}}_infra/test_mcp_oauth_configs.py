@@ -1,0 +1,552 @@
+# Copyright 2026 DataRobot, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from collections.abc import Iterator
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+from unittest.mock import Mock, patch
+
+import pytest
+import yaml
+from yaml import YAMLError
+
+from infra.{{mcp_app_name}}_infra.mcp_oauth_configs import (
+    DEFAULT_TOKEN_ENDPOINT_AUTH_METHOD,
+    OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH,
+    BaseDataClass,
+    CrossApplicationAccessMetadata,
+    MCPOAuthProtectedResourceMetadataConfig,
+    MCPOAuthProtectedResourceMetadataConfigManager,
+    XAATokenExchangeParams,
+    XAATokenRequestParams,
+    config_dir_path,
+    mcp_enable_unauthenticated_well_known_route_value,
+    mcp_oauth_metadata_value,
+    oauth_and_well_known_env_vars,
+    oauth_protected_resource_well_known_route_auth,
+    workload_default_mcp_oauth_routes,
+)
+
+
+@pytest.fixture
+def mock_mcp_as_resource_server_url() -> str:
+    return "https://foo/bar/mcp_resource_server"
+
+
+@pytest.fixture
+def mock_authorization_server_urls() -> list[str]:
+    return ["https://foo/bar/authorization_server"]
+
+
+@pytest.fixture
+def mock_scopes_supported() -> list[str]:
+    return ["scope"]
+
+
+@pytest.fixture
+def mock_token_endpoint_auth_method() -> str:
+    return "private_key_jwt"
+
+
+@pytest.fixture
+def mock_token_exchange_trusted_issuer() -> str:
+    return "https://foo/bar/issuer"
+
+
+@pytest.fixture
+def mock_token_exchange_audience() -> str:
+    return "https://foo/bar/token_exchange_audience"
+
+
+@pytest.fixture
+def mock_token_request_token_url() -> str:
+    return "https://foo/bar/token"
+
+
+@pytest.fixture
+def mock_token_request_audience() -> str:
+    return "https://foo/bar/token_request_audience"
+
+
+@pytest.fixture
+def mock_token_request_scopes() -> list[str]:
+    return ["scope"]
+
+
+@pytest.fixture
+def cross_application_access_in_dict(
+    mock_token_endpoint_auth_method: str,
+    mock_token_exchange_trusted_issuer: str,
+    mock_token_exchange_audience: str,
+    mock_token_request_token_url: str,
+    mock_token_request_audience: str,
+    mock_token_request_scopes: list[str],
+) -> dict[str, Any]:
+    return {
+        "token_endpoint_auth_method": mock_token_endpoint_auth_method,
+        "token_exchange": {
+            "trusted_issuer": mock_token_exchange_trusted_issuer,
+            "audience": mock_token_exchange_audience,
+        },
+        "token_request": {
+            "token_url": mock_token_request_token_url,
+            "audience": mock_token_request_audience,
+            "scopes": mock_token_request_scopes,
+        },
+    }
+
+
+@pytest.fixture
+def metadata_in_dict(
+    mock_mcp_as_resource_server_url: str,
+    mock_authorization_server_urls: list[str],
+    mock_scopes_supported: list[str],
+    cross_application_access_in_dict: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "resource": mock_mcp_as_resource_server_url,
+        "authorization_servers": mock_authorization_server_urls,
+        "scopes_supported": mock_scopes_supported,
+        "cross_application_access": cross_application_access_in_dict,
+    }
+
+
+@dataclass
+class DummyDataClassInheritingBaseDataClass(BaseDataClass):
+    attribute: int
+    nullable_attribute: int | None
+
+
+class TestBaseDataClass:
+    def test_to_dict_without_null_attribute(self) -> None:
+        dataclass_object = DummyDataClassInheritingBaseDataClass(1, None)
+        assert dataclass_object.to_dict_without_null_attribute() == {"attribute": 1}
+
+    def test_to_yaml_string(self) -> None:
+        dataclass_object = DummyDataClassInheritingBaseDataClass(1, None)
+        assert dataclass_object.to_yaml_string() == "attribute: 1\n"
+
+
+class TestCrossApplicationAccessMetadata:
+    @pytest.fixture
+    def metadata_without_token_request_audience(
+        self,
+        cross_application_access_in_dict: dict[str, Any],
+    ) -> dict[str, Any]:
+        cross_application_access_in_dict["token_request"].pop("audience")
+        return cross_application_access_in_dict
+
+    def test_load_from_dict(
+        self,
+        cross_application_access_in_dict: dict[str, Any],
+        mock_token_endpoint_auth_method: str,
+        mock_token_exchange_trusted_issuer: str,
+        mock_token_exchange_audience: str,
+        mock_token_request_token_url: str,
+        mock_token_request_audience: str,
+        mock_token_request_scopes: list[str],
+    ) -> None:
+        metadata = CrossApplicationAccessMetadata.from_dict(
+            cross_application_access_in_dict
+        )
+
+        assert isinstance(metadata, CrossApplicationAccessMetadata)
+        assert metadata.token_endpoint_auth_method == mock_token_endpoint_auth_method
+        token_exchange_params = metadata.token_exchange
+        assert isinstance(token_exchange_params, XAATokenExchangeParams)
+        assert (
+            token_exchange_params.trusted_issuer == mock_token_exchange_trusted_issuer
+        )
+        assert token_exchange_params.audience == mock_token_exchange_audience
+        token_request_params = metadata.token_request
+        assert isinstance(token_request_params, XAATokenRequestParams)
+        assert token_request_params.token_url == mock_token_request_token_url
+        assert token_request_params.audience == mock_token_request_audience
+        assert token_request_params.scopes == mock_token_request_scopes
+
+    def test_load_from_dict_without_token_request_audience(
+        self,
+        metadata_without_token_request_audience: dict[str, Any],
+    ) -> None:
+        metadata = CrossApplicationAccessMetadata.from_dict(
+            metadata_without_token_request_audience
+        )
+
+        assert isinstance(metadata, CrossApplicationAccessMetadata)
+        assert metadata.token_request.audience is None
+
+    def test_to_yaml_string(
+        self, cross_application_access_in_dict: dict[str, Any]
+    ) -> None:
+        metadata = CrossApplicationAccessMetadata.from_dict(
+            cross_application_access_in_dict
+        )
+        assert metadata.to_yaml_string() == yaml.safe_dump(
+            cross_application_access_in_dict
+        )
+
+    def test_token_endpoint_auth_method_defaults_when_omitted(
+        self, cross_application_access_in_dict: dict[str, Any]
+    ) -> None:
+        cross_application_access_in_dict.pop("token_endpoint_auth_method")
+
+        metadata = CrossApplicationAccessMetadata.from_dict(
+            cross_application_access_in_dict
+        )
+
+        assert metadata.token_endpoint_auth_method == DEFAULT_TOKEN_ENDPOINT_AUTH_METHOD
+        assert DEFAULT_TOKEN_ENDPOINT_AUTH_METHOD == "private_key_jwt"
+
+
+class TestMCPOAuthProtectedResourceMetadataConfig:
+    def test_load_from_dict(
+        self,
+        metadata_in_dict: dict[str, Any],
+        mock_mcp_as_resource_server_url: str,
+        mock_authorization_server_urls: list[str],
+        mock_scopes_supported: list[str],
+        cross_application_access_in_dict: dict[str, Any],
+    ) -> None:
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict(metadata_in_dict)
+
+        assert metadata.resource == mock_mcp_as_resource_server_url
+        assert metadata.authorization_servers == mock_authorization_server_urls
+        assert metadata.scopes_supported == mock_scopes_supported
+        assert isinstance(
+            metadata.cross_application_access, CrossApplicationAccessMetadata
+        )
+
+    def test_to_yaml_string(self, metadata_in_dict: dict[str, Any]) -> None:
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict(metadata_in_dict)
+        assert metadata.to_yaml_string() == yaml.safe_dump(metadata_in_dict)
+
+    def test_load_from_dict_with_only_cross_application_access(
+        self, cross_application_access_in_dict: dict[str, Any]
+    ) -> None:
+        """resource/authorization_servers/scopes_supported have no logic behind them yet."""
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict(
+            {"cross_application_access": cross_application_access_in_dict}
+        )
+
+        assert metadata.resource is None
+        assert metadata.authorization_servers is None
+        assert metadata.scopes_supported is None
+        assert metadata.to_dict_without_null_attribute() == {
+            "cross_application_access": cross_application_access_in_dict
+        }
+
+    def test_load_from_dict_with_empty_config(self) -> None:
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict({})
+
+        assert metadata.cross_application_access is None
+        assert metadata.to_dict_without_null_attribute() == {}
+
+    def test_load_from_dict_reads_unauthenticated_well_known_route_flag(self) -> None:
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict(
+            {"mcp_enable_unauthenticated_well_known_route": True}
+        )
+
+        assert metadata.mcp_enable_unauthenticated_well_known_route is True
+
+
+class TestMCPOAuthProtectedResourceMetadataConfigManager:
+    @pytest.fixture
+    def mock_load_metadata_config(
+        self, metadata_in_dict: dict[str, Any]
+    ) -> Iterator[Mock]:
+        with patch.object(
+            MCPOAuthProtectedResourceMetadataConfigManager,
+            "load_metadata_config",
+        ) as mock_func:
+            mock_func.return_value = metadata_in_dict
+            yield mock_func
+
+    def test_config_dir_path_exists(self) -> None:
+        assert config_dir_path().exists()
+
+    def test_get_metadata_config_path(self) -> None:
+        config_path = (
+            MCPOAuthProtectedResourceMetadataConfigManager().get_metadata_config_path()
+        )
+        assert config_path.name == "oauth-config.yaml"
+
+    def test_get_yaml_string_of_metadata(
+        self,
+        metadata_in_dict: dict[str, Any],
+        mock_load_metadata_config: Mock,
+    ) -> None:
+        output = MCPOAuthProtectedResourceMetadataConfigManager().get_yaml_string_of_metadata()
+
+        mock_load_metadata_config.assert_called_once_with()
+        assert output == yaml.safe_dump(metadata_in_dict)
+
+    @pytest.mark.parametrize(
+        "raised_error",
+        [AttributeError, FileNotFoundError, KeyError, TypeError, YAMLError],
+        ids=str,
+    )
+    def test_get_yaml_string_of_metadata_return_none_if_errored(
+        self,
+        raised_error: AttributeError
+        | FileNotFoundError
+        | KeyError
+        | TypeError
+        | YAMLError,
+        mock_load_metadata_config: Mock,
+    ) -> None:
+        mock_load_metadata_config.side_effect = raised_error
+
+        output = MCPOAuthProtectedResourceMetadataConfigManager().get_yaml_string_of_metadata()
+
+        mock_load_metadata_config.assert_called_once_with()
+        assert output is None
+
+
+class TestMcpOAuthProvisioningConfig:
+    def test_mcp_oauth_metadata_value_prefers_env_var(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("MCP_OAUTH_METADATA", "resource: https://example.com")
+
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.MCPOAuthProtectedResourceMetadataConfigManager"
+        ) as mock_manager:
+            assert mcp_oauth_metadata_value() == "resource: https://example.com"
+            mock_manager.assert_not_called()
+
+    def test_mcp_oauth_metadata_value_falls_back_to_yaml_file(self) -> None:
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.MCPOAuthProtectedResourceMetadataConfigManager"
+        ) as mock_manager:
+            mock_manager.return_value.get_yaml_string_of_metadata.return_value = (
+                "resource: file"
+            )
+
+            assert mcp_oauth_metadata_value() == "resource: file"
+
+    def test_well_known_route_defaults_false(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", raising=False)
+
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.mcp_oauth_metadata_value",
+            return_value=None,
+        ):
+            assert mcp_enable_unauthenticated_well_known_route_value() == "false"
+
+    def test_well_known_route_reads_env_var(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", "true")
+
+        assert mcp_enable_unauthenticated_well_known_route_value() == "true"
+
+    @pytest.mark.parametrize(
+        ("yaml_value", "expected"),
+        [
+            ("true", "true"),
+            ("false", "false"),
+            ('"true"', "true"),
+            ('"false"', "false"),
+        ],
+    )
+    def test_well_known_route_reads_oauth_config_yaml(
+        self, monkeypatch: pytest.MonkeyPatch, yaml_value: str, expected: str
+    ) -> None:
+        """The flag is configurable from oauth-config.yaml, not just the env var."""
+        monkeypatch.delenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", raising=False)
+
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.mcp_oauth_metadata_value",
+            return_value=(
+                f"mcp_enable_unauthenticated_well_known_route: {yaml_value}\n"
+            ),
+        ):
+            assert mcp_enable_unauthenticated_well_known_route_value() == expected
+
+    def test_well_known_route_env_var_wins_over_yaml(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", "false")
+
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.mcp_oauth_metadata_value",
+            return_value="mcp_enable_unauthenticated_well_known_route: true\n",
+        ):
+            assert mcp_enable_unauthenticated_well_known_route_value() == "false"
+
+    def test_well_known_route_ignores_unparsable_metadata(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", raising=False)
+
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.mcp_oauth_metadata_value",
+            return_value="{unbalanced: [",
+        ):
+            assert mcp_enable_unauthenticated_well_known_route_value() == "false"
+
+    def test_oauth_and_well_known_env_vars(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", "true")
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.mcp_oauth_metadata_value",
+            return_value="oauth-yaml",
+        ):
+            env_vars = oauth_and_well_known_env_vars()
+
+        assert env_vars == [
+            {
+                "name": "MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE",
+                "value": "true",
+            },
+            {"name": "MCP_OAUTH_METADATA", "value": "oauth-yaml"},
+        ]
+
+    def test_oauth_and_well_known_env_vars_without_metadata(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", raising=False)
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.mcp_oauth_metadata_value",
+            return_value=None,
+        ):
+            env_vars = oauth_and_well_known_env_vars()
+
+        assert env_vars == [
+            {
+                "name": "MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE",
+                "value": "false",
+            },
+        ]
+
+
+class TestWorkloadOAuthRoutes:
+    @pytest.fixture(autouse=True)
+    def _without_oauth_config_yaml(self) -> Iterator[None]:
+        """Isolate from a developer's local {{mcp_app_name}}/oauth-config.yaml.
+
+        The route auth now also resolves from that file, so leaving it readable
+        would make these assertions depend on the host's config.
+        """
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.mcp_oauth_metadata_value",
+            return_value=None,
+        ):
+            yield
+
+    def test_workload_oauth_routes_defaults_to_required(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", raising=False)
+
+        assert workload_default_mcp_oauth_routes() == [
+            {
+                "path": OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH,
+                "auth": "required",
+            },
+        ]
+
+    def test_workload_oauth_routes_disabled_from_oauth_config_yaml(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", raising=False)
+
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.mcp_oauth_metadata_value",
+            return_value="mcp_enable_unauthenticated_well_known_route: true\n",
+        ):
+            assert oauth_protected_resource_well_known_route_auth() == "disabled"
+
+    def test_workload_oauth_routes_disabled_when_env_true(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", "true")
+
+        assert oauth_protected_resource_well_known_route_auth() == "disabled"
+        assert workload_default_mcp_oauth_routes() == [
+            {
+                "path": OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH,
+                "auth": "disabled",
+            },
+        ]
+
+
+class TestOAuthConfigTemplateContract:
+    """Pins the MCP_OAUTH_METADATA that ships to the server.
+
+    The server (datarobot-genai `drmcpbase.oauth_protected_resource_metadata`)
+    re-parses this YAML and publishes it at the well-known route, where a
+    DataRobot agent's XAA client reads `cross_application_access`. The same
+    literal is asserted from the genai side, so a drift in either repo fails.
+    """
+
+    EXPECTED_METADATA_YAML = (
+        "cross_application_access:\n"
+        "  token_endpoint_auth_method: private_key_jwt\n"
+        "  token_exchange:\n"
+        "    audience: https://url_of_auth_server_with_audience_id\n"
+        "    trusted_issuer: https://trusted_issuer_url_used_in_xaa_token_exchange_step\n"
+        "  token_request:\n"
+        "    audience: https://url_of_auth_server_with_targeted_audience_id\n"
+        "    scopes:\n"
+        "    - scope_to_be_authorized_by_authorization_server\n"
+        "    token_url: https://auth_server_token_request_url\n"
+        "mcp_enable_unauthenticated_well_known_route: true\n"
+    )
+
+    @pytest.fixture
+    def template_config(self) -> dict:
+        template_path = (
+            Path(__file__).resolve().parents[5]
+            / "{{mcp_app_name}}"
+            / "oauth-config.yaml.template"
+        )
+        return yaml.safe_load(template_path.read_text(encoding="utf-8"))
+
+    def test_template_only_declares_supported_fields(
+        self, template_config: dict
+    ) -> None:
+        assert set(template_config) == {
+            "cross_application_access",
+            "mcp_enable_unauthenticated_well_known_route",
+        }
+        # token_endpoint_auth_method is intentionally not shown; it defaults.
+        assert (
+            "token_endpoint_auth_method"
+            not in template_config["cross_application_access"]
+        )
+
+    def test_metadata_yaml_matches_the_served_contract(
+        self, template_config: dict
+    ) -> None:
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict(template_config)
+
+        assert metadata.to_yaml_string() == self.EXPECTED_METADATA_YAML
+
+    def test_template_enables_the_unauthenticated_well_known_route(
+        self, monkeypatch: pytest.MonkeyPatch, template_config: dict
+    ) -> None:
+        """Agents fetch the well-known route with no token, so it must be open."""
+        monkeypatch.delenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", raising=False)
+        metadata = MCPOAuthProtectedResourceMetadataConfig.from_dict(template_config)
+
+        with patch(
+            "infra.{{mcp_app_name}}_infra.mcp_oauth_configs.mcp_oauth_metadata_value",
+            return_value=metadata.to_yaml_string(),
+        ):
+            assert mcp_enable_unauthenticated_well_known_route_value() == "true"
+            assert oauth_protected_resource_well_known_route_auth() == "disabled"
