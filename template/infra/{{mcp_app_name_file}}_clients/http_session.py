@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Shared requests session with retries for DataRobot REST API clients."""
+"""Shared authenticated HTTP session for the DataRobot Files and Workload APIs."""
 
 from __future__ import annotations
 
@@ -20,66 +20,38 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# Transient overload / gateway / server errors worth retrying.
-DEFAULT_RETRY_STATUS_CODES: frozenset[int] = frozenset(
-    {
-        408,  # Request Timeout
-        429,  # Too Many Requests (honours Retry-After when present)
-        500,  # Internal Server Error
-        502,  # Bad Gateway
-        503,  # Service Unavailable
-        504,  # Gateway Timeout
-    }
-)
-
-DEFAULT_RETRY_TOTAL = 5
-DEFAULT_RETRY_BACKOFF_FACTOR = 1.0
-
-# urllib3's default allowed methods omit POST; both Files and Workload APIs
-# rely on POST for creates/build triggers/uploads.
-RETRY_ALLOWED_METHODS = frozenset(
-    {"DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT", "TRACE"}
-)
-
-
-def create_retry_adapter(
-    *,
-    total: int = DEFAULT_RETRY_TOTAL,
-    backoff_factor: float = DEFAULT_RETRY_BACKOFF_FACTOR,
-    status_forcelist: frozenset[int] | None = None,
-) -> HTTPAdapter:
-    """Build an HTTPAdapter that retries transient connection and HTTP errors."""
-    retry = Retry(
-        total=total,
-        connect=total,
-        read=total,
-        status=total,
-        backoff_factor=backoff_factor,
-        status_forcelist=tuple(status_forcelist or DEFAULT_RETRY_STATUS_CODES),
-        allowed_methods=RETRY_ALLOWED_METHODS,
-        raise_on_status=False,
-    )
-    return HTTPAdapter(max_retries=retry)
+TOTAL_RETRIES = 3
+BACKOFF_FACTOR = 0.5
+RETRY_STATUS_FORCELIST = (429, 500, 502, 503, 504)
 
 
 def create_datarobot_api_session(
-    token: str,
-    *,
-    default_headers: dict[str, str] | None = None,
-    retry_total: int = DEFAULT_RETRY_TOTAL,
-    retry_backoff_factor: float = DEFAULT_RETRY_BACKOFF_FACTOR,
+    token: str, default_headers: dict[str, str] | None = None
 ) -> requests.Session:
-    """Create a requests session authenticated for DataRobot API calls."""
+    """A DataRobot API session with bearer auth and retries on transient failures.
+
+    Retries are limited to urllib3's default idempotent methods. POST is
+    deliberately excluded: the Files and Workload APIs create resources with POST
+    (catalogs, stages, artifacts, builds), so a retry after a request that
+    actually succeeded server-side would create a duplicate.
+
+    ``raise_on_status=False`` keeps the final response instead of raising
+    ``requests.exceptions.RetryError``, so callers' own error handling can still
+    surface the response body — the Workload API returns the actionable
+    validation detail there.
+    """
     session = requests.Session()
-    adapter = create_retry_adapter(
-        total=retry_total,
-        backoff_factor=retry_backoff_factor,
+    session.headers.update({"Authorization": f"Bearer {token}"})
+    if default_headers:
+        session.headers.update(default_headers)
+
+    retry = Retry(
+        total=TOTAL_RETRIES,
+        backoff_factor=BACKOFF_FACTOR,
+        status_forcelist=RETRY_STATUS_FORCELIST,
+        raise_on_status=False,
     )
+    adapter = HTTPAdapter(max_retries=retry)
     session.mount("https://", adapter)
     session.mount("http://", adapter)
-
-    headers = {"Authorization": f"Bearer {token}"}
-    if default_headers:
-        headers.update(default_headers)
-    session.headers.update(headers)
     return session

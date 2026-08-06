@@ -1,15 +1,36 @@
-resource: https://url_of_mcp_as_resource_server
-authorization_servers:
-  - https://url_of_auth_server
-scopes_supported:
-  - scope_to_be_authorized_by_authorization_server
-xaa_metadata:
-  token_endpoint_auth_method: private_key_jwt
+# OAuth protected-resource metadata for this MCP server.
+#
+# Copy to `oauth-config.yaml` and edit. `task deploy` ships the result to the
+# server as MCP_OAUTH_METADATA, and the server publishes it at
+# `/.well-known/oauth-protected-resource`. Set the MCP_OAUTH_METADATA env var
+# to override this file entirely.
+#
+# Every field is optional. Fields that are not registered RFC 9728 parameters are
+# published with an `x_` prefix so clients can tell them apart — the exception is
+# `cross_application_access`, published under its own name (see below).
+
+# Serve the well-known route without authentication. A DataRobot agent fetches
+# this document *before* it holds a token, so XAA discovery needs this enabled.
+# Published as `x_mcp_enable_unauthenticated_well_known_route`.
+mcp_enable_unauthenticated_well_known_route: true
+
+# Cross-Application Access parameters, published under this same name so it
+# matches an agent's own `cross_application_access` config block: an agent that
+# omits that block discovers these values here instead.
+cross_application_access:
+  # Optional: `token_endpoint_auth_method` defaults to `private_key_jwt`,
+  # which is the only method implemented today.
   token_exchange:
     trusted_issuer: https://trusted_issuer_url_used_in_xaa_token_exchange_step
     audience: https://url_of_auth_server_with_audience_id
-  token_request:
-    token_url: https://auth_server_token_request_url
     audience: https://url_of_auth_server_with_targeted_audience_id
     scopes:
       - scope_to_be_authorized_by_authorization_server
+# Optional standard fields. Published verbatim when set, but nothing enforces
+# them yet, so they are left out by default:
+#
+# resource: https://url_of_mcp_as_resource_server
+# authorization_servers:
+#   - https://url_of_auth_server
+# scopes_supported:
+#   - scope_to_be_authorized_by_authorization_server

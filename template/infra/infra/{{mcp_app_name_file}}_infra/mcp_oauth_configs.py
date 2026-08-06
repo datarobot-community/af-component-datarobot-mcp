@@ -31,6 +31,18 @@ logger = logging.getLogger(__name__)
 
 OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH = "/.well-known/oauth-protected-resource"
 
+ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_KEY = (
+    "mcp_enable_unauthenticated_well_known_route"
+)
+
+# Only ``private_key_jwt`` is implemented today, so the config may omit it.
+DEFAULT_TOKEN_ENDPOINT_AUTH_METHOD = "private_key_jwt"
+
+# Key for the Cross-Application Access block. The server publishes it under this
+# same name — deliberately exempt from the ``x_`` prefix it gives its other
+# non-RFC-9728 members — so it matches the agent-side config block exactly.
+CROSS_APPLICATION_ACCESS_CONFIG_KEY = "cross_application_access"
+
 
 class BaseDataClass:
     def to_dict_without_null_attribute(self) -> dict[str, Any]:
@@ -68,41 +80,71 @@ class XAATokenRequestParams(BaseDataClass):
 
 
 @dataclass
-class XAAMetadata(BaseDataClass):
-    token_endpoint_auth_method: str
+class CrossApplicationAccessMetadata(BaseDataClass):
+    """Cross-Application Access parameters for the hybrid RFC 8693 / RFC 7523 flow.
+
+    Mirrors the agent-side ``cross_application_access`` config block, so an agent
+    that omits it reads these values off this server's metadata document instead.
+    """
+
     token_exchange: XAATokenExchangeParams
     token_request: XAATokenRequestParams
+    token_endpoint_auth_method: str = DEFAULT_TOKEN_ENDPOINT_AUTH_METHOD
 
     @classmethod
-    def from_dict(cls, metadata_in_dict: dict[str, Any]) -> XAAMetadata:
+    def from_dict(
+        cls, metadata_in_dict: dict[str, Any]
+    ) -> CrossApplicationAccessMetadata:
         return cls(
-            metadata_in_dict["token_endpoint_auth_method"],
-            XAATokenExchangeParams.from_dict(metadata_in_dict["token_exchange"]),
-            XAATokenRequestParams.from_dict(metadata_in_dict["token_request"]),
+            token_exchange=XAATokenExchangeParams.from_dict(
+                metadata_in_dict["token_exchange"]
+            ),
+            token_request=XAATokenRequestParams.from_dict(
+                metadata_in_dict["token_request"]
+            ),
+            token_endpoint_auth_method=metadata_in_dict.get(
+                "token_endpoint_auth_method", DEFAULT_TOKEN_ENDPOINT_AUTH_METHOD
+            ),
         )
 
 
 @dataclass
 class MCPOAuthProtectedResourceMetadataConfig(BaseDataClass):
-    resource: str
-    authorization_servers: list[str]
-    scopes_supported: list[str]
-    xaa_metadata: XAAMetadata | None
+    """Parsed ``dr_mcp/oauth-config.yaml`` (or ``MCP_OAUTH_METADATA``).
+
+    Every field is optional. ``resource``, ``authorization_servers`` and
+    ``scopes_supported`` are shipped verbatim but nothing enforces them yet, so a
+    config declaring only ``cross_application_access`` is valid. This mirrors
+    ``datarobot_genai.drmcpbase.oauth_protected_resource_metadata.entities``,
+    which the server uses to serve the document — keep the two in sync.
+    """
+
+    resource: str | None = None
+    authorization_servers: list[str] | None = None
+    scopes_supported: list[str] | None = None
+    cross_application_access: CrossApplicationAccessMetadata | None = None
+    mcp_enable_unauthenticated_well_known_route: bool | None = None
 
     @classmethod
     def from_dict(
         cls, metadata_in_dict: dict[str, Any]
     ) -> MCPOAuthProtectedResourceMetadataConfig:
-        xaa_metadata = (
-            XAAMetadata.from_dict(metadata_in_dict["xaa_metadata"])
-            if metadata_in_dict.get("xaa_metadata")
+        cross_application_access_in_dict = metadata_in_dict.get(
+            CROSS_APPLICATION_ACCESS_CONFIG_KEY
+        )
+        cross_application_access = (
+            CrossApplicationAccessMetadata.from_dict(cross_application_access_in_dict)
+            if cross_application_access_in_dict
             else None
         )
         return cls(
-            metadata_in_dict["resource"],
-            metadata_in_dict["authorization_servers"],
-            metadata_in_dict["scopes_supported"],
-            xaa_metadata,
+            resource=metadata_in_dict.get("resource"),
+            authorization_servers=metadata_in_dict.get("authorization_servers"),
+            scopes_supported=metadata_in_dict.get("scopes_supported"),
+            cross_application_access=cross_application_access,
+            mcp_enable_unauthenticated_well_known_route=metadata_in_dict.get(
+                ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_KEY
+            ),
         )
 
 
@@ -151,10 +193,38 @@ def mcp_oauth_metadata_value() -> str | None:
     )
 
 
+def _well_known_route_flag_from_metadata() -> bool | None:
+    """Read the well-known route flag out of the resolved OAuth metadata YAML."""
+    metadata = mcp_oauth_metadata_value()
+    if not metadata:
+        return None
+    try:
+        parsed = yaml.safe_load(metadata)
+    except YAMLError:
+        logger.exception(
+            "Failed to parse MCP OAuth metadata while reading "
+            f"{ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_KEY}"
+        )
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    value = parsed.get(ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_KEY)
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value.strip().lower() == "true"
+    return bool(value)
+
+
 def mcp_enable_unauthenticated_well_known_route_value() -> str:
-    return str(
-        os.getenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", "false")
-    ).lower()
+    """Resolve the well-known route flag: env var wins, then oauth-config.yaml."""
+    env_value = os.getenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", "").strip()
+    if env_value:
+        return env_value.lower()
+    flag_from_metadata = _well_known_route_flag_from_metadata()
+    if flag_from_metadata is not None:
+        return str(flag_from_metadata).lower()
+    return "false"
 
 
 def oauth_protected_resource_well_known_route_auth() -> str:

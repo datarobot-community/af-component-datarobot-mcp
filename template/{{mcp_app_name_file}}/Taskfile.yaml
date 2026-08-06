@@ -12,19 +12,19 @@ vars:
         echo "uv"
       fi
 
-  MCP_LRS_TYPE_RESOLVED:
+  MCP_DEPLOYMENT_TYPE_RESOLVED:
     sh: |
       # 1) OS env (includes root dotenv when invoked via `task dr_mcp:install`)
-      if [ -n "${MCP_LRS_TYPE:-}" ]; then
-        echo "$MCP_LRS_TYPE"
+      if [ -n "${MCP_DEPLOYMENT_TYPE:-}" ]; then
+        echo "$MCP_DEPLOYMENT_TYPE"
         exit 0
       fi
       # 2) Fallback for standalone `cd dr_mcp && task install`
       for env_file in ../.env "../.env.${ENV:-testing}" .env; do
         if [ -f "$env_file" ]; then
-          line="$(grep -E '^[[:space:]]*MCP_LRS_TYPE=' "$env_file" | tail -n 1 || true)"
+          line="$(grep -E '^[[:space:]]*MCP_DEPLOYMENT_TYPE=' "$env_file" | tail -n 1 || true)"
           if [ -n "$line" ]; then
-            val="${line#MCP_LRS_TYPE=}"
+            val="${line#MCP_DEPLOYMENT_TYPE=}"
             val="${val%\"}"; val="${val#\"}"
             val="${val%\'}"; val="${val#\'}"
             echo "$val" | xargs
@@ -41,28 +41,28 @@ tasks:
       - echo "🔧 Loading and saving MCP item metadata.."
       - "{{.UV_CMD}} run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata"
 
-  lrs-type-check:
-    desc: "ℹ️ Validate MCP_LRS_TYPE and print the effective LRS deployment mode"
+  deployment-type-check:
+    desc: "ℹ️ Validate MCP_DEPLOYMENT_TYPE and print the effective MCP deployment mode"
     silent: true
     vars:
-      RAW_MCP_LRS_TYPE: '{{.MCP_LRS_TYPE_RESOLVED}}'
+      RAW_MCP_DEPLOYMENT_TYPE: '{{.MCP_DEPLOYMENT_TYPE_RESOLVED}}'
     cmds:
       - |
-        case "{{.RAW_MCP_LRS_TYPE}}" in
-          datarobot-deployment|datarobot-workload)
-            echo "✅ LRS deployment is set up as MCP_LRS_TYPE={{.RAW_MCP_LRS_TYPE}}"
+        case "{{.RAW_MCP_DEPLOYMENT_TYPE}}" in
+          datarobot-serverless|datarobot-workload)
+            echo "✅ MCP deployment type is set up as MCP_DEPLOYMENT_TYPE={{.RAW_MCP_DEPLOYMENT_TYPE}}"
             ;;
           "")
-            echo "⚠️  MCP_LRS_TYPE is not set; deploy will default to MCP_LRS_TYPE=datarobot-deployment."
+            echo "⚠️  MCP_DEPLOYMENT_TYPE is not set; deploy will default to MCP_DEPLOYMENT_TYPE=datarobot-serverless."
             echo "ℹ️  To choose explicitly, set in .env or your shell:"
-            echo "       MCP_LRS_TYPE=datarobot-deployment"
-            echo "    or MCP_LRS_TYPE=datarobot-workload"
+            echo "       MCP_DEPLOYMENT_TYPE=datarobot-serverless"
+            echo "    or MCP_DEPLOYMENT_TYPE=datarobot-workload"
             ;;
           *)
-            echo "❌  Invalid MCP_LRS_TYPE '{{.RAW_MCP_LRS_TYPE}}'."
+            echo "❌  Invalid MCP_DEPLOYMENT_TYPE '{{.RAW_MCP_DEPLOYMENT_TYPE}}'."
             echo "ℹ️  Set a valid value in .env or your shell:"
-            echo "       MCP_LRS_TYPE=datarobot-deployment"
-            echo "    or MCP_LRS_TYPE=datarobot-workload"
+            echo "       MCP_DEPLOYMENT_TYPE=datarobot-serverless"
+            echo "    or MCP_DEPLOYMENT_TYPE=datarobot-workload"
             exit 1
             ;;
         esac
@@ -70,17 +70,17 @@ tasks:
   install:
     desc: "🔧 Install dependencies"
     vars:
-      EFFECTIVE_LRS_TYPE: '{{.MCP_LRS_TYPE_RESOLVED | default "datarobot-deployment"}}'
+      EFFECTIVE_DEPLOYMENT_TYPE: '{{.MCP_DEPLOYMENT_TYPE_RESOLVED | default "datarobot-serverless"}}'
     deps:
-      - lrs-type-check
+      - deployment-type-check
     cmds:
       - echo "🔧 Installing dependencies.."
       - "{{.UV_CMD}} sync --all-extras"
       - task: generate-docker-requirement-file
-      # MCP item metadata is only consumed by datarobot-deployment provisioning.
+      # MCP item metadata is only consumed by datarobot-serverless provisioning.
       # (go-task has no `if:` on task calls, so this is a shell conditional.)
       - |
-        if [ "{{.EFFECTIVE_LRS_TYPE}}" = "datarobot-deployment" ]; then
+        if [ "{{.EFFECTIVE_DEPLOYMENT_TYPE}}" = "datarobot-serverless" ]; then
           echo "🔧 Loading and saving MCP item metadata.."
           {{.UV_CMD}} run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata
         fi

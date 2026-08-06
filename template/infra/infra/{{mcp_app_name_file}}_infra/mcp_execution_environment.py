@@ -34,7 +34,7 @@ def provision_mcp_execution_environment(
     resource_name_suffix: str = "",
 ) -> pulumi_datarobot.ExecutionEnvironment:
     """
-    Mirror datarobot-deployment execution environment selection:
+    Mirror datarobot-serverless execution environment selection:
 
     - ``DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT`` set → reference existing EE
       (with GenAI default name normalization and optional version pin).

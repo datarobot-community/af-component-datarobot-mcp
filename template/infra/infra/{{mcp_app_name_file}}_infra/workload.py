@@ -59,7 +59,7 @@ DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
 def _require_env(name: str) -> str:
     value = os.getenv(name, "").strip()
     if not value:
-        message = f"{name} is required for MCP_LRS_TYPE=datarobot-workload"
+        message = f"{name} is required for MCP_DEPLOYMENT_TYPE=datarobot-workload"
         pulumi.error(message)
         raise RuntimeError(message)
     return value
@@ -119,7 +119,7 @@ def _resolve_container_port() -> int:
 def user_param_env_vars() -> list[dict[str, str]]:
     """Map MCP_USER_RUNTIME_PARAMETERS onto container env vars.
 
-    This mirrors the datarobot-deployment path, where the same list is injected
+    This mirrors the datarobot-serverless path, where the same list is injected
     as custom model runtime parameters. Credential-type parameters (whose value
     is an api-token DataRobot credential ID) become "dr-credential" env var
     references that the platform resolves at runtime.
@@ -266,7 +266,7 @@ def _create_workload_image_artifact(
 
     pulumi.info(
         "Workload image build: DockerfileGenerated "
-        "(execution environment aligned with datarobot-deployment)"
+        "(execution environment aligned with datarobot-serverless)"
     )
     return WorkloadGeneratedImageArtifact(
         mcp_server_asset_name + " Workload Artifact [Generated Dockerfile]",
@@ -293,7 +293,7 @@ def provision_workload_mcp_server(
     get_deployments_app_files: Callable[[], list[tuple[str, str]]],
 ) -> dict[str, Any]:
     pulumi.info(
-        "MCP_LRS_TYPE='datarobot-workload' -> provisioning via Workload API "
+        "MCP_DEPLOYMENT_TYPE='datarobot-workload' -> provisioning via Workload API "
         "(Files catalog + image-build artifact + Workload)."
     )
 
@@ -373,7 +373,7 @@ def provision_workload_mcp_server_from_image_uri(
     workload_image_uri: str,
 ) -> dict[str, Any]:
     pulumi.info(
-        "MCP_LRS_TYPE='datarobot-workload' -> provisioning via Workload API "
+        "MCP_DEPLOYMENT_TYPE='datarobot-workload' -> provisioning via Workload API "
         "(Workload image URI)."
     )
 
