@@ -59,7 +59,7 @@ DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
 def _require_env(name: str) -> str:
     value = os.getenv(name, "").strip()
     if not value:
-        message = f"{name} is required for MCP_DEPLOYMENT_TYPE=datarobot-workload"
+        message = f"{name} is required for MCP_DEPLOYMENT_TYPE=datarobot-workload-preview-preview"
         pulumi.error(message)
         raise RuntimeError(message)
     return value
@@ -293,7 +293,7 @@ def provision_workload_mcp_server(
     get_deployments_app_files: Callable[[], list[tuple[str, str]]],
 ) -> dict[str, Any]:
     pulumi.info(
-        "MCP_DEPLOYMENT_TYPE='datarobot-workload' -> provisioning via Workload API "
+        "MCP_DEPLOYMENT_TYPE='datarobot-workload-preview' -> provisioning via Workload API "
         "(Files catalog + image-build artifact + Workload)."
     )
 
@@ -373,7 +373,7 @@ def provision_workload_mcp_server_from_image_uri(
     workload_image_uri: str,
 ) -> dict[str, Any]:
     pulumi.info(
-        "MCP_DEPLOYMENT_TYPE='datarobot-workload' -> provisioning via Workload API "
+        "MCP_DEPLOYMENT_TYPE='datarobot-workload-preview' -> provisioning via Workload API "
         "(Workload image URI)."
     )
 

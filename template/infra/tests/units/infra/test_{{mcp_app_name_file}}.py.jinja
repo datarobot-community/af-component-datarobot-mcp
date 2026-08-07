@@ -432,7 +432,7 @@ class TestMcpDeploymentType:
     def test_mcp_deployment_type_routes_to_workload_image_uri(
         self, monkeypatch
     ) -> None:
-        monkeypatch.setenv("MCP_DEPLOYMENT_TYPE", "datarobot-workload")
+        monkeypatch.setenv("MCP_DEPLOYMENT_TYPE", "datarobot-workload-preview")
         monkeypatch.setenv("WORKLOAD_MCP_IMAGE_URI", "img:tag")
         import importlib
 
@@ -455,7 +455,7 @@ class TestMcpDeploymentType:
             assert actual == expected
 
     def test_mcp_deployment_type_routes_to_workload_build(self, monkeypatch) -> None:
-        monkeypatch.setenv("MCP_DEPLOYMENT_TYPE", "datarobot-workload")
+        monkeypatch.setenv("MCP_DEPLOYMENT_TYPE", "datarobot-workload-preview")
         monkeypatch.delenv("WORKLOAD_MCP_IMAGE_URI", raising=False)
         import importlib
 

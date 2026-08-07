@@ -108,7 +108,7 @@ EXCLUDE_PATTERNS = [
 env_mcp_deployment_type = os.getenv("MCP_DEPLOYMENT_TYPE", "").strip().lower()
 
 MCP_DEPLOYMENT_TYPE_SERVERLESS: Final[str] = "datarobot-serverless"
-MCP_DEPLOYMENT_TYPE_WORKLOAD: Final[str] = "datarobot-workload"
+MCP_DEPLOYMENT_TYPE_WORKLOAD_PREVIEW: Final[str] = "datarobot-workload-preview"
 INVALID_MCP_DEPLOYMENT_TYPE = "not-found-mcp-deployment-type"
 
 # WE MUST set a default value to datarobot-serverless to avoid breaking changes
@@ -123,7 +123,7 @@ if MCP_DEPLOYMENT_TYPE == INVALID_MCP_DEPLOYMENT_TYPE:
     )
     MCP_DEPLOYMENT_TYPE = MCP_DEPLOYMENT_TYPE_SERVERLESS
 
-if MCP_DEPLOYMENT_TYPE not in (MCP_DEPLOYMENT_TYPE_SERVERLESS, MCP_DEPLOYMENT_TYPE_WORKLOAD):
+if MCP_DEPLOYMENT_TYPE not in (MCP_DEPLOYMENT_TYPE_SERVERLESS, MCP_DEPLOYMENT_TYPE_WORKLOAD_PREVIEW):
     pulumi.error(f"Unrecognized MCP_DEPLOYMENT_TYPE '{MCP_DEPLOYMENT_TYPE}'; Terminating deployment.")
     sys.exit(1)
 
@@ -170,7 +170,7 @@ def get_deployments_app_files() -> list[tuple[str, str]]:
     return unique_source_files
 
 
-if MCP_DEPLOYMENT_TYPE == MCP_DEPLOYMENT_TYPE_WORKLOAD:
+if MCP_DEPLOYMENT_TYPE == MCP_DEPLOYMENT_TYPE_WORKLOAD_PREVIEW:
     env_workload_mcp_image_uri = os.getenv("WORKLOAD_MCP_IMAGE_URI", "").strip()
     if env_workload_mcp_image_uri:
         _mcp_exports = provision_workload_mcp_server_from_image_uri(
