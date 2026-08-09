@@ -68,6 +68,48 @@ def test_get_workload_source_files_includes_docker_assets_when_using_provided_do
     }
 
 
+def test_get_workload_source_files_bundles_a_custom_dockerfile_path(tmp_path: Path):
+    """MCP_WORKLOAD_DOCKERFILE_PATH must reach the bundle, not just the artifact spec.
+
+    The build looks for the Dockerfile at the catalog-relative path in the spec,
+    so uploading `docker/Dockerfile` while the spec says `custom/Dockerfile`
+    fails the build.
+    """
+    deployments_path = tmp_path / "{{mcp_app_name}}"
+    (deployments_path / "custom").mkdir(parents=True)
+    (deployments_path / "custom" / "Dockerfile").write_text(
+        "FROM scratch\n", encoding="utf-8"
+    )
+    docker_dir = deployments_path / "docker"
+    docker_dir.mkdir(parents=True)
+    (docker_dir / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+
+    with patch.object(
+        mcp_bundle,
+        "ensure_docker_requirements_txt",
+        return_value=docker_dir / "requirements.txt",
+    ):
+        files = get_workload_source_files(
+            deployments_path=deployments_path,
+            dockerfile_relative_path="custom/Dockerfile",
+            get_core_app_files=list,
+        )
+
+    rel_paths = {rel_path for _, rel_path in files}
+    assert rel_paths == {"custom/Dockerfile", "requirements.txt", "start_server.sh"}
+
+
+def test_get_docker_bundle_files_error_names_the_configured_path(tmp_path: Path):
+    deployments_path = tmp_path / "{{mcp_app_name}}"
+    deployments_path.mkdir(parents=True)
+
+    with (
+        patch.object(pulumi, "error"),
+        pytest.raises(RuntimeError, match="custom/Dockerfile"),
+    ):
+        get_docker_bundle_files(deployments_path, "custom/Dockerfile")
+
+
 def test_get_workload_source_files_skips_docker_assets_for_generated_mode(
     tmp_path: Path,
 ):

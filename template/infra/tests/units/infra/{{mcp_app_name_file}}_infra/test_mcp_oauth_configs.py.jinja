@@ -354,12 +354,41 @@ class TestMcpOAuthProvisioningConfig:
         assert mcp_enable_unauthenticated_well_known_route_value() == "true"
 
     @pytest.mark.parametrize(
+        ("env_value", "expected"),
+        [
+            ("true", "true"),
+            ("TRUE", "true"),
+            ("  True  ", "true"),
+            ("1", "true"),
+            ("yes", "true"),
+            ("on", "true"),
+            ("false", "false"),
+            ("0", "false"),
+            ("no", "false"),
+            ("banana", "false"),
+        ],
+    )
+    def test_well_known_route_env_var_accepts_the_same_spellings_as_yaml(
+        self, monkeypatch: pytest.MonkeyPatch, env_value: str, expected: str
+    ) -> None:
+        """The env var and the YAML key set one flag, so they must agree.
+
+        The value is also normalized before it is handed to the container, so
+        the server never has to re-guess what `yes` meant.
+        """
+        monkeypatch.setenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", env_value)
+
+        assert mcp_enable_unauthenticated_well_known_route_value() == expected
+
+    @pytest.mark.parametrize(
         ("yaml_value", "expected"),
         [
             ("true", "true"),
             ("false", "false"),
             ('"true"', "true"),
             ('"false"', "false"),
+            ('"yes"', "true"),
+            ("1", "true"),
         ],
     )
     def test_well_known_route_reads_oauth_config_yaml(

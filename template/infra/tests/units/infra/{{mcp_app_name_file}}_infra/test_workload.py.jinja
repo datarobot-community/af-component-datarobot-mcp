@@ -118,11 +118,11 @@ class TestRequireEnv:
 
 class TestWorkloadEntrypoint:
     def test_none_when_unset(self) -> None:
-        with env(WORKLOAD_ENTRYPOINT=None):
+        with env(MCP_WORKLOAD_ENTRYPOINT=None):
             assert workload._explicit_workload_entrypoint() is None
 
     def test_json_list(self) -> None:
-        with env(WORKLOAD_ENTRYPOINT='["python", "-m", "app.main"]'):
+        with env(MCP_WORKLOAD_ENTRYPOINT='["python", "-m", "app.main"]'):
             assert workload._explicit_workload_entrypoint() == [
                 "python",
                 "-m",
@@ -130,7 +130,7 @@ class TestWorkloadEntrypoint:
             ]
 
     def test_comma_separated(self) -> None:
-        with env(WORKLOAD_ENTRYPOINT="python, -m , app.main"):
+        with env(MCP_WORKLOAD_ENTRYPOINT="python, -m , app.main"):
             assert workload._explicit_workload_entrypoint() == [
                 "python",
                 "-m",
@@ -139,26 +139,26 @@ class TestWorkloadEntrypoint:
 
     def test_invalid_json_raises(self) -> None:
         with (
-            env(WORKLOAD_ENTRYPOINT='["python",'),
+            env(MCP_WORKLOAD_ENTRYPOINT='["python",'),
             pytest.raises(RuntimeError, match="not valid JSON"),
         ):
             workload._explicit_workload_entrypoint()
 
     def test_json_non_string_list_raises(self) -> None:
         with (
-            env(WORKLOAD_ENTRYPOINT="[1, 2]"),
+            env(MCP_WORKLOAD_ENTRYPOINT="[1, 2]"),
             pytest.raises(RuntimeError, match="list of strings"),
         ):
             workload._explicit_workload_entrypoint()
 
     def test_resolve_falls_back_to_default(self) -> None:
-        with env(WORKLOAD_ENTRYPOINT=None):
+        with env(MCP_WORKLOAD_ENTRYPOINT=None):
             assert (
                 workload._resolve_workload_entrypoint() == workload.DEFAULT_ENTRYPOINT
             )
 
     def test_resolve_uses_explicit_value(self) -> None:
-        with env(WORKLOAD_ENTRYPOINT="python,app.main"):
+        with env(MCP_WORKLOAD_ENTRYPOINT="python,app.main"):
             expected = ["python", "app.main"]
             actual = workload._resolve_workload_entrypoint()
             assert actual == expected
@@ -234,13 +234,13 @@ class TestSessionSecretEnvVars:
 
 class TestResolveContainerPort:
     def test_default_port(self) -> None:
-        with env(WORKLOAD_CONTAINER_PORT=None):
+        with env(MCP_WORKLOAD_CONTAINER_PORT=None):
             expected = 8080
             actual = workload._resolve_container_port()
             assert actual == expected
 
     def test_custom_port(self) -> None:
-        with env(WORKLOAD_CONTAINER_PORT="9000"):
+        with env(MCP_WORKLOAD_CONTAINER_PORT="9000"):
             expected = 9000
             actual = workload._resolve_container_port()
             assert actual == expected
@@ -249,13 +249,13 @@ class TestResolveContainerPort:
 class TestResolveDockerfileRelativePath:
     @pytest.mark.parametrize("value", ["none", "false", "0", "NONE"])
     def test_disabled_values_return_none(self, value: str) -> None:
-        with env(WORKLOAD_DOCKERFILE_PATH=value):
+        with env(MCP_WORKLOAD_DOCKERFILE_PATH=value):
             expected = None
             actual = workload._resolve_dockerfile_relative_path()
             assert actual == expected
 
     def test_explicit_path(self) -> None:
-        with env(WORKLOAD_DOCKERFILE_PATH="custom/Dockerfile"):
+        with env(MCP_WORKLOAD_DOCKERFILE_PATH="custom/Dockerfile"):
             expected = "custom/Dockerfile"
             actual = workload._resolve_dockerfile_relative_path()
             assert actual == expected
@@ -264,7 +264,7 @@ class TestResolveDockerfileRelativePath:
         project_dir = tmp_path / "infra" / "infra"
         with (
             patch.object(workload, "project_dir", project_dir),
-            env(WORKLOAD_DOCKERFILE_PATH=None),
+            env(MCP_WORKLOAD_DOCKERFILE_PATH=None),
         ):
             expected = None
             actual = workload._resolve_dockerfile_relative_path()
@@ -277,7 +277,7 @@ class TestResolveDockerfileRelativePath:
         (docker_dir / "Dockerfile").write_text("FROM scratch\n")
         with (
             patch.object(workload, "project_dir", project_dir),
-            env(WORKLOAD_DOCKERFILE_PATH=None),
+            env(MCP_WORKLOAD_DOCKERFILE_PATH=None),
         ):
             expected = "docker/Dockerfile"
             actual = workload._resolve_dockerfile_relative_path()
@@ -325,7 +325,7 @@ class TestCreateWorkload:
         mock = MagicMock()
         with (
             patch.object(workload.pulumi_datarobot, "Workload", mock),
-            env(WORKLOAD_IMPORTANCE=None),
+            env(MCP_WORKLOAD_IMPORTANCE=None),
         ):
             workload._create_workload(
                 mcp_server_asset_name="srv", artifact_id="art-id", depends_on=[]
@@ -338,7 +338,7 @@ class TestCreateWorkload:
         mock = MagicMock()
         with (
             patch.object(workload.pulumi_datarobot, "Workload", mock),
-            env(WORKLOAD_REPLICA_COUNT="3", WORKLOAD_CPU="2.5"),
+            env(MCP_WORKLOAD_REPLICA_COUNT="3", MCP_WORKLOAD_CPU="2.5"),
         ):
             workload._create_workload(
                 mcp_server_asset_name="srv", artifact_id="art-id", depends_on=[]
@@ -369,12 +369,24 @@ class TestExportWorkloadEndpoints:
             workload._export_workload_endpoints("srv", wl)
             actual = {call.args[0] for call in stubs["export"].call_args_list}
         expected = {
-            "workload_endpoint",
-            "workload_id",
-            "workload_name",
-            "workload_artifact_id",
+            "srv Workload Endpoint",
+            "srv Workload Id",
+            "srv Workload Name",
+            "srv Workload Artifact Id",
         }
         assert expected <= actual
+
+    def test_every_export_is_namespaced_by_asset_name(self) -> None:
+        """This component is `repeatable`; bare names would collide between servers."""
+        wl = MagicMock(
+            endpoint=MockOutput("https://host/"), id="w1", name="srv", artifact_id="a1"
+        )
+        with pulumi_stubs() as stubs:
+            workload._export_workload_endpoints("srv", wl)
+            names = [call.args[0] for call in stubs["export"].call_args_list]
+        actual = [name for name in names if not name.startswith("srv ")]
+        expected: list[str] = []
+        assert actual == expected
 
 
 class TestCreateWorkloadImageArtifact:
@@ -490,5 +502,5 @@ class TestProvisionWorkloadMcpServerFromImageUri:
                 mcp_server_asset_name="srv", workload_image_uri="img:tag"
             )
             actual = stubs["export"].call_args_list[0].args
-        expected = ("workload_image_uri", "img:tag")
+        expected = ("srv Workload Image URI", "img:tag")
         assert actual == expected

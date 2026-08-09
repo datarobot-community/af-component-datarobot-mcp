@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -28,6 +28,7 @@ from {{mcp_app_name}}_clients.workload_api_client import (
     ImageBuildConfig,
     WorkloadArtifactSpecFromImageBuildConfig,
     WorkloadClient,
+    _create_and_build_artifact,
     build_artifact_from_image_uri,
 )
 
@@ -128,3 +129,50 @@ def test_trigger_build_surfaces_response_body_on_422():
         pytest.raises(requests.HTTPError, match="dockerfile not found in catalog"),
     ):
         client.trigger_build("abc")
+
+
+class TestCreateAndBuildArtifactCleanup:
+    """A failed build must not orphan the artifact.
+
+    The dynamic provider's create() never returns when this raises, so Pulumi
+    records no state for the artifact and nothing else would ever delete it.
+    """
+
+    def test_deletes_artifact_when_build_fails(self):
+        client = MagicMock()
+        client.create_artifact.return_value = "art-1"
+        client.wait_for_build.side_effect = RuntimeError("build FAILED")
+
+        with pytest.raises(RuntimeError, match="build FAILED"):
+            _create_and_build_artifact(client, MagicMock(), build_timeout_s=1)
+
+        client.delete_artifact.assert_called_once_with("art-1")
+
+    def test_deletes_artifact_when_no_build_id_returned(self):
+        client = MagicMock()
+        client.create_artifact.return_value = "art-2"
+        client.trigger_build.return_value = []
+
+        with pytest.raises(RuntimeError, match="no build id"):
+            _create_and_build_artifact(client, MagicMock(), build_timeout_s=1)
+
+        client.delete_artifact.assert_called_once_with("art-2")
+
+    def test_cleanup_failure_does_not_mask_the_original_error(self):
+        client = MagicMock()
+        client.create_artifact.return_value = "art-3"
+        client.wait_for_build.side_effect = TimeoutError("build not done after 1s")
+        client.delete_artifact.side_effect = requests.HTTPError("500 cleanup failed")
+
+        with pytest.raises(TimeoutError, match="build not done"):
+            _create_and_build_artifact(client, MagicMock(), build_timeout_s=1)
+
+    def test_does_not_delete_on_success(self):
+        client = MagicMock()
+        client.create_artifact.return_value = "art-4"
+        client.trigger_build.return_value = ["b-1"]
+
+        actual = _create_and_build_artifact(client, MagicMock(), build_timeout_s=1)
+
+        assert actual == "art-4"
+        client.delete_artifact.assert_not_called()

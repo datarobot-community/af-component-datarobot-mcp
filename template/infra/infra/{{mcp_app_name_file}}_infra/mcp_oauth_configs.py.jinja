@@ -43,6 +43,17 @@ DEFAULT_TOKEN_ENDPOINT_AUTH_METHOD = "private_key_jwt"
 # non-RFC-9728 members — so it matches the agent-side config block exactly.
 CROSS_APPLICATION_ACCESS_CONFIG_KEY = "cross_application_access"
 
+# Accepted spellings of "on" for the well-known route flag. The env var and the
+# YAML key feed the same setting, so they are coerced through one table and the
+# container always receives the canonical "true"/"false".
+TRUTHY_VALUES = frozenset({"true", "1", "yes", "on"})
+
+
+def coerce_bool(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in TRUTHY_VALUES
+    return bool(value)
+
 
 class BaseDataClass:
     def to_dict_without_null_attribute(self) -> dict[str, Any]:
@@ -110,7 +121,7 @@ class CrossApplicationAccessMetadata(BaseDataClass):
 
 @dataclass
 class MCPOAuthProtectedResourceMetadataConfig(BaseDataClass):
-    """Parsed ``dr_mcp/oauth-config.yaml`` (or ``MCP_OAUTH_METADATA``).
+    """Parsed ``{{mcp_app_name}}/oauth-config.yaml`` (or ``MCP_OAUTH_METADATA``).
 
     Every field is optional. ``resource``, ``authorization_servers`` and
     ``scopes_supported`` are shipped verbatim but nothing enforces them yet, so a
@@ -211,16 +222,19 @@ def _well_known_route_flag_from_metadata() -> bool | None:
     value = parsed.get(ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_KEY)
     if value is None:
         return None
-    if isinstance(value, str):
-        return value.strip().lower() == "true"
-    return bool(value)
+    return coerce_bool(value)
 
 
 def mcp_enable_unauthenticated_well_known_route_value() -> str:
-    """Resolve the well-known route flag: env var wins, then oauth-config.yaml."""
+    """Resolve the well-known route flag: env var wins, then oauth-config.yaml.
+
+    Always returns the canonical ``"true"`` / ``"false"``, so a truthy spelling
+    the YAML path would accept (``yes``, ``1``, ``on``) means the same thing in
+    the env var and reaches the container normalized.
+    """
     env_value = os.getenv("MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE", "").strip()
     if env_value:
-        return env_value.lower()
+        return str(coerce_bool(env_value)).lower()
     flag_from_metadata = _well_known_route_flag_from_metadata()
     if flag_from_metadata is not None:
         return str(flag_from_metadata).lower()

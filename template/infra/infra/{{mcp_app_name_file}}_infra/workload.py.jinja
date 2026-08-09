@@ -25,9 +25,9 @@ from typing import Any, cast
 import pulumi
 import pulumi_datarobot
 
-from dr_mcp_clients.files_catalog_pulumi import FilesCatalogBundle, source_bundle_hash
-from dr_mcp_clients.workload_api_client import build_artifact_from_image_uri
-from dr_mcp_clients.workload_artifact_pulumi import (
+from {{mcp_app_name}}_clients.files_catalog_pulumi import FilesCatalogBundle, source_bundle_hash
+from {{mcp_app_name}}_clients.workload_api_client import build_artifact_from_image_uri
+from {{mcp_app_name}}_clients.workload_artifact_pulumi import (
     WorkloadGeneratedImageArtifact,
     WorkloadImageArtifact,
 )
@@ -49,7 +49,7 @@ from .mcp_oauth_configs import (
 )
 
 WORKLOAD_CONTAINER_NAME = "mcp-server"
-WORKLOAD_CONTAINER_PORT = 8080
+DEFAULT_WORKLOAD_CONTAINER_PORT = 8080
 DEFAULT_DOCKERFILE_RELATIVE_PATH = "docker/Dockerfile"
 DEFAULT_BUILD_TIMEOUT_S = 6000
 DEFAULT_ENTRYPOINT = ["python", "-m", "app.main"]
@@ -59,7 +59,9 @@ DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
 def _require_env(name: str) -> str:
     value = os.getenv(name, "").strip()
     if not value:
-        message = f"{name} is required for MCP_DEPLOYMENT_TYPE=datarobot-workload-preview-preview"
+        message = (
+            f"{name} is required for MCP_DEPLOYMENT_TYPE=datarobot-workload-preview"
+        )
         pulumi.error(message)
         raise RuntimeError(message)
     return value
@@ -73,10 +75,11 @@ def _resolve_dockerfile_relative_path() -> str | None:
     """
     Return a catalog-relative Dockerfile path when using DockerfileProvided.
 
-    ``WORKLOAD_DOCKERFILE_PATH`` overrides the default ``docker/Dockerfile`` check.
-    Set ``WORKLOAD_DOCKERFILE_PATH=none`` (or ``false``/``0``) to force generated mode.
+    ``MCP_WORKLOAD_DOCKERFILE_PATH`` overrides the default ``docker/Dockerfile``
+    check. Set ``MCP_WORKLOAD_DOCKERFILE_PATH=none`` (or ``false``/``0``) to force
+    generated mode.
     """
-    explicit = os.getenv("WORKLOAD_DOCKERFILE_PATH", "").strip()
+    explicit = os.getenv("MCP_WORKLOAD_DOCKERFILE_PATH", "").strip()
     if explicit.lower() in {"none", "false", "0"}:
         return None
     if explicit:
@@ -89,19 +92,19 @@ def _resolve_dockerfile_relative_path() -> str | None:
 
 
 def _explicit_workload_entrypoint() -> list[str] | None:
-    """Parse WORKLOAD_ENTRYPOINT (JSON list or comma-separated); None when unset."""
-    raw = os.getenv("WORKLOAD_ENTRYPOINT", "").strip()
+    """Parse MCP_WORKLOAD_ENTRYPOINT (JSON list or comma-separated); None when unset."""
+    raw = os.getenv("MCP_WORKLOAD_ENTRYPOINT", "").strip()
     if not raw:
         return None
     if raw.startswith("["):
         try:
             parsed = json.loads(raw)
         except ValueError as exc:
-            message = f"WORKLOAD_ENTRYPOINT is not valid JSON: {exc}"
+            message = f"MCP_WORKLOAD_ENTRYPOINT is not valid JSON: {exc}"
             pulumi.error(message)
             raise RuntimeError(message) from exc
         if not isinstance(parsed, list) or not all(isinstance(x, str) for x in parsed):
-            message = "WORKLOAD_ENTRYPOINT JSON must be a list of strings"
+            message = "MCP_WORKLOAD_ENTRYPOINT JSON must be a list of strings"
             pulumi.error(message)
             raise RuntimeError(message)
         return parsed
@@ -113,11 +116,13 @@ def _resolve_workload_entrypoint() -> list[str]:
 
 
 def _resolve_container_port() -> int:
-    return int(os.getenv("WORKLOAD_CONTAINER_PORT", str(WORKLOAD_CONTAINER_PORT)))
+    return int(
+        os.getenv("MCP_WORKLOAD_CONTAINER_PORT", str(DEFAULT_WORKLOAD_CONTAINER_PORT))
+    )
 
 
 def user_param_env_vars() -> list[dict[str, str]]:
-    """Map MCP_USER_RUNTIME_PARAMETERS onto container env vars.
+    """Map MCP_USER_RUNTIME_PARAMETERS (see {{mcp_app_name}}_user_params.py) onto container env vars.
 
     This mirrors the datarobot-serverless path, where the same list is injected
     as custom model runtime parameters. Credential-type parameters (whose value
@@ -175,19 +180,19 @@ def _create_workload(
         mcp_server_asset_name + " Workload",
         name=mcp_server_asset_name,
         artifact_id=artifact_id,
-        importance=os.getenv("WORKLOAD_IMPORTANCE", "high"),
+        importance=os.getenv("MCP_WORKLOAD_IMPORTANCE", "high"),
         runtime={
             "container_groups": [
                 {
-                    "replica_count": int(os.getenv("WORKLOAD_REPLICA_COUNT", "1")),
+                    "replica_count": int(os.getenv("MCP_WORKLOAD_REPLICA_COUNT", "1")),
                     "containers": [
                         {
                             "name": WORKLOAD_CONTAINER_NAME,
                             "resource_allocation": {
-                                "cpu": float(os.getenv("WORKLOAD_CPU", "1")),
+                                "cpu": float(os.getenv("MCP_WORKLOAD_CPU", "1")),
                                 "memory": int(
                                     os.getenv(
-                                        "WORKLOAD_MEMORY",
+                                        "MCP_WORKLOAD_MEMORY",
                                         str(DEFAULT_WORKLOAD_MEMORY_BYTES),
                                     )
                                 ),
@@ -208,10 +213,13 @@ def _create_workload(
 def _export_workload_endpoints(
     mcp_server_asset_name: str, workload: pulumi_datarobot.Workload
 ) -> pulumi.Output[str]:
-    pulumi.export("workload_endpoint", workload.endpoint)
-    pulumi.export("workload_id", workload.id)
-    pulumi.export("workload_name", workload.name)
-    pulumi.export("workload_artifact_id", workload.artifact_id)
+    # Every export is prefixed with the asset name: this component is
+    # `repeatable`, so a project may hold more than one MCP server and bare
+    # names would collide between them (the deployment path does the same).
+    pulumi.export(mcp_server_asset_name + " Workload Endpoint", workload.endpoint)
+    pulumi.export(mcp_server_asset_name + " Workload Id", workload.id)
+    pulumi.export(mcp_server_asset_name + " Workload Name", workload.name)
+    pulumi.export(mcp_server_asset_name + " Workload Artifact Id", workload.artifact_id)
     mcp_workload_endpoint = workload.endpoint.apply(
         lambda endpoint: f"{endpoint.rstrip('/')}/mcp"
     )
@@ -332,7 +340,7 @@ def provision_workload_mcp_server(
         environment_vars=_workload_environment_vars(mcp_server_asset_name),
         routes=get_workload_mcp_oauth_routes(),
         build_timeout_s=int(
-            os.getenv("WORKLOAD_BUILD_TIMEOUT_S", str(DEFAULT_BUILD_TIMEOUT_S))
+            os.getenv("MCP_WORKLOAD_BUILD_TIMEOUT_S", str(DEFAULT_BUILD_TIMEOUT_S))
         ),
         dockerfile_relative_path=dockerfile_relative_path,
         execution_environment=execution_environment,
@@ -348,12 +356,17 @@ def provision_workload_mcp_server(
         depends_on=workload_depends_on,
     )
 
-    pulumi.export("files_catalog_id", catalog.catalog_id)
-    pulumi.export("files_catalog_version_id", catalog.catalog_version_id)
+    pulumi.export(mcp_server_asset_name + " Files Catalog Id", catalog.catalog_id)
+    pulumi.export(
+        mcp_server_asset_name + " Files Catalog Version Id", catalog.catalog_version_id
+    )
     if execution_environment is not None:
-        pulumi.export("workload_execution_environment_id", execution_environment.id)
         pulumi.export(
-            "workload_execution_environment_version_id",
+            mcp_server_asset_name + " Workload Execution Environment Id",
+            execution_environment.id,
+        )
+        pulumi.export(
+            mcp_server_asset_name + " Workload Execution Environment Version Id",
             execution_environment.version_id,
         )
     mcp_workload_endpoint = _export_workload_endpoints(mcp_server_asset_name, workload)
@@ -399,7 +412,7 @@ def provision_workload_mcp_server_from_image_uri(
         depends_on=[artifact],
     )
 
-    pulumi.export("workload_image_uri", workload_image_uri)
+    pulumi.export(mcp_server_asset_name + " Workload Image URI", workload_image_uri)
     mcp_workload_endpoint = _export_workload_endpoints(mcp_server_asset_name, workload)
 
     return {

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 import dataclasses
 import time
 from collections.abc import Callable
@@ -274,15 +275,23 @@ def _create_and_build_artifact(
     build_interval_s: int = 10,
 ) -> str:
     artifact_id = client.create_artifact(spec)
-    build_ids = client.trigger_build(artifact_id)
-    if not build_ids:
-        raise RuntimeError("no build id returned from trigger_build")
-    client.wait_for_build(
-        artifact_id,
-        build_ids[0],
-        timeout_s=build_timeout_s,
-        interval_s=build_interval_s,
-    )
+    try:
+        build_ids = client.trigger_build(artifact_id)
+        if not build_ids:
+            raise RuntimeError("no build id returned from trigger_build")
+        client.wait_for_build(
+            artifact_id,
+            build_ids[0],
+            timeout_s=build_timeout_s,
+            interval_s=build_interval_s,
+        )
+    except BaseException:
+        # The dynamic provider's create() never returns when this raises, so
+        # Pulumi records no state for the artifact and would never delete it.
+        # Best-effort cleanup; never mask the failure that got us here.
+        with contextlib.suppress(Exception):
+            client.delete_artifact(artifact_id)
+        raise
     return artifact_id
 
 

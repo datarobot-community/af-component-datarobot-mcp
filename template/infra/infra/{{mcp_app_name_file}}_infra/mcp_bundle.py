@@ -94,19 +94,27 @@ def ensure_docker_requirements_txt(deployments_path: Path) -> Path:
     return target
 
 
-def get_docker_bundle_files(deployments_path: Path) -> list[tuple[str, str]]:
+def get_docker_bundle_files(
+    deployments_path: Path,
+    dockerfile_relative_path: str = DOCKERFILE_RELATIVE_PATH,
+) -> list[tuple[str, str]]:
     """
     Files required for DockerfileProvided workload builds.
 
+    ``dockerfile_relative_path`` is the catalog-relative path the artifact spec
+    points the build at (``MCP_WORKLOAD_DOCKERFILE_PATH``). The same path locates
+    the Dockerfile on disk and places it in the bundle, so a custom location is
+    uploaded where the build looks for it.
+
     The catalog Dockerfile expects ``requirements.txt`` and ``start_server.sh`` at
-    the bundle root, so those paths are included alongside ``docker/Dockerfile``.
+    the bundle root, so those paths are included alongside it.
     """
-    dockerfile_path = deployments_path / DOCKERFILE_RELATIVE_PATH
+    dockerfile_path = deployments_path / dockerfile_relative_path
     start_server_path = deployments_path / START_SERVER_SOURCE_RELATIVE_PATH
 
     if not dockerfile_path.is_file():
         message = (
-            f"Workload DockerfileProvided build requires {DOCKERFILE_RELATIVE_PATH} "
+            f"Workload DockerfileProvided build requires {dockerfile_relative_path} "
             f"under {deployments_path}"
         )
         pulumi.error(message)
@@ -122,7 +130,7 @@ def get_docker_bundle_files(deployments_path: Path) -> list[tuple[str, str]]:
     requirements_path = ensure_docker_requirements_txt(deployments_path)
 
     return [
-        (str(dockerfile_path), DOCKERFILE_RELATIVE_PATH),
+        (str(dockerfile_path), dockerfile_relative_path),
         (str(requirements_path), ROOT_REQUIREMENTS_RELATIVE_PATH),
         (str(start_server_path), ROOT_START_SERVER_RELATIVE_PATH),
     ]
@@ -149,5 +157,5 @@ def get_workload_source_files(
     core_files = get_core_app_files()
     if dockerfile_relative_path is None:
         return core_files
-    docker_files = get_docker_bundle_files(deployments_path)
+    docker_files = get_docker_bundle_files(deployments_path, dockerfile_relative_path)
     return merge_source_files(core_files, docker_files)

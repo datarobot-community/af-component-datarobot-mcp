@@ -392,8 +392,8 @@ class TestGetDeploymentsAppFiles:
     ) -> None:
         import infra.{{mcp_app_name}} as mcp_infra
 
-        dr_mcp_root = tmp_path.parent / "{{mcp_app_name}}"
-        app_dir = dr_mcp_root / "app"
+        {{mcp_app_name}}_root = tmp_path.parent / "{{mcp_app_name}}"
+        app_dir = {{mcp_app_name}}_root / "app"
         app_dir.mkdir(parents=True)
         (app_dir / "main.py").write_text("print('hi')\n", encoding="utf-8")
         actual = {name for _, name in mcp_infra.get_deployments_app_files()}
@@ -403,8 +403,8 @@ class TestGetDeploymentsAppFiles:
     def test_get_deployments_app_files_excludes_test_paths(self, tmp_path) -> None:
         import infra.{{mcp_app_name}} as mcp_infra
 
-        dr_mcp_root = tmp_path.parent / "{{mcp_app_name}}"
-        tests_dir = dr_mcp_root / "tests"
+        {{mcp_app_name}}_root = tmp_path.parent / "{{mcp_app_name}}"
+        tests_dir = {{mcp_app_name}}_root / "tests"
         tests_dir.mkdir(parents=True)
         (tests_dir / "test_x.py").write_text("pass\n", encoding="utf-8")
         actual = {name for _, name in mcp_infra.get_deployments_app_files()}
@@ -433,7 +433,7 @@ class TestMcpDeploymentType:
         self, monkeypatch
     ) -> None:
         monkeypatch.setenv("MCP_DEPLOYMENT_TYPE", "datarobot-workload-preview")
-        monkeypatch.setenv("WORKLOAD_MCP_IMAGE_URI", "img:tag")
+        monkeypatch.setenv("MCP_WORKLOAD_IMAGE_URI", "img:tag")
         import importlib
 
         import infra.{{mcp_app_name}} as mcp_infra
@@ -456,7 +456,7 @@ class TestMcpDeploymentType:
 
     def test_mcp_deployment_type_routes_to_workload_build(self, monkeypatch) -> None:
         monkeypatch.setenv("MCP_DEPLOYMENT_TYPE", "datarobot-workload-preview")
-        monkeypatch.delenv("WORKLOAD_MCP_IMAGE_URI", raising=False)
+        monkeypatch.delenv("MCP_WORKLOAD_IMAGE_URI", raising=False)
         import importlib
 
         import infra.{{mcp_app_name}} as mcp_infra
