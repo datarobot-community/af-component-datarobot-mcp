@@ -48,7 +48,7 @@ from .mcp_cli_configs import (
 from .mcp_execution_environment import provision_mcp_execution_environment
 from .mcp_oauth_configs import (
     mcp_enable_unauthenticated_well_known_route_value,
-    mcp_oauth_metadata_value,
+    mcp_oauth_metadata_env_vars,
 )
 
 
@@ -194,14 +194,16 @@ def provision_deployment_mcp_server(
 
     deployments_model_runtime_parameters.extend(MCP_USER_RUNTIME_PARAMETERS)
     deployments_model_runtime_parameters.extend(api_keys_runtime_parameters)
-    if mcp_oauth_metadata := mcp_oauth_metadata_value():
-        deployments_model_runtime_parameters.append(
-            pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-                key="mcp_oauth_metadata",
-                type="string",
-                value=mcp_oauth_metadata,
-            )
+    # The server reads each metadata setting by its own name; the runtime
+    # parameter key is the lower-cased env var, as everywhere else here.
+    deployments_model_runtime_parameters.extend(
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key=env_var["name"].lower(),
+            type="string",
+            value=env_var["value"],
         )
+        for env_var in mcp_oauth_metadata_env_vars()
+    )
     custom_model_files = get_deployments_app_files()
 
     use_mcp = os.getenv("USE_MCP_TARGET_TYPE", "true").lower() == "true"
