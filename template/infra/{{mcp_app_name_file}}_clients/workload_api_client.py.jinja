@@ -21,7 +21,9 @@ from typing import Any
 
 import requests
 
-from {{mcp_app_name}}_clients.http_session import create_datarobot_api_session
+from {{mcp_app_name}}_clients.http_session import (
+    create_datarobot_api_session,
+)
 
 BUILD_SUCCESS = "COMPLETED"
 BUILD_FAILURES = frozenset({"FAILED", "CANCELLED"})

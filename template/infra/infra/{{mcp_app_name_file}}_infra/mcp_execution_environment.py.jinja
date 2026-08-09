@@ -74,12 +74,15 @@ def provision_mcp_execution_environment(
         )
 
     pulumi.info("Using docker folder to compile the execution environment")
+    # Bound to a local so the line length does not depend on the app name this
+    # template was rendered with (see the note in workload.py).
+    docker_context_path = project_dir.parent / "{{mcp_app_name}}" / "docker"
     return pulumi_datarobot.ExecutionEnvironment(
         resource_name=resource_label,
         name=mcp_server_asset_name + resource_name_suffix,
         description="Execution environment for MCP server",
         programming_language="python",
         use_cases=["customModel"],
-        docker_context_path=str(project_dir.parent / "{{mcp_app_name}}" / "docker"),
+        docker_context_path=str(docker_context_path),
         opts=pulumi.ResourceOptions(retain_on_delete=False),
     )

@@ -25,8 +25,17 @@ from typing import Any, cast
 import pulumi
 import pulumi_datarobot
 
-from {{mcp_app_name}}_clients.files_catalog_pulumi import FilesCatalogBundle, source_bundle_hash
-from {{mcp_app_name}}_clients.workload_api_client import build_artifact_from_image_uri
+# The trailing commas below are load-bearing: this file is a copier template and
+# the package prefix grows with the user's app name. A magic trailing comma keeps
+# ruff from collapsing these onto one line for a short name and then re-wrapping
+# them for a long one, which made `ruff format --check` fail per app name.
+from {{mcp_app_name}}_clients.files_catalog_pulumi import (
+    FilesCatalogBundle,
+    source_bundle_hash,
+)
+from {{mcp_app_name}}_clients.workload_api_client import (
+    build_artifact_from_image_uri,
+)
 from {{mcp_app_name}}_clients.workload_artifact_pulumi import (
     WorkloadGeneratedImageArtifact,
     WorkloadImageArtifact,

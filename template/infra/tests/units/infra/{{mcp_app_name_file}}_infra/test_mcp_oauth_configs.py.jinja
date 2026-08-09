@@ -539,11 +539,8 @@ class TestOAuthConfigTemplateContract:
 
     @pytest.fixture
     def template_config(self) -> dict:
-        template_path = (
-            Path(__file__).resolve().parents[5]
-            / "{{mcp_app_name}}"
-            / "oauth-config.yaml.template"
-        )
+        app_dir = Path(__file__).resolve().parents[5] / "{{mcp_app_name}}"
+        template_path = app_dir / "oauth-config.yaml.template"
         return yaml.safe_load(template_path.read_text(encoding="utf-8"))
 
     def test_template_only_declares_supported_fields(

@@ -22,6 +22,11 @@ from {{mcp_app_name}}_clients.files_catalog_pulumi import (
     source_bundle_hash,
 )
 
+# Bound to a name so patch targets stay a fixed width: this file is a copier
+# template and the package prefix varies in length with the user's app name,
+# which otherwise makes `ruff format --check` pass or fail per rendered name.
+MODULE = "{{mcp_app_name}}_clients.files_catalog_pulumi"
+
 
 @contextmanager
 def env(**variables: str | None):
@@ -98,10 +103,10 @@ class TestFilesCatalogBundleProvider:
         with (
             env(DATAROBOT_API_TOKEN="token"),
             patch(
-                "{{mcp_app_name}}_clients.files_catalog_pulumi.read_bundle_files",
+                f"{MODULE}.read_bundle_files",
                 return_value=[("app.py", b"code")],
             ),
-            patch("{{mcp_app_name}}_clients.files_catalog_pulumi.FilesApiClient") as client_cls,
+            patch(f"{MODULE}.FilesApiClient") as client_cls,
         ):
             client_cls.return_value.upload_bundle.return_value = ("cat", "ver")
             result = provider.create(inputs)
@@ -121,7 +126,7 @@ class TestFilesCatalogBundleProvider:
         with (
             env(DATAROBOT_API_TOKEN="token"),
             patch(
-                "{{mcp_app_name}}_clients.files_catalog_pulumi.FilesApiClient",
+                f"{MODULE}.FilesApiClient",
                 return_value=mock_client,
             ),
         ):

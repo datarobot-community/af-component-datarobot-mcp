@@ -58,7 +58,9 @@ def pulumi_mocks(monkeypatch, tmp_path):
     mock_user_params_module = MagicMock()
     mock_user_params_module.MCP_USER_RUNTIME_PARAMETERS = []
     monkeypatch.setitem(
-        sys.modules, "infra.{{mcp_app_name}}_user_params", mock_user_params_module
+        sys.modules,
+        "infra.{{mcp_app_name}}_user_params",
+        mock_user_params_module,
     )
 
     # Mock pulumi_datarobot resources
@@ -392,8 +394,8 @@ class TestGetDeploymentsAppFiles:
     ) -> None:
         import infra.{{mcp_app_name}} as mcp_infra
 
-        {{mcp_app_name}}_root = tmp_path.parent / "{{mcp_app_name}}"
-        app_dir = {{mcp_app_name}}_root / "app"
+        app_root = tmp_path.parent / "{{mcp_app_name}}"
+        app_dir = app_root / "app"
         app_dir.mkdir(parents=True)
         (app_dir / "main.py").write_text("print('hi')\n", encoding="utf-8")
         actual = {name for _, name in mcp_infra.get_deployments_app_files()}
@@ -403,8 +405,8 @@ class TestGetDeploymentsAppFiles:
     def test_get_deployments_app_files_excludes_test_paths(self, tmp_path) -> None:
         import infra.{{mcp_app_name}} as mcp_infra
 
-        {{mcp_app_name}}_root = tmp_path.parent / "{{mcp_app_name}}"
-        tests_dir = {{mcp_app_name}}_root / "tests"
+        app_root = tmp_path.parent / "{{mcp_app_name}}"
+        tests_dir = app_root / "tests"
         tests_dir.mkdir(parents=True)
         (tests_dir / "test_x.py").write_text("pass\n", encoding="utf-8")
         actual = {name for _, name in mcp_infra.get_deployments_app_files()}

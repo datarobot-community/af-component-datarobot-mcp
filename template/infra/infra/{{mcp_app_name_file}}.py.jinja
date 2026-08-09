@@ -29,7 +29,9 @@ from dev_tools.lineage.pulumi_managers import (
 )
 
 from . import project_dir, use_case
-from .{{mcp_app_name}}_infra.deployment import provision_deployment_mcp_server
+from .{{mcp_app_name}}_infra.deployment import (
+    provision_deployment_mcp_server,
+)
 from .{{mcp_app_name}}_infra.workload import (
     provision_workload_mcp_server,
     provision_workload_mcp_server_from_image_uri,

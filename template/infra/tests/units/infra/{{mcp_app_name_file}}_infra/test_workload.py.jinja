@@ -21,6 +21,11 @@ import pytest
 
 from infra.{{mcp_app_name}}_infra import workload
 
+# Bound to a name so call sites stay a fixed width: this file is a copier
+# template and the app name inside the label varies in length, which otherwise
+# makes `ruff format --check` pass or fail depending on the rendered name.
+ASSET_NAME = "[unittest] [{{mcp_app_name}}]"
+
 
 class MockOutput(MagicMock):
     def __init__(self, val=None, *args, **kwargs):
@@ -208,7 +213,7 @@ class TestUserParamEnvVars:
             env(MCP_SERVER_NAME=None, SESSION_SECRET_KEY=None),
             patch.object(workload, "MCP_USER_RUNTIME_PARAMETERS", params),
         ):
-            env_vars = workload._workload_environment_vars("[unittest] [{{mcp_app_name}}]")
+            env_vars = workload._workload_environment_vars(ASSET_NAME)
 
         assert {"name": "USER_NAME", "value": "alice"} in env_vars
         assert {"name": "MCP_SERVER_NAME", "value": "datarobot-mcp-server"} in env_vars
@@ -218,11 +223,11 @@ class TestUserParamEnvVars:
 class TestSessionSecretEnvVars:
     def test_empty_when_unset(self) -> None:
         with env(SESSION_SECRET_KEY=None):
-            assert workload._session_secret_env_vars("[unittest] [{{mcp_app_name}}]") == []
+            assert workload._session_secret_env_vars(ASSET_NAME) == []
 
     def test_creates_dr_credential_reference(self) -> None:
         with env(SESSION_SECRET_KEY="super-secret"):
-            entries = workload._session_secret_env_vars("[unittest] [{{mcp_app_name}}]")
+            entries = workload._session_secret_env_vars(ASSET_NAME)
 
         assert len(entries) == 1
         entry = entries[0]
