@@ -42,8 +42,8 @@ def _to_wire(value: Any) -> Any:
     """Serialize spec dataclasses to the camelCase wire format, dropping None fields.
 
     Leaf values are passed through by reference (deliberately no deepcopy):
-    when the spec feeds a ``pulumi_datarobot.Artifact``, values may be pulumi
-    Outputs, which cannot be copied.
+    environment entries may hold pulumi Outputs, which cannot be copied and
+    are resolved downstream by their consumer.
     """
     if dataclasses.is_dataclass(value) and not isinstance(value, type):
         return {
@@ -143,14 +143,69 @@ class ArtifactSpecFromImageUri:
     container_groups: list[ContainerGroupImageUri]
 
 
+def _env_var_pulumi_args(entry: dict[str, str]) -> dict[str, str]:
+    """Provider spelling of one env entry.
+
+    Entries are built in REST wire form, where the credential reference is
+    ``drCredentialId``; the pulumi provider names the same field
+    ``credential_id``. Every other key is shared between the two.
+    """
+    return {
+        ("credential_id" if key == "drCredentialId" else key): value
+        for key, value in entry.items()
+    }
+
+
 @dataclass
 class WorkloadArtifactSpecFromImageUri:
     name: str
     spec: ArtifactSpecFromImageUri
     type: str = WORKLOAD_ARTIFACT_TYPE
 
-    def to_payload(self) -> dict:
-        return _to_wire(self)
+    def to_pulumi_args(self) -> dict:
+        """Arguments for ``pulumi_datarobot.Artifact`` — not the REST payload.
+
+        This spec's only consumer is the pulumi provider, which validates a
+        typed snake_case spec. The camelCase wire format ``to_payload`` emits
+        elsewhere happens to overlap it for most fields, but the differences
+        are silently fatal: ``drCredentialId`` is not the provider's
+        ``credential_id``, so credential-backed env vars would arrive under a
+        key the provider does not know and be dropped.
+        """
+        return {
+            "name": self.name,
+            "type": self.type,
+            "spec": {
+                "container_groups": [
+                    {
+                        "containers": [
+                            self._container_args(container)
+                            for container in group.containers
+                        ]
+                    }
+                    for group in self.spec.container_groups
+                ]
+            },
+        }
+
+    @staticmethod
+    def _container_args(container: ContainerImageUri) -> dict[str, Any]:
+        args: dict[str, Any] = {
+            "name": container.name,
+            "primary": container.primary,
+            "port": container.port,
+            "image_uri": container.image_uri,
+            "environment_vars": [
+                _env_var_pulumi_args(entry) for entry in container.environment_vars
+            ],
+        }
+        if container.entrypoints is not None:
+            args["entrypoints"] = container.entrypoints
+        if container.routes is not None:
+            # path/auth are spelled the same on both wires. Provider releases
+            # that predate route support reject the key at preview time.
+            args["routes"] = container.routes
+        return args
 
 
 class WorkloadClient:

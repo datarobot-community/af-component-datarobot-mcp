@@ -24,7 +24,8 @@ ARG UID
 ARG GID
 ARG UNAME
 
-USER root
+# Root by its numeric uid: hadolint DL3066 requires numeric user ids
+USER 0
 
 # Create group and user
 RUN addgroup -g "$GID" "$UNAME" && \
@@ -55,6 +56,9 @@ RUN chown -R $UNAME:$UNAME /opt/code \
     && chmod +x start_server.sh
 
 # Switch to non-root user
+# DL3066 wants a numeric uid, but this user is a build arg and a variable never
+# looks numeric to hadolint — acknowledged rather than hardcoding the id.
+# hadolint ignore=DL3066
 USER $UNAME
 
 # Expose port (adjust if your app uses a different port)

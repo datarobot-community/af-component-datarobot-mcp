@@ -14,6 +14,7 @@
 
 import os
 from contextlib import contextmanager
+from typing import ClassVar
 from unittest.mock import MagicMock, patch
 
 import pulumi_datarobot
@@ -317,12 +318,64 @@ class TestWorkloadConstants:
 
 
 class TestWorkloadEnvironmentVars:
+    #: Settings the deployment path injects as runtime parameters, with the
+    #: defaults it uses — the workload path must not silently drop any of them.
+    DEPLOYMENT_PARITY_DEFAULTS: ClassVar[dict[str, str]] = {
+        "MCP_SERVER_LOG_LEVEL": "WARNING",
+        "APP_LOG_LEVEL": "INFO",
+        "MCP_SERVER_TOOL_REGISTRATION_DUPLICATE_BEHAVIOR": "warn",
+        "MCP_SERVER_TOOL_REGISTRATION_ALLOW_EMPTY_SCHEMA": "false",
+        "MCP_SERVER_PROMPT_REGISTRATION_DUPLICATE_BEHAVIOR": "warn",
+        "OTEL_ATTRIBUTES": "{}",
+        "OTEL_ENABLED": "true",
+        "OTEL_ENABLED_HTTP_INSTRUMENTORS": "false",
+    }
+
     def test_custom_mcp_server_name(self) -> None:
         with env(MCP_SERVER_NAME="my-mcp", SESSION_SECRET_KEY=None):
             env_vars = workload._workload_environment_vars("[test]")
             actual = next(v for v in env_vars if v["name"] == "MCP_SERVER_NAME")
             expected = {"name": "MCP_SERVER_NAME", "value": "my-mcp"}
             assert actual == expected
+
+    def test_deployment_path_settings_ride_along_with_their_defaults(self) -> None:
+        unset = {name: None for name in self.DEPLOYMENT_PARITY_DEFAULTS}
+        with env(
+            SESSION_SECRET_KEY=None,
+            OTEL_COLLECTOR_BASE_URL=None,
+            OTEL_ENTITY_ID=None,
+            **unset,
+        ):
+            forwarded = {
+                v["name"]: v["value"]
+                for v in workload._workload_environment_vars("[test]")
+            }
+
+        for name, default in self.DEPLOYMENT_PARITY_DEFAULTS.items():
+            assert forwarded[name] == default
+        # Optional OTEL settings stay absent when unset, as on the deployment path.
+        assert "OTEL_COLLECTOR_BASE_URL" not in forwarded
+        assert "OTEL_ENTITY_ID" not in forwarded
+
+    def test_configured_values_are_forwarded_and_normalized(self) -> None:
+        with env(
+            SESSION_SECRET_KEY=None,
+            MCP_SERVER_LOG_LEVEL="DEBUG",
+            MCP_SERVER_TOOL_REGISTRATION_DUPLICATE_BEHAVIOR="ERROR",
+            OTEL_ENABLED="FALSE",
+            OTEL_COLLECTOR_BASE_URL="https://collector",
+            OTEL_ENTITY_ID="deployment-123",
+        ):
+            forwarded = {
+                v["name"]: v["value"]
+                for v in workload._workload_environment_vars("[test]")
+            }
+
+        assert forwarded["MCP_SERVER_LOG_LEVEL"] == "DEBUG"
+        assert forwarded["MCP_SERVER_TOOL_REGISTRATION_DUPLICATE_BEHAVIOR"] == "error"
+        assert forwarded["OTEL_ENABLED"] == "false"
+        assert forwarded["OTEL_COLLECTOR_BASE_URL"] == "https://collector"
+        assert forwarded["OTEL_ENTITY_ID"] == "deployment-123"
 
 
 class TestCreateWorkload:
@@ -474,7 +527,7 @@ class TestProvisionWorkloadMcpServer:
 class TestProvisionWorkloadMcpServerFromImageUri:
     def test_returns_mcp_endpoint(self) -> None:
         spec = MagicMock()
-        spec.to_payload.return_value = {"type": "service"}
+        spec.to_pulumi_args.return_value = {"type": "service"}
         artifact = MagicMock(artifact_id="art-id")
         wl = MagicMock(endpoint=MockOutput("https://host/"))
         with (
@@ -493,7 +546,7 @@ class TestProvisionWorkloadMcpServerFromImageUri:
         assert actual == expected
 
     def test_exports_workload_image_uri(self) -> None:
-        spec = MagicMock(to_payload=MagicMock(return_value={"type": "service"}))
+        spec = MagicMock(to_pulumi_args=MagicMock(return_value={"type": "service"}))
         artifact = MagicMock(artifact_id="art-id")
         wl = MagicMock(endpoint=MockOutput("https://host/"))
         with (

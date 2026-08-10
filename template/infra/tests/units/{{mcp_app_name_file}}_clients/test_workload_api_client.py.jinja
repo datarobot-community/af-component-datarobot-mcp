@@ -65,15 +65,56 @@ def test_workload_artifact_spec_type_is_service():
     assert build_config["codeRef"]["datarobot"]["catalogId"] == "cat"
 
 
-def test_image_uri_payload_omits_entrypoints_unless_set():
+def test_image_uri_pulumi_args_use_the_provider_shape():
+    """The provider validates snake_case and calls the credential field credential_id."""
+    spec = build_artifact_from_image_uri(
+        artifact_name="mcp-server",
+        container_name="mcp-server",
+        container_port=8080,
+        image_uri="registry.example.com/mcp:latest",
+        environment_vars=[
+            {"name": "MCP_SERVER_NAME", "value": "demo"},
+            {
+                "name": "SESSION_SECRET_KEY",
+                "source": "dr-credential",
+                "drCredentialId": "cred-123",
+                "key": "apiToken",
+            },
+        ],
+        routes=[{"path": "/.well-known/oauth-protected-resource", "auth": "disabled"}],
+    )
+
+    args = spec.to_pulumi_args()
+
+    assert args["name"] == "mcp-server"
+    assert args["type"] == WORKLOAD_ARTIFACT_TYPE
+    container = args["spec"]["container_groups"][0]["containers"][0]
+    assert container["image_uri"] == "registry.example.com/mcp:latest"
+    assert container["routes"] == [
+        {"path": "/.well-known/oauth-protected-resource", "auth": "disabled"}
+    ]
+    assert container["environment_vars"] == [
+        {"name": "MCP_SERVER_NAME", "value": "demo"},
+        {
+            "name": "SESSION_SECRET_KEY",
+            "source": "dr-credential",
+            "credential_id": "cred-123",
+            "key": "apiToken",
+        },
+    ]
+
+
+def test_image_uri_pulumi_args_omit_entrypoints_unless_set():
     spec_without = build_artifact_from_image_uri(
         artifact_name="mcp-server",
         container_name="mcp-server",
         container_port=8080,
         image_uri="registry.example.com/mcp:latest",
     )
-    container = spec_without.to_payload()["spec"]["containerGroups"][0]["containers"][0]
+    args = spec_without.to_pulumi_args()
+    container = args["spec"]["container_groups"][0]["containers"][0]
     assert "entrypoints" not in container
+    assert "routes" not in container
 
     spec_with = build_artifact_from_image_uri(
         artifact_name="mcp-server",
@@ -82,7 +123,8 @@ def test_image_uri_payload_omits_entrypoints_unless_set():
         image_uri="registry.example.com/mcp:latest",
         entrypoints=["python", "-m", "app.main"],
     )
-    container = spec_with.to_payload()["spec"]["containerGroups"][0]["containers"][0]
+    args = spec_with.to_pulumi_args()
+    container = args["spec"]["container_groups"][0]["containers"][0]
     assert container["entrypoints"] == ["python", "-m", "app.main"]
 
 
