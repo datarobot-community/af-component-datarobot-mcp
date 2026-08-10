@@ -13,13 +13,14 @@
 # limitations under the License.
 import pytest
 
-from infra.{{mcp_app_name}}_infra.mcp_oauth_configs import (
+from infra.{{mcp_app_name_file}}_infra.mcp_oauth_configs import (
     AUTHORIZATION_SERVERS_ENV_VAR,
     ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_ENV_VAR,
     OAUTH_METADATA_ENV_VARS,
     OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH,
     RESOURCE_ENV_VAR,
-    SCOPES_SUPPORTED_ENV_VAR,
+    SCOPE_SOURCE_ENV_VAR,
+    TAG_SCOPES_ENV_VAR_PREFIX,
     XAA_EXCHANGE_AUDIENCE_ENV_VAR,
     XAA_REQUIRED_ENV_VARS,
     XAA_SCOPES_ENV_VAR,
@@ -30,10 +31,9 @@ from infra.{{mcp_app_name}}_infra.mcp_oauth_configs import (
     get_workload_mcp_oauth_routes,
     mcp_enable_unauthenticated_well_known_route_value,
     mcp_oauth_metadata_env_vars,
+    mcp_tag_scope_env_vars,
     oauth_and_well_known_env_vars,
-    oauth_protected_resource_well_known_route_auth,
     validate_cross_application_access_env,
-    workload_default_mcp_oauth_routes,
 )
 
 TRUSTED_ISSUER = "https://foo/bar/issuer"
@@ -73,7 +73,7 @@ class TestOAuthMetadataEnvVars:
     ) -> None:
         monkeypatch.setenv(RESOURCE_ENV_VAR, "https://resource")
         monkeypatch.setenv(AUTHORIZATION_SERVERS_ENV_VAR, "https://as1,https://as2")
-        monkeypatch.setenv(SCOPES_SUPPORTED_ENV_VAR, "scope")
+        monkeypatch.setenv(SCOPE_SOURCE_ENV_VAR, "tags")
 
         assert mcp_oauth_metadata_env_vars() == [
             {"name": RESOURCE_ENV_VAR, "value": "https://resource"},
@@ -81,7 +81,7 @@ class TestOAuthMetadataEnvVars:
                 "name": AUTHORIZATION_SERVERS_ENV_VAR,
                 "value": "https://as1,https://as2",
             },
-            {"name": SCOPES_SUPPORTED_ENV_VAR, "value": "scope"},
+            {"name": SCOPE_SOURCE_ENV_VAR, "value": "tags"},
         ]
 
     def test_values_are_forwarded_verbatim(
@@ -219,26 +219,55 @@ class TestOAuthAndWellKnownEnvVars:
 
 
 class TestWorkloadOAuthRoutes:
-    def test_defaults_to_required(self) -> None:
-        assert workload_default_mcp_oauth_routes() == [
-            {
-                "path": OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH,
-                "auth": "required",
-            },
-        ]
-
     def test_no_routes_are_requested_when_the_flag_is_off(self) -> None:
+        """None keeps every route on the gateway default of requiring auth."""
         assert get_workload_mcp_oauth_routes() is None
 
-    def test_disabled_when_the_flag_is_on(
+    def test_the_well_known_route_opts_out_when_the_flag_is_on(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv(ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_ENV_VAR, "true")
 
-        assert oauth_protected_resource_well_known_route_auth() == "disabled"
         assert get_workload_mcp_oauth_routes() == [
             {
                 "path": OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH,
                 "auth": "disabled",
             },
         ]
+
+
+class TestTagScopeEnvVars:
+    """Per-tag scope requirements are matched by prefix, not named individually."""
+
+    def test_each_tag_variable_is_forwarded(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(f"{TAG_SCOPES_ENV_VAR_PREFIX}DATABASE", "mcp:tools:write")
+        monkeypatch.setenv(f"{TAG_SCOPES_ENV_VAR_PREFIX}READONLY", "mcp:tools:read")
+
+        forwarded = mcp_tag_scope_env_vars()
+
+        assert forwarded == [
+            {
+                "name": f"{TAG_SCOPES_ENV_VAR_PREFIX}DATABASE",
+                "value": "mcp:tools:write",
+            },
+            {"name": f"{TAG_SCOPES_ENV_VAR_PREFIX}READONLY", "value": "mcp:tools:read"},
+        ]
+
+    def test_a_blank_variable_is_not_forwarded(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """GIVEN a blanked-out tag, THEN nothing is shipped and the guard lifts."""
+        monkeypatch.setenv(f"{TAG_SCOPES_ENV_VAR_PREFIX}DATABASE", "   ")
+
+        assert mcp_tag_scope_env_vars() == []
+
+    def test_they_ride_along_with_the_metadata_variables(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(f"{TAG_SCOPES_ENV_VAR_PREFIX}DATABASE", "mcp:tools:write")
+
+        names = {env_var["name"] for env_var in mcp_oauth_metadata_env_vars()}
+
+        assert f"{TAG_SCOPES_ENV_VAR_PREFIX}DATABASE" in names

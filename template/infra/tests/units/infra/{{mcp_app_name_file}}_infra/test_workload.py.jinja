@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, patch
 import pulumi_datarobot
 import pytest
 
-from infra.{{mcp_app_name}}_infra import workload
+from infra.{{mcp_app_name_file}}_infra import workload
 
 # Bound to a name so call sites stay a fixed width: this file is a copier
 # template and the app name inside the label varies in length, which otherwise
@@ -277,7 +277,7 @@ class TestResolveDockerfileRelativePath:
 
     def test_returns_default_when_dockerfile_exists(self, tmp_path) -> None:
         project_dir = tmp_path / "infra" / "infra"
-        docker_dir = tmp_path / "infra" / "{{mcp_app_name}}" / "docker"
+        docker_dir = tmp_path / "infra" / "{{mcp_app_name_file}}" / "docker"
         docker_dir.mkdir(parents=True)
         (docker_dir / "Dockerfile").write_text("FROM scratch\n")
         with (
@@ -290,11 +290,11 @@ class TestResolveDockerfileRelativePath:
 
 
 class TestDeploymentsApplicationPath:
-    def test_points_to_{{mcp_app_name}}_sibling(self, tmp_path) -> None:
+    def test_points_to_{{mcp_app_name_file}}_sibling(self, tmp_path) -> None:
         project_dir = tmp_path / "infra" / "infra"
         project_dir.mkdir(parents=True)
         with patch.object(workload, "project_dir", project_dir):
-            expected = tmp_path / "infra" / "{{mcp_app_name}}"
+            expected = tmp_path / "infra" / "{{mcp_app_name_file}}"
             actual = workload._deployments_application_path()
             assert actual == expected
 

@@ -16,7 +16,7 @@ import os
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
-from {{mcp_app_name}}_clients.workload_artifact_pulumi import (
+from {{mcp_app_name_file}}_clients.workload_artifact_pulumi import (
     WorkloadGeneratedImageArtifactProvider,
     WorkloadImageArtifactProvider,
     _delete_artifact,
@@ -98,7 +98,7 @@ class TestDeleteArtifact:
         with (
             env(DATAROBOT_API_TOKEN="token"),
             patch(
-                "{{mcp_app_name}}_clients.workload_artifact_pulumi.WorkloadClient",
+                "{{mcp_app_name_file}}_clients.workload_artifact_pulumi.WorkloadClient",
                 return_value=mock_client,
             ),
         ):
@@ -114,7 +114,7 @@ class TestWorkloadImageArtifactProvider:
         with (
             env(DATAROBOT_API_TOKEN="token"),
             patch(
-                "{{mcp_app_name}}_clients.workload_artifact_pulumi.build_artifact_with_provided_dockerfile",
+                "{{mcp_app_name_file}}_clients.workload_artifact_pulumi.build_artifact_with_provided_dockerfile",
                 return_value="art-1",
             ),
         ):
@@ -139,7 +139,7 @@ class TestWorkloadImageArtifactProvider:
         with (
             env(DATAROBOT_API_TOKEN="token"),
             patch(
-                "{{mcp_app_name}}_clients.workload_artifact_pulumi.WorkloadClient",
+                "{{mcp_app_name_file}}_clients.workload_artifact_pulumi.WorkloadClient",
                 return_value=mock_client,
             ),
         ):
@@ -157,7 +157,7 @@ class TestWorkloadGeneratedImageArtifactProvider:
         with (
             env(DATAROBOT_API_TOKEN="token"),
             patch(
-                "{{mcp_app_name}}_clients.workload_artifact_pulumi.build_artifact_with_generated_dockerfile",
+                "{{mcp_app_name_file}}_clients.workload_artifact_pulumi.build_artifact_with_generated_dockerfile",
                 return_value="art-gen",
             ),
         ):

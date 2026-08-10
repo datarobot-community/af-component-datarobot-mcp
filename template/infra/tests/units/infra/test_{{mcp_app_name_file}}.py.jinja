@@ -50,8 +50,8 @@ def pulumi_mocks(monkeypatch, tmp_path):
     monkeypatch.setattr("infra.project_dir", mock_project_dir)
 
     # Create the mcp app directory structure expected by module-level code.
-    # deployments_application_path = project_dir.parent / "{{mcp_app_name}}"
-    mcp_app_dir = tmp_path.parent / "{{mcp_app_name}}"
+    # deployments_application_path = project_dir.parent / "{{mcp_app_name_file}}"
+    mcp_app_dir = tmp_path.parent / "{{mcp_app_name_file}}"
     mcp_app_dir.mkdir(exist_ok=True)
 
     # Mock user params module
@@ -59,7 +59,7 @@ def pulumi_mocks(monkeypatch, tmp_path):
     mock_user_params_module.MCP_USER_RUNTIME_PARAMETERS = []
     monkeypatch.setitem(
         sys.modules,
-        "infra.{{mcp_app_name}}_user_params",
+        "infra.{{mcp_app_name_file}}_user_params",
         mock_user_params_module,
     )
 
@@ -163,7 +163,7 @@ def test_execution_environment_not_set_uses_docker(monkeypatch):
 
     import importlib
 
-    import infra.{{mcp_app_name}} as mcp_infra
+    import infra.{{mcp_app_name_file}} as mcp_infra
 
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.reset_mock()
     mcp_infra.pulumi.info.reset_mock()
@@ -192,7 +192,7 @@ def test_execution_environment_default_set(monkeypatch):
 
     import importlib
 
-    import infra.{{mcp_app_name}} as mcp_infra
+    import infra.{{mcp_app_name_file}} as mcp_infra
 
     importlib.reload(mcp_infra)
 
@@ -224,7 +224,7 @@ def test_execution_environment_pinned_set(monkeypatch):
 
     import importlib
 
-    import infra.{{mcp_app_name}} as mcp_infra
+    import infra.{{mcp_app_name_file}} as mcp_infra
 
     importlib.reload(mcp_infra)
 
@@ -253,7 +253,7 @@ def test_execution_environment_custom_set(monkeypatch):
 
     import importlib
 
-    import infra.{{mcp_app_name}} as mcp_infra
+    import infra.{{mcp_app_name_file}} as mcp_infra
 
     importlib.reload(mcp_infra)
 
@@ -275,7 +275,7 @@ def test_resolve_execution_environment_version_not_found_returns_none(monkeypatc
     """When pinned EE version is not found in DataRobot, warn and return None (use latest)."""
     from datarobot.errors import ClientError
 
-    import infra.{{mcp_app_name}} as mcp_infra
+    import infra.{{mcp_app_name_file}} as mcp_infra
 
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
@@ -302,7 +302,7 @@ def test_resolve_execution_environment_version_found(monkeypatch):
     """When pinned version exists and build_status is SUCCESS, return its id."""
     from datarobot.enums import EXECUTION_ENVIRONMENT_VERSION_BUILD_STATUS
 
-    import infra.{{mcp_app_name}} as mcp_infra
+    import infra.{{mcp_app_name_file}} as mcp_infra
 
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
@@ -327,7 +327,7 @@ def test_resolve_execution_environment_version_found(monkeypatch):
 
 def test_resolve_execution_environment_version_not_success_returns_none(monkeypatch):
     """When get() succeeds but build_status is not SUCCESS, return None with a warning."""
-    import infra.{{mcp_app_name}} as mcp_infra
+    import infra.{{mcp_app_name_file}} as mcp_infra
 
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
@@ -355,7 +355,7 @@ def test_resolve_execution_environment_version_not_success_returns_none(monkeypa
 
 def test_resolve_execution_environment_version_unset_returns_none(monkeypatch):
     """When env var is unset or invalid, return None without calling DR API."""
-    import infra.{{mcp_app_name}} as mcp_infra
+    import infra.{{mcp_app_name_file}} as mcp_infra
 
     monkeypatch.delenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID", raising=False
@@ -379,7 +379,7 @@ def test_reset_environment_between_tests():
 
     import importlib
 
-    import infra.{{mcp_app_name}} as mcp_infra
+    import infra.{{mcp_app_name_file}} as mcp_infra
 
     importlib.reload(mcp_infra)
 
@@ -392,9 +392,9 @@ class TestGetDeploymentsAppFiles:
     def test_get_deployments_app_files_collects_app_python_files(
         self, tmp_path
     ) -> None:
-        import infra.{{mcp_app_name}} as mcp_infra
+        import infra.{{mcp_app_name_file}} as mcp_infra
 
-        app_root = tmp_path.parent / "{{mcp_app_name}}"
+        app_root = tmp_path.parent / "{{mcp_app_name_file}}"
         app_dir = app_root / "app"
         app_dir.mkdir(parents=True)
         (app_dir / "main.py").write_text("print('hi')\n", encoding="utf-8")
@@ -403,9 +403,9 @@ class TestGetDeploymentsAppFiles:
         assert actual == expected
 
     def test_get_deployments_app_files_excludes_test_paths(self, tmp_path) -> None:
-        import infra.{{mcp_app_name}} as mcp_infra
+        import infra.{{mcp_app_name_file}} as mcp_infra
 
-        app_root = tmp_path.parent / "{{mcp_app_name}}"
+        app_root = tmp_path.parent / "{{mcp_app_name_file}}"
         tests_dir = app_root / "tests"
         tests_dir.mkdir(parents=True)
         (tests_dir / "test_x.py").write_text("pass\n", encoding="utf-8")
@@ -419,7 +419,7 @@ class TestMcpDeploymentType:
         monkeypatch.delenv("MCP_DEPLOYMENT_TYPE", raising=False)
         import importlib
 
-        import infra.{{mcp_app_name}} as mcp_infra
+        import infra.{{mcp_app_name_file}} as mcp_infra
 
         warn_mock = cast(MagicMock, mcp_infra.pulumi.warn)
         warn_mock.reset_mock()
@@ -438,7 +438,7 @@ class TestMcpDeploymentType:
         monkeypatch.setenv("MCP_WORKLOAD_IMAGE_URI", "img:tag")
         import importlib
 
-        import infra.{{mcp_app_name}} as mcp_infra
+        import infra.{{mcp_app_name_file}} as mcp_infra
 
         return_value: dict[str, Any] = {
             "execution_environment": None,
@@ -448,7 +448,7 @@ class TestMcpDeploymentType:
             "mcp_custom_model_runtime_parameters": [],
         }
         with patch(
-            "infra.{{mcp_app_name}}_infra.workload.provision_workload_mcp_server_from_image_uri",
+            "infra.{{mcp_app_name_file}}_infra.workload.provision_workload_mcp_server_from_image_uri",
             return_value=return_value,
         ) as mock_from_image:
             importlib.reload(mcp_infra)
@@ -461,7 +461,7 @@ class TestMcpDeploymentType:
         monkeypatch.delenv("MCP_WORKLOAD_IMAGE_URI", raising=False)
         import importlib
 
-        import infra.{{mcp_app_name}} as mcp_infra
+        import infra.{{mcp_app_name_file}} as mcp_infra
 
         return_value: dict[str, Any] = {
             "execution_environment": MagicMock(),
@@ -471,7 +471,7 @@ class TestMcpDeploymentType:
             "mcp_custom_model_runtime_parameters": [],
         }
         with patch(
-            "infra.{{mcp_app_name}}_infra.workload.provision_workload_mcp_server",
+            "infra.{{mcp_app_name_file}}_infra.workload.provision_workload_mcp_server",
             return_value=return_value,
         ) as mock_build:
             importlib.reload(mcp_infra)
@@ -483,7 +483,7 @@ class TestMcpDeploymentType:
         monkeypatch.setenv("MCP_DEPLOYMENT_TYPE", "invalid-type")
         import importlib
 
-        import infra.{{mcp_app_name}} as mcp_infra
+        import infra.{{mcp_app_name_file}} as mcp_infra
 
         with (
             patch.object(sys, "exit", side_effect=SystemExit(1)) as mock_exit,

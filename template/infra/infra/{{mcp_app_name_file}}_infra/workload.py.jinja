@@ -29,20 +29,20 @@ import pulumi_datarobot
 # the package prefix grows with the user's app name. A magic trailing comma keeps
 # ruff from collapsing these onto one line for a short name and then re-wrapping
 # them for a long one, which made `ruff format --check` fail per app name.
-from {{mcp_app_name}}_clients.files_catalog_pulumi import (
+from {{mcp_app_name_file}}_clients.files_catalog_pulumi import (
     FilesCatalogBundle,
     source_bundle_hash,
 )
-from {{mcp_app_name}}_clients.workload_api_client import (
+from {{mcp_app_name_file}}_clients.workload_api_client import (
     build_artifact_from_image_uri,
 )
-from {{mcp_app_name}}_clients.workload_artifact_pulumi import (
+from {{mcp_app_name_file}}_clients.workload_artifact_pulumi import (
     WorkloadGeneratedImageArtifact,
     WorkloadImageArtifact,
 )
 
 from .. import project_dir
-from ..{{mcp_app_name}}_user_params import MCP_USER_RUNTIME_PARAMETERS
+from ..{{mcp_app_name_file}}_user_params import MCP_USER_RUNTIME_PARAMETERS
 from .mcp_api_keys import (
     SESSION_SECRET_KEY,
     auth_resolution_strategy,
@@ -77,7 +77,7 @@ def _require_env(name: str) -> str:
 
 
 def _deployments_application_path() -> Path:
-    return project_dir.parent / "{{mcp_app_name}}"
+    return project_dir.parent / "{{mcp_app_name_file}}"
 
 
 def _resolve_dockerfile_relative_path() -> str | None:
@@ -131,7 +131,7 @@ def _resolve_container_port() -> int:
 
 
 def user_param_env_vars() -> list[dict[str, str]]:
-    """Map MCP_USER_RUNTIME_PARAMETERS (see {{mcp_app_name}}_user_params.py) onto container env vars.
+    """Map MCP_USER_RUNTIME_PARAMETERS (see {{mcp_app_name_file}}_user_params.py) onto container env vars.
 
     This mirrors the datarobot-serverless path, where the same list is injected
     as custom model runtime parameters. Credential-type parameters (whose value

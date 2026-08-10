@@ -18,8 +18,8 @@ from unittest.mock import patch
 import pulumi
 import pytest
 
-from infra.{{mcp_app_name}}_infra import mcp_bundle
-from infra.{{mcp_app_name}}_infra.mcp_bundle import (
+from infra.{{mcp_app_name_file}}_infra import mcp_bundle
+from infra.{{mcp_app_name_file}}_infra.mcp_bundle import (
     ensure_docker_requirements_txt,
     get_docker_bundle_files,
     get_workload_source_files,
@@ -39,7 +39,7 @@ def test_merge_source_files_keeps_last_duplicate_relative_path():
 def test_get_workload_source_files_includes_docker_assets_when_using_provided_dockerfile(
     tmp_path: Path,
 ):
-    deployments_path = tmp_path / "{{mcp_app_name}}"
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
     docker_dir = deployments_path / "docker"
     docker_dir.mkdir(parents=True)
     (docker_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
@@ -75,7 +75,7 @@ def test_get_workload_source_files_bundles_a_custom_dockerfile_path(tmp_path: Pa
     so uploading `docker/Dockerfile` while the spec says `custom/Dockerfile`
     fails the build.
     """
-    deployments_path = tmp_path / "{{mcp_app_name}}"
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
     (deployments_path / "custom").mkdir(parents=True)
     (deployments_path / "custom" / "Dockerfile").write_text(
         "FROM scratch\n", encoding="utf-8"
@@ -100,7 +100,7 @@ def test_get_workload_source_files_bundles_a_custom_dockerfile_path(tmp_path: Pa
 
 
 def test_get_docker_bundle_files_error_names_the_configured_path(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name}}"
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
     deployments_path.mkdir(parents=True)
 
     with (
@@ -125,7 +125,7 @@ def test_get_workload_source_files_skips_docker_assets_for_generated_mode(
 
 
 def test_ensure_docker_requirements_txt_overwrites_when_content_changes(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name}}"
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
     docker_dir = deployments_path / "docker"
     docker_dir.mkdir(parents=True)
     target = docker_dir / "requirements.txt"
@@ -146,7 +146,7 @@ def test_ensure_docker_requirements_txt_overwrites_when_content_changes(tmp_path
 
 
 def test_ensure_docker_requirements_txt_skips_write_when_unchanged(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name}}"
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
     docker_dir = deployments_path / "docker"
     docker_dir.mkdir(parents=True)
     target = docker_dir / "requirements.txt"
@@ -168,7 +168,7 @@ def test_ensure_docker_requirements_txt_skips_write_when_unchanged(tmp_path: Pat
 
 
 def test_get_docker_bundle_files_requires_dockerfile_and_start_script(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name}}"
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
     deployments_path.mkdir(parents=True)
 
     with (

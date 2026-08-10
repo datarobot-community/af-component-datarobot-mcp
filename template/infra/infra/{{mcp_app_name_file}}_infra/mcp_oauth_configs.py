@@ -38,7 +38,14 @@ ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_ENV_VAR = (
 
 RESOURCE_ENV_VAR = "MCP_OAUTH_RESOURCE"
 AUTHORIZATION_SERVERS_ENV_VAR = "MCP_OAUTH_AUTHORIZATION_SERVERS"
-SCOPES_SUPPORTED_ENV_VAR = "MCP_OAUTH_SCOPES_SUPPORTED"
+SCOPE_SOURCE_ENV_VAR = "MCP_OAUTH_SCOPE_SOURCE"
+AUDIENCE_ENV_VAR = "MCP_OAUTH_AUDIENCE"
+JWKS_URI_ENV_VAR = "MCP_OAUTH_JWKS_URI"
+
+#: Per-tag scope requirements are one variable per tag, so they are matched by
+#: prefix rather than named individually. `scopes_supported` is deliberately not
+#: forwarded: the server derives it from the requirements it actually enforces.
+TAG_SCOPES_ENV_VAR_PREFIX = "MCP_OAUTH_TAG_SCOPES_"
 
 XAA_TRUSTED_ISSUER_ENV_VAR = "MCP_XAA_TRUSTED_ISSUER"
 XAA_EXCHANGE_AUDIENCE_ENV_VAR = "MCP_XAA_EXCHANGE_AUDIENCE"
@@ -52,7 +59,9 @@ XAA_TOKEN_ENDPOINT_AUTH_METHOD_ENV_VAR = "MCP_XAA_TOKEN_ENDPOINT_AUTH_METHOD"
 OAUTH_METADATA_ENV_VARS = (
     RESOURCE_ENV_VAR,
     AUTHORIZATION_SERVERS_ENV_VAR,
-    SCOPES_SUPPORTED_ENV_VAR,
+    SCOPE_SOURCE_ENV_VAR,
+    AUDIENCE_ENV_VAR,
+    JWKS_URI_ENV_VAR,
     XAA_TRUSTED_ISSUER_ENV_VAR,
     XAA_EXCHANGE_AUDIENCE_ENV_VAR,
     XAA_TOKEN_URL_ENV_VAR,
@@ -105,6 +114,21 @@ def validate_cross_application_access_env() -> None:
         )
 
 
+def mcp_tag_scope_env_vars() -> list[dict[str, str]]:
+    """Every ``MCP_OAUTH_TAG_SCOPES_<TAG>`` variable that is set.
+
+    Matched by prefix because the tag is part of the variable name, so the set
+    is open-ended and cannot be enumerated up front.
+    """
+    env_vars = []
+    for name, value in sorted(os.environ.items()):
+        if not name.upper().startswith(TAG_SCOPES_ENV_VAR_PREFIX):
+            continue
+        if stripped := (value or "").strip():
+            env_vars.append({"name": name.upper(), "value": stripped})
+    return env_vars
+
+
 def mcp_oauth_metadata_env_vars() -> list[dict[str, str]]:
     """The metadata settings that are configured, ready to forward."""
     validate_cross_application_access_env()
@@ -113,6 +137,7 @@ def mcp_oauth_metadata_env_vars() -> list[dict[str, str]]:
         value = _env(name)
         if value:
             env_vars.append({"name": name, "value": value})
+    env_vars.extend(mcp_tag_scope_env_vars())
     return env_vars
 
 
@@ -130,26 +155,23 @@ def mcp_enable_unauthenticated_well_known_route_value() -> str:
     return str(enabled).lower()
 
 
-def oauth_protected_resource_well_known_route_auth() -> str:
-    if mcp_enable_unauthenticated_well_known_route_value() == "true":
-        return "disabled"
-    return "required"
+def get_workload_mcp_oauth_routes() -> list[dict[str, str]] | None:
+    """Route auth overrides for the workload artifact, or None to keep defaults.
 
-
-def workload_default_mcp_oauth_routes() -> list[dict[str, str]]:
-    """Workload artifact routes for OAuth protected resource metadata."""
+    The only override there is opens the well-known route to anonymous callers,
+    so nothing ships unless the flag asks for that. With the flag off, None
+    leaves every route — this one included — on the gateway default of
+    requiring DataRobot auth; an explicit ``"auth": "required"`` entry would
+    say the same thing in more words.
+    """
+    if mcp_enable_unauthenticated_well_known_route_value() != "true":
+        return None
     return [
         {
             "path": OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH,
-            "auth": oauth_protected_resource_well_known_route_auth(),
+            "auth": "disabled",
         },
     ]
-
-
-def get_workload_mcp_oauth_routes() -> list[dict[str, str]] | None:
-    if mcp_enable_unauthenticated_well_known_route_value() == "true":
-        return workload_default_mcp_oauth_routes()
-    return None
 
 
 def oauth_and_well_known_env_vars() -> list[dict[str, str]]:

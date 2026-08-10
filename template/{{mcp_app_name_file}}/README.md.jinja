@@ -148,10 +148,10 @@ task install
 
 ## Configure environment variables
 
-Create a `.env` file in the `{{mcp_app_name}}/` directory:
+Create a `.env` file in the `{{mcp_app_name_file}}/` directory:
 
 ```bash
-cd {{mcp_app_name}}
+cd {{mcp_app_name_file}}
 vim .env # or your preferred editor
 ```
 
@@ -215,7 +215,7 @@ Open the DataRobot UI to locate and copy your DataRobot API key and endpoint to 
 
 ## Run locally
 
-From `/{{mcp_app_name}}/`, start the server locally using the `task dev` command:
+From `/{{mcp_app_name_file}}/`, start the server locally using the `task dev` command:
 
 ```bash
 task dev
@@ -234,7 +234,7 @@ From here, you can perform some optional interactive testing on the local server
 
 Once the server is running, you can immediately test your tools with an AI agent using the interactive testing mode:
 
-From `/{{mcp_app_name}}/`, run:
+From `/{{mcp_app_name_file}}/`, run:
 
 ```bash
 task test-interactive
@@ -305,11 +305,11 @@ more details. For production CI/CD information see our comprehensive
 
 ## Deploy to DataRobot
 
-1. Copy the `.env` file from the `{{mcp_app_name}}` directory to the root directory:
+1. Copy the `.env` file from the `{{mcp_app_name_file}}` directory to the root directory:
 
 ```bash
-cd .. # Previous steps left off in the {{mcp_app_name}} directory
-cp {{mcp_app_name}}/.env .env
+cd .. # Previous steps left off in the {{mcp_app_name_file}} directory
+cp {{mcp_app_name_file}}/.env .env
 ```
 
 2. Deploy to DataRobot using Pulumi:
@@ -380,7 +380,7 @@ USE_MCP_TARGET_TYPE=false task deploy
 
 Customize deployment parameters by modifying the following files:
 
-### infra/infra/{{mcp_app_name}}_user_params.py
+### infra/infra/{{mcp_app_name_file}}_user_params.py
 
 Add your custom runtime parameters in the infrastructure:
 
@@ -395,7 +395,7 @@ MCP_RECIPE_RUNTIME_PARAMETERS = [
 ]
 ```
 
-### {{mcp_app_name}}/app/core/user_config.py
+### {{mcp_app_name_file}}/app/core/user_config.py
 
 Add matching fields to read runtime parameters at runtime. `DataRobotAppFrameworkBaseSettings` loads values automatically from deployment runtime parameters (`MLOPS_RUNTIME_PARAM_*`), `.env`, and `pulumi_config.json`:
 
@@ -447,7 +447,7 @@ Access configuration in your app via `get_user_config()` (for example, `get_user
 Another process is using port 8080. Either kill that process or change the port:
 
 ```bash
-cd {{mcp_app_name}}
+cd {{mcp_app_name_file}}
 export MCP_SERVER_PORT=8081
 task dev
 ```
@@ -492,8 +492,8 @@ DataRobot welcomes contributions. Please see [CONTRIBUTING.md](./CONTRIBUTING.md
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes following our code standards
-4. Run tests: `cd {{mcp_app_name}} && task test`
-5. Run linters: `cd {{mcp_app_name}} && task lint`
+4. Run tests: `cd {{mcp_app_name_file}} && task test`
+5. Run linters: `cd {{mcp_app_name_file}} && task lint`
 6. Commit with proper license headers
 7. Push and create a pull request
 

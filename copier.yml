@@ -6,9 +6,12 @@ mcp_app_name:
   help: "The name/folder of your DataRobot MCP Web App. Required to use a python friendly name like mcp_server or mcp_deployments"
   # Two things this must hold, both of which produce a broken project rather than
   # a clear error if they are not checked here:
-  #   * lower-case snake_case — directory names render from `mcp_app_name_file`
-  #     (normalized) while module bodies render from `mcp_app_name` (raw), so any
-  #     name that is not already normalized emits imports that do not parse.
+  #   * lower-case snake_case identifier — every directory, import and path
+  #     reference renders from `mcp_app_name_file`, whose normalization only
+  #     lower-cases and maps `-` to `_`, so a name with spaces, dots or a
+  #     leading digit still emits packages that do not import. Requiring the
+  #     raw name to equal its normalization keeps its one remaining use —
+  #     display labels — the same string as the directories on disk.
   #   * at most 28 characters — the generated infra is ruff-formatted to 88
   #     columns; past 28 the app name pushes import lines over and
   #     `ruff format --check` fails in CI. Verified empirically: 28 is clean, 29 is not.

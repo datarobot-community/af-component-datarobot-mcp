@@ -16,7 +16,7 @@ import os
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
-from {{mcp_app_name}}_clients.files_catalog_pulumi import (
+from {{mcp_app_name_file}}_clients.files_catalog_pulumi import (
     FilesCatalogBundleProvider,
     read_bundle_files,
     source_bundle_hash,
@@ -25,7 +25,7 @@ from {{mcp_app_name}}_clients.files_catalog_pulumi import (
 # Bound to a name so patch targets stay a fixed width: this file is a copier
 # template and the package prefix varies in length with the user's app name,
 # which otherwise makes `ruff format --check` pass or fail per rendered name.
-MODULE = "{{mcp_app_name}}_clients.files_catalog_pulumi"
+MODULE = "{{mcp_app_name_file}}_clients.files_catalog_pulumi"
 
 
 @contextmanager

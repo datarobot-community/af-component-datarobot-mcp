@@ -14,12 +14,12 @@ vars:
 
   MCP_DEPLOYMENT_TYPE_RESOLVED:
     sh: |
-      # 1) OS env (includes root dotenv when invoked via `task dr_mcp:install`)
+      # 1) OS env (includes the root dotenv when invoked via the repo root's task wrapper)
       if [ -n "${MCP_DEPLOYMENT_TYPE:-}" ]; then
         echo "$MCP_DEPLOYMENT_TYPE"
         exit 0
       fi
-      # 2) Fallback for standalone `cd dr_mcp && task install`
+      # 2) Fallback for standalone `task install` runs from this app directory
       for env_file in ../.env "../.env.${ENV:-testing}" .env; do
         if [ -f "$env_file" ]; then
           line="$(grep -E '^[[:space:]]*MCP_DEPLOYMENT_TYPE=' "$env_file" | tail -n 1 || true)"
