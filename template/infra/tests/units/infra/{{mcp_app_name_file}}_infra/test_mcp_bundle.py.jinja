@@ -1,0 +1,180 @@
+# Copyright 2026 DataRobot, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from pathlib import Path
+from unittest.mock import patch
+
+import pulumi
+import pytest
+
+from infra.{{mcp_app_name_file}}_infra import mcp_bundle
+from infra.{{mcp_app_name_file}}_infra.mcp_bundle import (
+    ensure_docker_requirements_txt,
+    get_docker_bundle_files,
+    get_workload_source_files,
+    merge_source_files,
+)
+
+
+def test_merge_source_files_keeps_last_duplicate_relative_path():
+    merged = merge_source_files(
+        [("/tmp/a", "requirements.txt"), ("/tmp/b", "app/main.py")],
+        [("/tmp/c", "requirements.txt")],
+    )
+
+    assert merged == [("/tmp/b", "app/main.py"), ("/tmp/c", "requirements.txt")]
+
+
+def test_get_workload_source_files_includes_docker_assets_when_using_provided_dockerfile(
+    tmp_path: Path,
+):
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
+    docker_dir = deployments_path / "docker"
+    docker_dir.mkdir(parents=True)
+    (docker_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
+    (docker_dir / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+
+    core_files = [("/tmp/app/main.py", "app/main.py")]
+
+    with patch.object(
+        mcp_bundle,
+        "ensure_docker_requirements_txt",
+        return_value=docker_dir / "requirements.txt",
+    ) as mock_requirements:
+        files = get_workload_source_files(
+            deployments_path=deployments_path,
+            dockerfile_relative_path="docker/Dockerfile",
+            get_core_app_files=lambda: core_files,
+        )
+
+    mock_requirements.assert_called_once_with(deployments_path)
+    rel_paths = {rel_path for _, rel_path in files}
+    assert rel_paths == {
+        "app/main.py",
+        "docker/Dockerfile",
+        "requirements.txt",
+        "start_server.sh",
+    }
+
+
+def test_get_workload_source_files_bundles_a_custom_dockerfile_path(tmp_path: Path):
+    """MCP_WORKLOAD_DOCKERFILE_PATH must reach the bundle, not just the artifact spec.
+
+    The build looks for the Dockerfile at the catalog-relative path in the spec,
+    so uploading `docker/Dockerfile` while the spec says `custom/Dockerfile`
+    fails the build.
+    """
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
+    (deployments_path / "custom").mkdir(parents=True)
+    (deployments_path / "custom" / "Dockerfile").write_text(
+        "FROM scratch\n", encoding="utf-8"
+    )
+    docker_dir = deployments_path / "docker"
+    docker_dir.mkdir(parents=True)
+    (docker_dir / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+
+    with patch.object(
+        mcp_bundle,
+        "ensure_docker_requirements_txt",
+        return_value=docker_dir / "requirements.txt",
+    ):
+        files = get_workload_source_files(
+            deployments_path=deployments_path,
+            dockerfile_relative_path="custom/Dockerfile",
+            get_core_app_files=list,
+        )
+
+    rel_paths = {rel_path for _, rel_path in files}
+    assert rel_paths == {"custom/Dockerfile", "requirements.txt", "start_server.sh"}
+
+
+def test_get_docker_bundle_files_error_names_the_configured_path(tmp_path: Path):
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
+    deployments_path.mkdir(parents=True)
+
+    with (
+        patch.object(pulumi, "error"),
+        pytest.raises(RuntimeError, match="custom/Dockerfile"),
+    ):
+        get_docker_bundle_files(deployments_path, "custom/Dockerfile")
+
+
+def test_get_workload_source_files_skips_docker_assets_for_generated_mode(
+    tmp_path: Path,
+):
+    core_files = [("/tmp/app/main.py", "app/main.py")]
+
+    files = get_workload_source_files(
+        deployments_path=tmp_path,
+        dockerfile_relative_path=None,
+        get_core_app_files=lambda: core_files,
+    )
+
+    assert files == core_files
+
+
+def test_ensure_docker_requirements_txt_overwrites_when_content_changes(tmp_path: Path):
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
+    docker_dir = deployments_path / "docker"
+    docker_dir.mkdir(parents=True)
+    target = docker_dir / "requirements.txt"
+    target.write_text("old-content\n", encoding="utf-8")
+
+    with (
+        patch.object(pulumi, "info"),
+        patch.object(
+            mcp_bundle,
+            "generate_docker_requirements_txt",
+            return_value="new-content\n",
+        ),
+    ):
+        result = ensure_docker_requirements_txt(deployments_path)
+
+    assert result == target
+    assert target.read_text(encoding="utf-8") == "new-content\n"
+
+
+def test_ensure_docker_requirements_txt_skips_write_when_unchanged(tmp_path: Path):
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
+    docker_dir = deployments_path / "docker"
+    docker_dir.mkdir(parents=True)
+    target = docker_dir / "requirements.txt"
+    target.write_text("same-content\n", encoding="utf-8")
+    mtime_before = target.stat().st_mtime_ns
+
+    with (
+        patch.object(pulumi, "info"),
+        patch.object(
+            mcp_bundle,
+            "generate_docker_requirements_txt",
+            return_value="same-content\n",
+        ),
+    ):
+        result = ensure_docker_requirements_txt(deployments_path)
+
+    assert result == target
+    assert target.stat().st_mtime_ns == mtime_before
+
+
+def test_get_docker_bundle_files_requires_dockerfile_and_start_script(tmp_path: Path):
+    deployments_path = tmp_path / "{{mcp_app_name_file}}"
+    deployments_path.mkdir(parents=True)
+
+    with (
+        patch.object(pulumi, "error") as mock_error,
+        pytest.raises(RuntimeError),
+    ):
+        get_docker_bundle_files(deployments_path)
+
+    mock_error.assert_called_once()
