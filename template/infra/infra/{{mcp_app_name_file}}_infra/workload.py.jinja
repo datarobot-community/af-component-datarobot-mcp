@@ -165,10 +165,49 @@ def _session_secret_env_vars(mcp_server_asset_name: str) -> list[dict[str, str]]
 
 
 def _workload_environment_vars(mcp_server_asset_name: str) -> list[dict[str, str]]:
-    return [
+    """Container env vars for the workload, mirroring the deployment path.
+
+    Every setting ``provision_deployment_mcp_server`` injects as a runtime
+    parameter must ride along here too, with the same defaults — otherwise
+    flipping MCP_DEPLOYMENT_TYPE to the workload preview silently drops
+    configured logging, registration and OTEL behavior.
+    """
+    env_vars: list[dict[str, str]] = [
         {
             "name": "MCP_SERVER_NAME",
             "value": os.getenv("MCP_SERVER_NAME", "datarobot-mcp-server"),
+        },
+        {
+            "name": "MCP_SERVER_LOG_LEVEL",
+            "value": os.getenv("MCP_SERVER_LOG_LEVEL", "WARNING"),
+        },
+        {"name": "APP_LOG_LEVEL", "value": os.getenv("APP_LOG_LEVEL", "INFO")},
+        {
+            "name": "MCP_SERVER_TOOL_REGISTRATION_DUPLICATE_BEHAVIOR",
+            "value": str(
+                os.getenv("MCP_SERVER_TOOL_REGISTRATION_DUPLICATE_BEHAVIOR", "warn")
+            ).lower(),
+        },
+        {
+            "name": "MCP_SERVER_TOOL_REGISTRATION_ALLOW_EMPTY_SCHEMA",
+            "value": str(
+                os.getenv("MCP_SERVER_TOOL_REGISTRATION_ALLOW_EMPTY_SCHEMA", "false")
+            ).lower(),
+        },
+        {
+            "name": "MCP_SERVER_PROMPT_REGISTRATION_DUPLICATE_BEHAVIOR",
+            "value": str(
+                os.getenv("MCP_SERVER_PROMPT_REGISTRATION_DUPLICATE_BEHAVIOR", "warn")
+            ).lower(),
+        },
+        {"name": "OTEL_ATTRIBUTES", "value": os.getenv("OTEL_ATTRIBUTES", "{}")},
+        {
+            "name": "OTEL_ENABLED",
+            "value": str(os.getenv("OTEL_ENABLED", "true")).lower(),
+        },
+        {
+            "name": "OTEL_ENABLED_HTTP_INSTRUMENTORS",
+            "value": str(os.getenv("OTEL_ENABLED_HTTP_INSTRUMENTORS", "false")).lower(),
         },
         {"name": "AUTH_RESOLUTION_STRATEGY", "value": auth_resolution_strategy()},
         *tool_flag_env_vars(),
@@ -177,6 +216,15 @@ def _workload_environment_vars(mcp_server_asset_name: str) -> list[dict[str, str
         *workload_credential_env_vars(),
         *_session_secret_env_vars(mcp_server_asset_name),
     ]
+    # The optional OTEL settings ride along only when configured, as on the
+    # deployment path.
+    if otel_collector_base_url := os.getenv("OTEL_COLLECTOR_BASE_URL"):
+        env_vars.append(
+            {"name": "OTEL_COLLECTOR_BASE_URL", "value": otel_collector_base_url}
+        )
+    if otel_entity_id := os.getenv("OTEL_ENTITY_ID"):
+        env_vars.append({"name": "OTEL_ENTITY_ID", "value": otel_entity_id})
+    return env_vars
 
 
 def _create_workload(
@@ -412,7 +460,7 @@ def provision_workload_mcp_server_from_image_uri(
 
     artifact = pulumi_datarobot.Artifact(
         mcp_server_asset_name + " Workload Artifact [Image URI]",
-        **workload_artifact_spec.to_payload(),
+        **workload_artifact_spec.to_pulumi_args(),
     )
 
     workload = _create_workload(

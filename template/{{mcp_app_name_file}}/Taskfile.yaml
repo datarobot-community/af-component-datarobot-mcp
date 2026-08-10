@@ -14,9 +14,11 @@ vars:
 
   MCP_DEPLOYMENT_TYPE_RESOLVED:
     sh: |
+      # Lower-cased to match the pulumi-side validation, which lowercases the
+      # value before checking it — both ends must accept the same spellings.
       # 1) OS env (includes the root dotenv when invoked via the repo root's task wrapper)
       if [ -n "${MCP_DEPLOYMENT_TYPE:-}" ]; then
-        echo "$MCP_DEPLOYMENT_TYPE"
+        echo "$MCP_DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]' | xargs
         exit 0
       fi
       # 2) Fallback for standalone `task install` runs from this app directory
@@ -27,7 +29,7 @@ vars:
             val="${line#MCP_DEPLOYMENT_TYPE=}"
             val="${val%\"}"; val="${val#\"}"
             val="${val%\'}"; val="${val#\'}"
-            echo "$val" | xargs
+            echo "$val" | tr '[:upper:]' '[:lower:]' | xargs
             exit 0
           fi
         fi
