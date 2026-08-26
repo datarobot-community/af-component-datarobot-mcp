@@ -173,6 +173,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# Mirrored into docker/ for local image builds; deployments_path is the source of truth
+/docker/pyproject.toml
+/docker/uv.lock
+
 # temp files
 temp.txt
 
