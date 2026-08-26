@@ -1,16 +1,16 @@
 ---
 name: Deploy E2E (serverless-docker)
 on:
-  push:
-    branches: ["main", "anatolii/BUZZOK-31992", "rabih-datarobot/BUZZOK-31992"]
+  pull_request:
+    branches: ["main", "anatolii/BUZZOK-31992"]
     paths:
       - "fixtures/e2e/**"
       - "template/**"
       - "copier.yml"
       - ".github/workflows/reusable-deploy-e2e.yaml"
       - ".github/workflows/afcomponentmcp-deploy-e2e-serverless-docker.yaml"
-  pull_request:
-    branches: ["main", "anatolii/BUZZOK-31992", "rabih-datarobot/BUZZOK-31992"]
+  push:
+    branches: ["main"]
     paths:
       - "fixtures/e2e/**"
       - "template/**"

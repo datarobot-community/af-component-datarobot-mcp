@@ -66,6 +66,7 @@ OTEL_ENABLED=false
 EOF
 
 append_env_var DATAROBOT_ENDPOINT "${DATAROBOT_ENDPOINT}"
+append_env_var DATAROBOT_API_TOKEN "${DATAROBOT_API_TOKEN:-}"
 append_env_var PULUMI_CONFIG_PASSPHRASE "${PULUMI_CONFIG_PASSPHRASE}"
 append_env_var SESSION_SECRET_KEY "${SESSION_SECRET_KEY}"
 append_env_var MCP_DEPLOYMENT_TYPE "${MCP_DEPLOYMENT_TYPE:-}"
@@ -77,6 +78,11 @@ set -a
 # shellcheck disable=SC1091
 source "${RENDERED_DIR}/.env"
 set +a
+
+if [[ -z "${DATAROBOT_API_TOKEN:-}" ]]; then
+  echo "::error::DATAROBOT_API_TOKEN is not set. Add it as a repository or organization Actions secret."
+  exit 1
+fi
 
 cd "${RENDERED_DIR}/mcp_server"
 uv sync --all-extras
