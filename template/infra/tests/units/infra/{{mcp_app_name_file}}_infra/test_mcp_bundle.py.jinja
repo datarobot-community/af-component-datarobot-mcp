@@ -133,7 +133,9 @@ def test_ensure_docker_dependency_files_copies_when_missing(tmp_path: Path):
     ensure_docker_dependency_files(deployments_path)
 
     docker_dir = deployments_path / "docker"
-    assert (docker_dir / "pyproject.toml").read_text(encoding="utf-8") == "new-content\n"
+    assert (docker_dir / "pyproject.toml").read_text(
+        encoding="utf-8"
+    ) == "new-content\n"
     assert (docker_dir / "uv.lock").read_text(encoding="utf-8") == "lock-content\n"
 
 
@@ -148,7 +150,9 @@ def test_ensure_docker_dependency_files_overwrites_when_content_changes(tmp_path
 
     ensure_docker_dependency_files(deployments_path)
 
-    assert (docker_dir / "pyproject.toml").read_text(encoding="utf-8") == "new-content\n"
+    assert (docker_dir / "pyproject.toml").read_text(
+        encoding="utf-8"
+    ) == "new-content\n"
     assert (docker_dir / "uv.lock").read_text(encoding="utf-8") == "lock-content\n"
 
 
