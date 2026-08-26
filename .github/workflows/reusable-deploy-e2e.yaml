@@ -14,6 +14,7 @@ on:
         type: string
 jobs:
   deploy-e2e:
+    if: ${{ secrets.DATAROBOT_API_TOKEN != '' }}
     name: "Deploy E2E (${{ inputs.use-case-id }})"
     runs-on: "ubuntu-latest"
     timeout-minutes: 180
