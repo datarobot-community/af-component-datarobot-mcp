@@ -53,28 +53,47 @@ append_env_var() {
   fi
 }
 
+normalize_datarobot_api_endpoint() {
+  local endpoint="${1%/}"
+  if [[ "${endpoint}" == */api/v2 ]]; then
+    printf '%s' "${endpoint}"
+  else
+    printf '%s/api/v2' "${endpoint}"
+  fi
+}
+
 validate_datarobot_credentials() {
-  local endpoint="${DATAROBOT_ENDPOINT%/}"
   local http_status
 
   http_status="$(
     curl -sS -o /dev/null -w "%{http_code}" \
       -H "Authorization: Bearer ${DATAROBOT_API_TOKEN}" \
-      "${endpoint}/api/v2/account/info/" || echo "000"
+      "${DATAROBOT_ENDPOINT}/account/info/" || echo "000"
   )"
 
   if [[ "${http_status}" != "200" ]]; then
-    echo "::error::DataRobot API rejected credentials (HTTP ${http_status}) for ${endpoint}. Verify DATAROBOT_API_TOKEN and DATAROBOT_ENDPOINT (repository/org secret and variable)."
+    echo "::error::DataRobot API rejected credentials (HTTP ${http_status}) for ${DATAROBOT_ENDPOINT}. Verify DATAROBOT_API_TOKEN and DATAROBOT_ENDPOINT (must resolve to the API v2 base, e.g. https://app.datarobot.com/api/v2)."
     exit 1
   fi
 
-  echo "DataRobot API credentials validated against ${endpoint}"
+  echo "DataRobot API credentials validated against ${DATAROBOT_ENDPOINT}"
 }
 
 cp "${WORKSPACE}/fixtures/e2e/infra/Pulumi.yaml" "${RENDERED_DIR}/infra/Pulumi.yaml"
 cp "${WORKSPACE}/fixtures/e2e/infra/pyproject.toml" "${RENDERED_DIR}/infra/pyproject.toml"
 cp "${WORKSPACE}/fixtures/e2e/infra/__main__.py" "${RENDERED_DIR}/infra/__main__.py"
 cp "${WORKSPACE}/fixtures/e2e/infra/infra/__init__.py" "${RENDERED_DIR}/infra/infra/__init__.py"
+
+if [[ -z "${DATAROBOT_API_TOKEN:-}" ]]; then
+  echo "::error::DATAROBOT_API_TOKEN is not set. Add it as a repository or organization Actions secret."
+  exit 1
+fi
+
+DATAROBOT_API_TOKEN="$(printf '%s' "${DATAROBOT_API_TOKEN}" | tr -d '\r\n')"
+DATAROBOT_ENDPOINT="$(normalize_datarobot_api_endpoint "${DATAROBOT_ENDPOINT:-https://app.datarobot.com}")"
+export DATAROBOT_API_TOKEN DATAROBOT_ENDPOINT
+
+validate_datarobot_credentials
 
 cat > "${RENDERED_DIR}/.env" <<EOF
 MCP_SERVER_REGISTER_DYNAMIC_TOOLS_ON_STARTUP=false
@@ -83,8 +102,8 @@ ENABLE_PREDICTIVE_TOOLS=true
 OTEL_ENABLED=false
 EOF
 
-append_env_var DATAROBOT_ENDPOINT "${DATAROBOT_ENDPOINT:-https://app.datarobot.com}"
-append_env_var DATAROBOT_API_TOKEN "${DATAROBOT_API_TOKEN:-}"
+append_env_var DATAROBOT_ENDPOINT "${DATAROBOT_ENDPOINT}"
+append_env_var DATAROBOT_API_TOKEN "${DATAROBOT_API_TOKEN}"
 append_env_var PULUMI_CONFIG_PASSPHRASE "${PULUMI_CONFIG_PASSPHRASE}"
 append_env_var SESSION_SECRET_KEY "${SESSION_SECRET_KEY}"
 append_env_var MCP_DEPLOYMENT_TYPE "${MCP_DEPLOYMENT_TYPE:-}"
@@ -96,18 +115,6 @@ set -a
 # shellcheck disable=SC1091
 source "${RENDERED_DIR}/.env"
 set +a
-
-if [[ -z "${DATAROBOT_API_TOKEN:-}" ]]; then
-  echo "::error::DATAROBOT_API_TOKEN is not set. Add it as a repository or organization Actions secret."
-  exit 1
-fi
-
-DATAROBOT_API_TOKEN="$(printf '%s' "${DATAROBOT_API_TOKEN}" | tr -d '\r\n')"
-DATAROBOT_ENDPOINT="${DATAROBOT_ENDPOINT:-https://app.datarobot.com}"
-DATAROBOT_ENDPOINT="${DATAROBOT_ENDPOINT%/}"
-export DATAROBOT_API_TOKEN DATAROBOT_ENDPOINT
-
-validate_datarobot_credentials
 
 cd "${RENDERED_DIR}/mcp_server"
 uv sync --all-extras

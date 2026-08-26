@@ -33,7 +33,7 @@ jobs:
       UV_CACHE_DIR: /.uv_cache
       DATAROBOT_API_TOKEN: ${{ secrets.DATAROBOT_API_TOKEN }}
       PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-      DATAROBOT_ENDPOINT: ${{ vars.DATAROBOT_ENDPOINT != '' && vars.DATAROBOT_ENDPOINT || 'https://app.datarobot.com' }}
+      DATAROBOT_ENDPOINT: ${{ vars.DATAROBOT_ENDPOINT != '' && vars.DATAROBOT_ENDPOINT || 'https://app.datarobot.com/api/v2' }}
       USE_CASE_ID: ${{ inputs.use-case-id }}
       SKIP_DESTROY: ${{ inputs.skip-destroy }}
     steps:
@@ -62,5 +62,5 @@ jobs:
         env:
           RENDERED_DIR: ./rendered
           DATAROBOT_API_TOKEN: ${{ secrets.DATAROBOT_API_TOKEN }}
-          DATAROBOT_ENDPOINT: ${{ vars.DATAROBOT_ENDPOINT != '' && vars.DATAROBOT_ENDPOINT || 'https://app.datarobot.com' }}
+          DATAROBOT_ENDPOINT: ${{ vars.DATAROBOT_ENDPOINT != '' && vars.DATAROBOT_ENDPOINT || 'https://app.datarobot.com/api/v2' }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE != '' && secrets.PULUMI_CONFIG_PASSPHRASE || 'ci-e2e-pulumi-passphrase' }}
