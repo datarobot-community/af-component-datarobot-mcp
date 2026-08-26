@@ -25,16 +25,24 @@ DOCKER_DIR = "docker"
 DOCKERFILE_RELATIVE_PATH = f"{DOCKER_DIR}/Dockerfile"
 PYPROJECT_RELATIVE_PATH = "pyproject.toml"
 UV_LOCK_RELATIVE_PATH = "uv.lock"
-DOCKER_DEPENDENCY_FILENAMES = (PYPROJECT_RELATIVE_PATH, UV_LOCK_RELATIVE_PATH)
+START_SERVER_RELATIVE_PATH = "start_server.sh"
+# Keep in sync with Taskfile copy-docker-dependency-files.
+DOCKER_DEPENDENCY_FILENAMES = (
+    PYPROJECT_RELATIVE_PATH,
+    UV_LOCK_RELATIVE_PATH,
+    START_SERVER_RELATIVE_PATH,
+)
 
 
 def ensure_docker_dependency_files(deployments_path: Path) -> None:
-    """Mirror pyproject.toml/uv.lock into docker/, overwriting only on change.
+    """Mirror docker build context files into docker/, overwriting only on change.
 
-    The Files Catalog bundle reads them straight from ``deployments_path``, so
-    this isn't needed for the remote build -- it's for a local
-    ``docker build`` run with ``docker/`` as the context. The mirrored copies
-    are gitignored; ``deployments_path`` stays the source of truth.
+    Copies ``pyproject.toml``, ``uv.lock``, and ``start_server.sh`` — the same
+    set as ``copy-docker-dependency-files`` in the app Taskfile. The Files
+    Catalog bundle reads dependency manifests from ``deployments_path``; the
+    mirrored copies under ``docker/`` are for local ``docker build`` runs with
+    ``docker/`` as the context. The copies are gitignored;
+    ``deployments_path`` stays the source of truth.
     """
     docker_dir = deployments_path / DOCKER_DIR
     docker_dir.mkdir(parents=True, exist_ok=True)
@@ -60,8 +68,8 @@ def get_docker_bundle_files(
 
     The Dockerfile installs uv and runs ``uv sync --frozen`` against
     ``pyproject.toml``/``uv.lock`` at the bundle root -- already included via
-    ``get_deployments_app_files`` -- so only their presence is checked here,
-    to fail fast instead of erroring deep in the remote Docker build.
+    ``get_deployments_app_files`` -- and expects ``start_server.sh`` in the
+    docker build context (mirrored by ``ensure_docker_dependency_files``).
     """
     dockerfile_path = deployments_path / dockerfile_relative_path
 
@@ -69,6 +77,7 @@ def get_docker_bundle_files(
         (dockerfile_path, dockerfile_relative_path),
         (deployments_path / PYPROJECT_RELATIVE_PATH, PYPROJECT_RELATIVE_PATH),
         (deployments_path / UV_LOCK_RELATIVE_PATH, UV_LOCK_RELATIVE_PATH),
+        (deployments_path / START_SERVER_RELATIVE_PATH, START_SERVER_RELATIVE_PATH),
     ):
         if not required_path.is_file():
             message = (

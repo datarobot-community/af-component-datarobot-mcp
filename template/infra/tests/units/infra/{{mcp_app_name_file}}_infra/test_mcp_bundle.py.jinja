@@ -44,6 +44,7 @@ def test_get_workload_source_files_includes_docker_assets_when_using_provided_do
     (docker_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
     (deployments_path / "pyproject.toml").write_text("", encoding="utf-8")
     (deployments_path / "uv.lock").write_text("", encoding="utf-8")
+    (deployments_path / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
 
     core_files = [("/tmp/app/main.py", "app/main.py")]
 
@@ -57,6 +58,7 @@ def test_get_workload_source_files_includes_docker_assets_when_using_provided_do
     assert rel_paths == {"app/main.py", "docker/Dockerfile"}
     assert (docker_dir / "pyproject.toml").is_file()
     assert (docker_dir / "uv.lock").is_file()
+    assert (docker_dir / "start_server.sh").is_file()
 
 
 def test_get_workload_source_files_bundles_a_custom_dockerfile_path(tmp_path: Path):
@@ -129,6 +131,7 @@ def test_ensure_docker_dependency_files_copies_when_missing(tmp_path: Path):
     deployments_path.mkdir(parents=True)
     (deployments_path / "pyproject.toml").write_text("new-content\n", encoding="utf-8")
     (deployments_path / "uv.lock").write_text("lock-content\n", encoding="utf-8")
+    (deployments_path / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
 
     ensure_docker_dependency_files(deployments_path)
 
@@ -137,6 +140,7 @@ def test_ensure_docker_dependency_files_copies_when_missing(tmp_path: Path):
         encoding="utf-8"
     ) == "new-content\n"
     assert (docker_dir / "uv.lock").read_text(encoding="utf-8") == "lock-content\n"
+    assert (docker_dir / "start_server.sh").read_text(encoding="utf-8") == "#!/bin/sh\n"
 
 
 def test_ensure_docker_dependency_files_overwrites_when_content_changes(tmp_path: Path):
@@ -145,8 +149,10 @@ def test_ensure_docker_dependency_files_overwrites_when_content_changes(tmp_path
     docker_dir.mkdir(parents=True)
     (deployments_path / "pyproject.toml").write_text("new-content\n", encoding="utf-8")
     (deployments_path / "uv.lock").write_text("lock-content\n", encoding="utf-8")
+    (deployments_path / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
     (docker_dir / "pyproject.toml").write_text("old-content\n", encoding="utf-8")
     (docker_dir / "uv.lock").write_text("old-lock\n", encoding="utf-8")
+    (docker_dir / "start_server.sh").write_text("#!/bin/old\n", encoding="utf-8")
 
     ensure_docker_dependency_files(deployments_path)
 
@@ -162,8 +168,10 @@ def test_ensure_docker_dependency_files_skips_write_when_unchanged(tmp_path: Pat
     docker_dir.mkdir(parents=True)
     (deployments_path / "pyproject.toml").write_text("same-content\n", encoding="utf-8")
     (deployments_path / "uv.lock").write_text("same-lock\n", encoding="utf-8")
+    (deployments_path / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
     (docker_dir / "pyproject.toml").write_text("same-content\n", encoding="utf-8")
     (docker_dir / "uv.lock").write_text("same-lock\n", encoding="utf-8")
+    (docker_dir / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
     mtime_before = (docker_dir / "pyproject.toml").stat().st_mtime_ns
 
     ensure_docker_dependency_files(deployments_path)

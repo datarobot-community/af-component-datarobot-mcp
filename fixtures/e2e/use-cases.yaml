@@ -8,6 +8,7 @@
 use_cases:
   serverless-docker:
     # Empty DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT → build EE from docker/ (no pin).
+    # Stable EE name so CI reuses/upgrades one EE instead of creating per-run names.
     description: Custom model (serverless) deploy building EE from docker/
     workflow: afcomponentmcp-deploy-e2e-serverless-docker.yaml
     env:
@@ -15,6 +16,7 @@ use_cases:
       MCP_WORKLOAD_DOCKERFILE_PATH: ""
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: ""
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
+      DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME: "ci-e2e-mcp-server-docker-ee"
 
   serverless-ee:
     # Non-empty DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT → reference platform EE (no docker/ build).

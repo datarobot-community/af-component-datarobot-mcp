@@ -150,6 +150,7 @@ append_env_var MCP_DEPLOYMENT_TYPE "${MCP_DEPLOYMENT_TYPE:-}"
 append_env_var MCP_WORKLOAD_DOCKERFILE_PATH "${MCP_WORKLOAD_DOCKERFILE_PATH:-}"
 append_env_var DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT "${DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT:-}"
 append_env_var DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID "${DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID:-}"
+append_env_var DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME:-}"
 
 set -a
 # shellcheck disable=SC1091
@@ -176,9 +177,6 @@ else
 fi
 
 pulumi stack init "${STACK_NAME}" --non-interactive 2>/dev/null || pulumi stack select "${STACK_NAME}"
-
-echo "Planning deployment with pulumi preview"
-pulumi preview --non-interactive
 
 echo "Deploying stack ${STACK_NAME}"
 pulumi up --yes --non-interactive
