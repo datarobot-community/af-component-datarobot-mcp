@@ -53,6 +53,24 @@ append_env_var() {
   fi
 }
 
+validate_datarobot_credentials() {
+  local endpoint="${DATAROBOT_ENDPOINT%/}"
+  local http_status
+
+  http_status="$(
+    curl -sS -o /dev/null -w "%{http_code}" \
+      -H "Authorization: Bearer ${DATAROBOT_API_TOKEN}" \
+      "${endpoint}/api/v2/account/info/" || echo "000"
+  )"
+
+  if [[ "${http_status}" != "200" ]]; then
+    echo "::error::DataRobot API rejected credentials (HTTP ${http_status}) for ${endpoint}. Verify DATAROBOT_API_TOKEN and DATAROBOT_ENDPOINT (repository/org secret and variable)."
+    exit 1
+  fi
+
+  echo "DataRobot API credentials validated against ${endpoint}"
+}
+
 cp "${WORKSPACE}/fixtures/e2e/infra/Pulumi.yaml" "${RENDERED_DIR}/infra/Pulumi.yaml"
 cp "${WORKSPACE}/fixtures/e2e/infra/pyproject.toml" "${RENDERED_DIR}/infra/pyproject.toml"
 cp "${WORKSPACE}/fixtures/e2e/infra/__main__.py" "${RENDERED_DIR}/infra/__main__.py"
@@ -65,7 +83,7 @@ ENABLE_PREDICTIVE_TOOLS=true
 OTEL_ENABLED=false
 EOF
 
-append_env_var DATAROBOT_ENDPOINT "${DATAROBOT_ENDPOINT}"
+append_env_var DATAROBOT_ENDPOINT "${DATAROBOT_ENDPOINT:-https://app.datarobot.com}"
 append_env_var DATAROBOT_API_TOKEN "${DATAROBOT_API_TOKEN:-}"
 append_env_var PULUMI_CONFIG_PASSPHRASE "${PULUMI_CONFIG_PASSPHRASE}"
 append_env_var SESSION_SECRET_KEY "${SESSION_SECRET_KEY}"
@@ -83,6 +101,13 @@ if [[ -z "${DATAROBOT_API_TOKEN:-}" ]]; then
   echo "::error::DATAROBOT_API_TOKEN is not set. Add it as a repository or organization Actions secret."
   exit 1
 fi
+
+DATAROBOT_API_TOKEN="$(printf '%s' "${DATAROBOT_API_TOKEN}" | tr -d '\r\n')"
+DATAROBOT_ENDPOINT="${DATAROBOT_ENDPOINT:-https://app.datarobot.com}"
+DATAROBOT_ENDPOINT="${DATAROBOT_ENDPOINT%/}"
+export DATAROBOT_API_TOKEN DATAROBOT_ENDPOINT
+
+validate_datarobot_credentials
 
 cd "${RENDERED_DIR}/mcp_server"
 uv sync --all-extras
@@ -109,9 +134,12 @@ echo "Planning deployment with pulumi preview"
 pulumi preview --non-interactive
 
 echo "Deploying stack ${STACK_NAME}"
-pulumi up --yes --non-interactive
+if ! pulumi up --yes --non-interactive; then
+  echo "::error::pulumi up failed for case ${CASE_NAME}. See provider errors above (common causes: invalid token, wrong DATAROBOT_ENDPOINT, or missing deploy permissions)."
+  exit 1
+fi
 
-python - <<'PY'
+python3 - <<'PY'
 import json
 import subprocess
 import sys

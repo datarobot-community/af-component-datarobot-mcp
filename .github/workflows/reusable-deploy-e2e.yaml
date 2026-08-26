@@ -62,4 +62,5 @@ jobs:
         env:
           RENDERED_DIR: ./rendered
           DATAROBOT_API_TOKEN: ${{ secrets.DATAROBOT_API_TOKEN }}
+          DATAROBOT_ENDPOINT: ${{ vars.DATAROBOT_ENDPOINT != '' && vars.DATAROBOT_ENDPOINT || 'https://app.datarobot.com' }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE != '' && secrets.PULUMI_CONFIG_PASSPHRASE || 'ci-e2e-pulumi-passphrase' }}
