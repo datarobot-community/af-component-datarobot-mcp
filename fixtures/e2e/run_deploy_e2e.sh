@@ -19,6 +19,11 @@ STACK_NAME="${STACK_NAME:?STACK_NAME is required}"
 CASE_NAME="${CASE_NAME:?CASE_NAME is required}"
 WORKSPACE="${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
 
+# Resolve before any cd — relative paths break after cd into mcp_server/infra.
+if [[ "${RENDERED_DIR}" != /* ]]; then
+  RENDERED_DIR="${WORKSPACE}/${RENDERED_DIR#./}"
+fi
+
 cleanup() {
   local exit_code=$?
   if [[ "${SKIP_DESTROY:-false}" == "true" ]]; then

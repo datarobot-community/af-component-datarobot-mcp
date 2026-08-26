@@ -2,7 +2,7 @@
 name: Deploy E2E (serverless-ee)
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "anatolii/BUZZOK-31992"]
     paths:
       - "fixtures/e2e/**"
       - "template/**"
@@ -10,7 +10,7 @@ on:
       - ".github/workflows/reusable-deploy-e2e.yaml"
       - ".github/workflows/afcomponentmcp-deploy-e2e-serverless-ee.yaml"
   pull_request:
-    branches: ["main"]
+    branches: ["main", "anatolii/BUZZOK-31992"]
     paths:
       - "fixtures/e2e/**"
       - "template/**"
@@ -29,7 +29,7 @@ on:
           - "true"
 concurrency:
   group: deploy-e2e-serverless-ee-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   deploy-e2e:
     if: ${{ secrets.DATAROBOT_API_TOKEN != '' }}
