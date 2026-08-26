@@ -141,6 +141,7 @@ def get_deployments_app_files() -> list[tuple[str, str]]:
     # Essential files only - whitelist approach to stay under 100 file limit
     essential_files = [
         "app/",
+        "start_server.sh",
         "pyproject.toml",
         "uv.lock",
     ]
