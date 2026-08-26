@@ -57,6 +57,9 @@ jobs:
         with:
           copier-args: "--defaults --trust --vcs-ref=HEAD"
 
+      - name: Install Task
+        uses: arduino/setup-task@v2
+
       - name: Run deployment E2E
         run: bash "${GITHUB_WORKSPACE}/fixtures/e2e/run_deploy_e2e.sh"
         env:

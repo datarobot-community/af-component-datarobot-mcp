@@ -118,7 +118,7 @@ set +a
 
 cd "${RENDERED_DIR}/mcp_server"
 uv sync --all-extras
-cp pyproject.toml uv.lock docker/
+task copy-docker-dependency-files
 
 effective_deployment_type="${MCP_DEPLOYMENT_TYPE:-datarobot-serverless}"
 if [[ "${effective_deployment_type}" != "datarobot-workload-preview" ]]; then
@@ -141,10 +141,7 @@ echo "Planning deployment with pulumi preview"
 pulumi preview --non-interactive
 
 echo "Deploying stack ${STACK_NAME}"
-if ! pulumi up --yes --non-interactive; then
-  echo "::error::pulumi up failed for case ${CASE_NAME}. See provider errors above (common causes: invalid token, wrong DATAROBOT_ENDPOINT, or missing deploy permissions)."
-  exit 1
-fi
+pulumi up --yes --non-interactive
 
 python3 - <<'PY'
 import json
