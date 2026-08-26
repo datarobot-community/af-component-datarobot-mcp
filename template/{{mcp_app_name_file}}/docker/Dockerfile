@@ -42,17 +42,23 @@ RUN apk add --no-cache \
     curl \
     bash
 
-# Copy requirements and wheels
-COPY requirements.txt .
+# Install uv (same tool start_server.sh uses at container startup)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Bake the venv at build time from the lock file, matching what start_server.sh
+# expects to find (and re-sync as a fast no-op) when the container starts.
+ENV UV_PROJECT=/opt/code \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_COMPILE_BYTECODE=1
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-progress --color never
 
 # Copy the application code (Pulumi copies mcp files to the build context)
 COPY . .
 
 # Make start_server.sh executable and set ownership
-RUN chown -R $UNAME:$UNAME /opt/code \
+RUN chown -R $UNAME:$UNAME /opt/code /opt/venv \
     && chmod +x start_server.sh
 
 # Switch to non-root user

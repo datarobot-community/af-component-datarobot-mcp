@@ -16,9 +16,6 @@
 
 from __future__ import annotations
 
-import os
-import shutil
-import subprocess
 from collections.abc import Callable
 from pathlib import Path
 
@@ -26,72 +23,8 @@ import pulumi
 
 DOCKER_DIR = "docker"
 DOCKERFILE_RELATIVE_PATH = f"{DOCKER_DIR}/Dockerfile"
-START_SERVER_SOURCE_RELATIVE_PATH = f"{DOCKER_DIR}/start_server.sh"
-ROOT_START_SERVER_RELATIVE_PATH = "start_server.sh"
-ROOT_REQUIREMENTS_RELATIVE_PATH = "requirements.txt"
-DOCKER_REQUIREMENTS_RELATIVE_PATH = f"{DOCKER_DIR}/requirements.txt"
-
-
-def _uv_command() -> list[str]:
-    uv = shutil.which("uv")
-    if uv is None:
-        message = (
-            "uv is required to generate docker/requirements.txt for workload image builds. "
-            "Install uv or run `task install` before deploying."
-        )
-        pulumi.error(message)
-        raise RuntimeError(message)
-    return [uv]
-
-
-def generate_docker_requirements_txt(deployments_path: Path) -> str:
-    """Export locked dependencies as requirements.txt content via uv."""
-    env = {
-        key: value
-        for key, value in os.environ.items()
-        if key not in {"PYTHONPATH", "VIRTUAL_ENV"}
-    }
-    result = subprocess.run(
-        [
-            *_uv_command(),
-            "export",
-            "--format",
-            "requirements-txt",
-            "--no-emit-project",
-            "--project",
-            str(deployments_path),
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-        cwd=str(deployments_path),
-        env=env,
-    )
-    if result.returncode != 0:
-        stderr = (result.stderr or result.stdout or "").strip()
-        message = (
-            "Failed to generate docker requirements.txt via `uv export`: "
-            f"{stderr or 'unknown error'}"
-        )
-        pulumi.error(message)
-        raise RuntimeError(message)
-    return result.stdout
-
-
-def ensure_docker_requirements_txt(deployments_path: Path) -> Path:
-    """Generate docker/requirements.txt and overwrite only when content changes."""
-    docker_dir = deployments_path / DOCKER_DIR
-    docker_dir.mkdir(parents=True, exist_ok=True)
-    target = docker_dir / "requirements.txt"
-    new_content = generate_docker_requirements_txt(deployments_path)
-
-    if target.is_file() and target.read_text(encoding="utf-8") == new_content:
-        pulumi.info("docker/requirements.txt is up to date")
-        return target
-
-    target.write_text(new_content, encoding="utf-8")
-    pulumi.info("Generated docker/requirements.txt for workload image build")
-    return target
+PYPROJECT_RELATIVE_PATH = "pyproject.toml"
+UV_LOCK_RELATIVE_PATH = "uv.lock"
 
 
 def get_docker_bundle_files(
@@ -106,34 +39,27 @@ def get_docker_bundle_files(
     the Dockerfile on disk and places it in the bundle, so a custom location is
     uploaded where the build looks for it.
 
-    The catalog Dockerfile expects ``requirements.txt`` and ``start_server.sh`` at
-    the bundle root, so those paths are included alongside it.
+    The Dockerfile installs uv and runs ``uv sync --frozen`` against
+    ``pyproject.toml``/``uv.lock`` at the bundle root -- already included via
+    ``get_deployments_app_files`` -- so only their presence is checked here,
+    to fail fast instead of erroring deep in the remote Docker build.
     """
     dockerfile_path = deployments_path / dockerfile_relative_path
-    start_server_path = deployments_path / START_SERVER_SOURCE_RELATIVE_PATH
 
-    if not dockerfile_path.is_file():
-        message = (
-            f"Workload DockerfileProvided build requires {dockerfile_relative_path} "
-            f"under {deployments_path}"
-        )
-        pulumi.error(message)
-        raise RuntimeError(message)
-    if not start_server_path.is_file():
-        message = (
-            f"Workload DockerfileProvided build requires {START_SERVER_SOURCE_RELATIVE_PATH} "
-            f"under {deployments_path}"
-        )
-        pulumi.error(message)
-        raise RuntimeError(message)
+    for required_path, relative_path in (
+        (dockerfile_path, dockerfile_relative_path),
+        (deployments_path / PYPROJECT_RELATIVE_PATH, PYPROJECT_RELATIVE_PATH),
+        (deployments_path / UV_LOCK_RELATIVE_PATH, UV_LOCK_RELATIVE_PATH),
+    ):
+        if not required_path.is_file():
+            message = (
+                f"Workload DockerfileProvided build requires {relative_path} "
+                f"under {deployments_path}"
+            )
+            pulumi.error(message)
+            raise RuntimeError(message)
 
-    requirements_path = ensure_docker_requirements_txt(deployments_path)
-
-    return [
-        (str(dockerfile_path), dockerfile_relative_path),
-        (str(requirements_path), ROOT_REQUIREMENTS_RELATIVE_PATH),
-        (str(start_server_path), ROOT_START_SERVER_RELATIVE_PATH),
-    ]
+    return [(str(dockerfile_path), dockerfile_relative_path)]
 
 
 def merge_source_files(

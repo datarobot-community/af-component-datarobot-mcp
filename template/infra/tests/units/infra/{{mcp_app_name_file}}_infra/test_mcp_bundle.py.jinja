@@ -18,9 +18,7 @@ from unittest.mock import patch
 import pulumi
 import pytest
 
-from infra.{{mcp_app_name_file}}_infra import mcp_bundle
 from infra.{{mcp_app_name_file}}_infra.mcp_bundle import (
-    ensure_docker_requirements_txt,
     get_docker_bundle_files,
     get_workload_source_files,
     merge_source_files,
@@ -43,29 +41,19 @@ def test_get_workload_source_files_includes_docker_assets_when_using_provided_do
     docker_dir = deployments_path / "docker"
     docker_dir.mkdir(parents=True)
     (docker_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
-    (docker_dir / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+    (deployments_path / "pyproject.toml").write_text("", encoding="utf-8")
+    (deployments_path / "uv.lock").write_text("", encoding="utf-8")
 
     core_files = [("/tmp/app/main.py", "app/main.py")]
 
-    with patch.object(
-        mcp_bundle,
-        "ensure_docker_requirements_txt",
-        return_value=docker_dir / "requirements.txt",
-    ) as mock_requirements:
-        files = get_workload_source_files(
-            deployments_path=deployments_path,
-            dockerfile_relative_path="docker/Dockerfile",
-            get_core_app_files=lambda: core_files,
-        )
+    files = get_workload_source_files(
+        deployments_path=deployments_path,
+        dockerfile_relative_path="docker/Dockerfile",
+        get_core_app_files=lambda: core_files,
+    )
 
-    mock_requirements.assert_called_once_with(deployments_path)
     rel_paths = {rel_path for _, rel_path in files}
-    assert rel_paths == {
-        "app/main.py",
-        "docker/Dockerfile",
-        "requirements.txt",
-        "start_server.sh",
-    }
+    assert rel_paths == {"app/main.py", "docker/Dockerfile"}
 
 
 def test_get_workload_source_files_bundles_a_custom_dockerfile_path(tmp_path: Path):
@@ -80,23 +68,17 @@ def test_get_workload_source_files_bundles_a_custom_dockerfile_path(tmp_path: Pa
     (deployments_path / "custom" / "Dockerfile").write_text(
         "FROM scratch\n", encoding="utf-8"
     )
-    docker_dir = deployments_path / "docker"
-    docker_dir.mkdir(parents=True)
-    (docker_dir / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+    (deployments_path / "pyproject.toml").write_text("", encoding="utf-8")
+    (deployments_path / "uv.lock").write_text("", encoding="utf-8")
 
-    with patch.object(
-        mcp_bundle,
-        "ensure_docker_requirements_txt",
-        return_value=docker_dir / "requirements.txt",
-    ):
-        files = get_workload_source_files(
-            deployments_path=deployments_path,
-            dockerfile_relative_path="custom/Dockerfile",
-            get_core_app_files=list,
-        )
+    files = get_workload_source_files(
+        deployments_path=deployments_path,
+        dockerfile_relative_path="custom/Dockerfile",
+        get_core_app_files=list,
+    )
 
     rel_paths = {rel_path for _, rel_path in files}
-    assert rel_paths == {"custom/Dockerfile", "requirements.txt", "start_server.sh"}
+    assert rel_paths == {"custom/Dockerfile"}
 
 
 def test_get_docker_bundle_files_error_names_the_configured_path(tmp_path: Path):
@@ -124,56 +106,15 @@ def test_get_workload_source_files_skips_docker_assets_for_generated_mode(
     assert files == core_files
 
 
-def test_ensure_docker_requirements_txt_overwrites_when_content_changes(tmp_path: Path):
+def test_get_docker_bundle_files_requires_pyproject_and_lock(tmp_path: Path):
     deployments_path = tmp_path / "{{mcp_app_name_file}}"
     docker_dir = deployments_path / "docker"
     docker_dir.mkdir(parents=True)
-    target = docker_dir / "requirements.txt"
-    target.write_text("old-content\n", encoding="utf-8")
-
-    with (
-        patch.object(pulumi, "info"),
-        patch.object(
-            mcp_bundle,
-            "generate_docker_requirements_txt",
-            return_value="new-content\n",
-        ),
-    ):
-        result = ensure_docker_requirements_txt(deployments_path)
-
-    assert result == target
-    assert target.read_text(encoding="utf-8") == "new-content\n"
-
-
-def test_ensure_docker_requirements_txt_skips_write_when_unchanged(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name_file}}"
-    docker_dir = deployments_path / "docker"
-    docker_dir.mkdir(parents=True)
-    target = docker_dir / "requirements.txt"
-    target.write_text("same-content\n", encoding="utf-8")
-    mtime_before = target.stat().st_mtime_ns
-
-    with (
-        patch.object(pulumi, "info"),
-        patch.object(
-            mcp_bundle,
-            "generate_docker_requirements_txt",
-            return_value="same-content\n",
-        ),
-    ):
-        result = ensure_docker_requirements_txt(deployments_path)
-
-    assert result == target
-    assert target.stat().st_mtime_ns == mtime_before
-
-
-def test_get_docker_bundle_files_requires_dockerfile_and_start_script(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name_file}}"
-    deployments_path.mkdir(parents=True)
+    (docker_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
 
     with (
         patch.object(pulumi, "error") as mock_error,
-        pytest.raises(RuntimeError),
+        pytest.raises(RuntimeError, match="pyproject.toml"),
     ):
         get_docker_bundle_files(deployments_path)
 
