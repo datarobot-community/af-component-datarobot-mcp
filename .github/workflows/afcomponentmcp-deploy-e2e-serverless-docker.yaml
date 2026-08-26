@@ -1,0 +1,40 @@
+---
+name: Deploy E2E (serverless-docker)
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "fixtures/e2e/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/reusable-deploy-e2e.yaml"
+      - ".github/workflows/afcomponentmcp-deploy-e2e-serverless-docker.yaml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "fixtures/e2e/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/reusable-deploy-e2e.yaml"
+      - ".github/workflows/afcomponentmcp-deploy-e2e-serverless-docker.yaml"
+  workflow_dispatch:
+    inputs:
+      skip_destroy:
+        description: "Skip pulumi destroy after deploy (debug only)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+concurrency:
+  group: deploy-e2e-serverless-docker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  deploy-e2e:
+    if: ${{ secrets.DATAROBOT_API_TOKEN != '' }}
+    uses: ./.github/workflows/reusable-deploy-e2e.yaml
+    secrets: inherit
+    with:
+      use-case-id: serverless-docker
+      skip-destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_destroy == 'true' && 'true' || 'false' }}

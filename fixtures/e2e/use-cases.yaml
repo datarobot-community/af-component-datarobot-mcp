@@ -1,0 +1,43 @@
+# Deployment E2E use cases — one GitHub Actions workflow per entry.
+#
+# To add a new case:
+#   1. Append a block below with a unique key.
+#   2. Copy an existing workflow from .github/workflows/afcomponentmcp-deploy-e2e-*.yaml
+#      and set workflow_call input use-case-id to the new key.
+#
+use_cases:
+  serverless-docker:
+    description: Custom model (serverless) deploy building EE from docker/
+    workflow: afcomponentmcp-deploy-e2e-serverless-docker.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: ""
+      MCP_WORKLOAD_DOCKERFILE_PATH: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
+
+  serverless-ee:
+    description: Custom model (serverless) deploy with pinned GenAI Agents EE
+    workflow: afcomponentmcp-deploy-e2e-serverless-ee.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: ""
+      MCP_WORKLOAD_DOCKERFILE_PATH: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "[DataRobot] Python 3.11 GenAI Agents"
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
+
+  workload-docker:
+    description: Workload deploy using docker/Dockerfile (no pinned EE)
+    workflow: afcomponentmcp-deploy-e2e-workload-docker.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: datarobot-workload-preview
+      MCP_WORKLOAD_DOCKERFILE_PATH: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
+
+  workload-ee:
+    description: Workload deploy with generated Dockerfile and pinned GenAI Agents EE
+    workflow: afcomponentmcp-deploy-e2e-workload-ee.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: datarobot-workload-preview
+      MCP_WORKLOAD_DOCKERFILE_PATH: none
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "[DataRobot] Python 3.11 GenAI Agents"
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
