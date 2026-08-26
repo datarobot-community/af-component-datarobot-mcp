@@ -26,6 +26,8 @@ fi
 
 cleanup() {
   local exit_code=$?
+  local destroy_rc=0
+
   if [[ "${SKIP_DESTROY:-false}" == "true" ]]; then
     echo "Skipping destroy because SKIP_DESTROY=true"
     return "${exit_code}"
@@ -33,11 +35,49 @@ cleanup() {
 
   echo "Cleaning up Pulumi stack ${STACK_NAME} (case=${CASE_NAME})"
   set +e
-  cd "${RENDERED_DIR}/infra"
-  if pulumi stack select "${STACK_NAME}" >/dev/null 2>&1; then
-    pulumi destroy --yes --non-interactive
-    pulumi stack rm "${STACK_NAME}" --yes --force
+
+  if [[ -f "${RENDERED_DIR}/.env" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "${RENDERED_DIR}/.env"
+    set +a
   fi
+
+  if [[ ! -d "${RENDERED_DIR}/infra" ]]; then
+    echo "No infra directory at ${RENDERED_DIR}/infra; skipping Pulumi cleanup"
+    set -e
+    return "${exit_code}"
+  fi
+
+  cd "${RENDERED_DIR}/infra"
+
+  if [[ -z "${PULUMI_ACCESS_TOKEN:-}" ]]; then
+    pulumi login --local >/dev/null 2>&1
+  fi
+
+  if ! pulumi stack select "${STACK_NAME}" >/dev/null 2>&1; then
+    echo "Pulumi stack ${STACK_NAME} not found; nothing to destroy"
+    set -e
+    return "${exit_code}"
+  fi
+
+  pulumi cancel --yes --non-interactive >/dev/null 2>&1
+
+  echo "Running pulumi destroy for stack ${STACK_NAME}"
+  pulumi destroy --yes --non-interactive
+  destroy_rc=$?
+
+  if [[ "${destroy_rc}" -eq 0 ]]; then
+    pulumi stack rm "${STACK_NAME}" --yes --force
+    if [[ $? -eq 0 ]]; then
+      echo "Pulumi stack ${STACK_NAME} destroyed and removed"
+    else
+      echo "::warning::pulumi stack rm failed for ${STACK_NAME} (exit $?)"
+    fi
+  else
+    echo "::warning::pulumi destroy failed for ${STACK_NAME} (exit ${destroy_rc}); stack kept in state for manual retry or cleanup"
+  fi
+
   set -e
   return "${exit_code}"
 }

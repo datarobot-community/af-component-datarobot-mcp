@@ -23,7 +23,7 @@ jobs:
   deploy-e2e:
     name: "Deploy E2E (${{ inputs.use-case-id }})"
     runs-on: "ubuntu-latest"
-    timeout-minutes: 180
+    timeout-minutes: 10
     container:
       image: ghcr.io/astral-sh/uv:python3.11-bookworm
     defaults:

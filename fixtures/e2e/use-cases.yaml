@@ -7,6 +7,7 @@
 #
 use_cases:
   serverless-docker:
+    # Empty DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT → build EE from docker/ (no pin).
     description: Custom model (serverless) deploy building EE from docker/
     workflow: afcomponentmcp-deploy-e2e-serverless-docker.yaml
     env:
@@ -16,6 +17,7 @@ use_cases:
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
 
   serverless-ee:
+    # Non-empty DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT → reference platform EE (no docker/ build).
     description: Custom model (serverless) deploy with pinned GenAI Agents EE
     workflow: afcomponentmcp-deploy-e2e-serverless-ee.yaml
     env:
