@@ -51,7 +51,7 @@ probe_mcp_endpoint() {
   local attempts="${MCP_PROBE_ATTEMPTS:-24}"
   local delay="${MCP_PROBE_DELAY_S:-10}"
   local payload='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci-e2e-probe","version":"0.0.1"}}}'
-  local body_file status attempt
+  local body_file status attempt errored_count=0
   body_file="$(mktemp)"
 
   echo "Probing MCP endpoint ${endpoint}"
@@ -69,6 +69,18 @@ probe_mcp_endpoint() {
       echo "MCP endpoint answered initialize (HTTP ${status}, attempt ${attempt}/${attempts})"
       rm -f "${body_file}"
       return 0
+    fi
+    # A workload reporting ERRORED is a crash loop, not a slow start — waiting
+    # out the remaining attempts just burns CI minutes. Require a few sightings
+    # in case the status flaps while replicas restart.
+    if grep -q "status is 'ERRORED'" "${body_file}" 2>/dev/null; then
+      errored_count=$((errored_count + 1))
+      if [[ "${errored_count}" -ge 3 ]]; then
+        echo "::error::Workload reported status ERRORED ${errored_count} times — container is crash-looping; aborting probe early"
+        cat "${body_file}" || true
+        rm -f "${body_file}"
+        return 1
+      fi
     fi
     echo "MCP endpoint not ready (HTTP ${status}, attempt ${attempt}/${attempts}); retrying in ${delay}s"
     sleep "${delay}"

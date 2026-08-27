@@ -50,6 +50,17 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project --no-progress --color never && \
     chown -R "${UID}:${GID}" /opt/venv
 
+# Copy the rest of the build context AFTER the deps layer so app-only changes
+# never invalidate the uv sync cache. What lands here depends on the context:
+#   - EE builds (context = app root): .dockerignore strips app/ etc., leaving a
+#     deps-only image — the platform injects model files at runtime.
+#   - Workload DockerfileProvided builds (context = Files catalog bundle, which
+#     has no .dockerignore): this copies app/ + start_server.sh, which CMD needs.
+#     Without it the container crash-loops on `python -m app.main` (workload
+#     status ERRORED).
+COPY . .
+RUN chown -R "${UID}:${GID}" /opt/code
+
 # DL3066 wants a numeric uid, but this user is a build arg and a variable never
 # looks numeric to hadolint — acknowledged rather than hardcoding the id.
 # hadolint ignore=DL3066
