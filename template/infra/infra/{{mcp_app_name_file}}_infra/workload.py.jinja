@@ -59,7 +59,7 @@ from .mcp_oauth_configs import (
 
 WORKLOAD_CONTAINER_NAME = "mcp-server"
 DEFAULT_WORKLOAD_CONTAINER_PORT = 8080
-DEFAULT_DOCKERFILE_RELATIVE_PATH = "docker/Dockerfile"
+DEFAULT_DOCKERFILE_RELATIVE_PATH = "Dockerfile"
 DEFAULT_BUILD_TIMEOUT_S = 6000
 DEFAULT_ENTRYPOINT = ["python", "-m", "app.main"]
 DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
@@ -84,7 +84,7 @@ def _resolve_dockerfile_relative_path() -> str | None:
     """
     Return a catalog-relative Dockerfile path when using DockerfileProvided.
 
-    ``MCP_WORKLOAD_DOCKERFILE_PATH`` overrides the default ``docker/Dockerfile``
+    ``MCP_WORKLOAD_DOCKERFILE_PATH`` overrides the default ``Dockerfile``
     check. Set ``MCP_WORKLOAD_DOCKERFILE_PATH=none`` (or ``false``/``0``) to force
     generated mode.
     """

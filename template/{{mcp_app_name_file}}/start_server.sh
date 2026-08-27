@@ -7,12 +7,15 @@
 # Released under the terms of DataRobot Tool and Utility Agreement.
 
 # =============================================================================
-# Startup script for MCP Server custom models.
+# Runtime bootstrap for serverless custom models on pinned platform EEs.
 #
-# Copied to /opt/code/start_server.sh in the image and invoked by the platform
-# for the custom-model surface only. The Workload API (code-to-workload) surface
-# never runs this script -- it generates its own Dockerfile and entrypoint on top
-# of this image.
+# Used when DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT is set (e.g. GenAI
+# Agents): the platform runs this script from the model bundle because there is
+# no custom Dockerfile and dependencies must be synced at container start.
+#
+# Not used for docker-built paths (serverless-docker, workload-docker): those
+# images bake /opt/venv at build time and start via CMD ["python", "-m",
+# "app.main"]. Workload-ee uses the same python entrypoint via infra.
 #
 # POSIX sh on purpose: keep it free of bashisms.
 # =============================================================================

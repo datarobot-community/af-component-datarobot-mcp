@@ -78,7 +78,6 @@ tasks:
     cmds:
       - echo "🔧 Installing dependencies.."
       - "{{.UV_CMD}} sync --all-extras"
-      - task: copy-docker-dependency-files
       # MCP item metadata is only consumed by datarobot-serverless provisioning.
       # (go-task has no `if:` on task calls, so this is a shell conditional.)
       - |
@@ -266,13 +265,6 @@ tasks:
         fi
         echo ""
         {{.UV_CMD}} run python test_interactive.py
-    silent: true
-
-  copy-docker-dependency-files:
-    desc: "🔨 Copy docker build context files into docker/ for EE and local image builds"
-    cmds:
-      - echo "🔨 Copying pyproject.toml, uv.lock, and start_server.sh into docker/..."
-      - cp pyproject.toml uv.lock start_server.sh docker/
     silent: true
 
   release_files:

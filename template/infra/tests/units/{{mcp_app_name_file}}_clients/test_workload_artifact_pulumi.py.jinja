@@ -48,7 +48,7 @@ def _provided_inputs() -> dict:
         "artifact_name": "mcp-server",
         "catalog_id": "cat",
         "catalog_version_id": "ver",
-        "dockerfile_relative_path": "docker/Dockerfile",
+        "dockerfile_relative_path": "Dockerfile",
         "container_name": "mcp-server",
         "container_port": 8080,
         "environment_vars": [{"name": "FOO", "value": "bar"}],
@@ -127,7 +127,7 @@ class TestWorkloadImageArtifactProvider:
         provider = WorkloadImageArtifactProvider()
         actual = provider.diff(
             "art-1",
-            {"dockerfile_relative_path": "docker/Dockerfile"},
+            {"dockerfile_relative_path": "Dockerfile"},
             {"dockerfile_relative_path": "docker/Other"},
         ).changes
         expected = True

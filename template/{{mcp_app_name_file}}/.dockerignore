@@ -1,0 +1,47 @@
+# Custom execution-environment builds upload this app directory as the Docker
+# context (see infra/.../mcp_execution_environment.py). Serverless MCP deploys
+# application code separately via custom model files — the EE image only needs
+# dependency manifests and runtime helpers, not app/.
+#
+# Workload-docker image builds use the Files catalog bundle (explicit file list),
+# not this .dockerignore, so excluding app/ here does not affect workload images.
+
+app/
+dev_tools/
+tests/
+docs/
+examples/
+samples/
+
+.env
+.env.*
+.venv/
+venv/
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+__pycache__/
+*.py[cod]
+.git/
+.github/
+.idea/
+.vscode/
+
+*.md
+*.rst
+*.log
+build/
+dist/
+*.egg-info/
+
+test_results/
+test_interactive.py
+pytest.ini
+Taskfile.yaml
+.env.template
+oauth-config.yaml

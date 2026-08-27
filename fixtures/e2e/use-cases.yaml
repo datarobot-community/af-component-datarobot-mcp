@@ -1,5 +1,15 @@
 # Deployment E2E use cases — one GitHub Actions workflow per entry.
 #
+# Execution environment env vars (also documented in mcp_execution_environment.py):
+#
+# DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT
+#   Selects an existing EE to reuse. Skips the Docker build (e.g. GenAI Agents).
+#
+# DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME
+#   Only when DEFAULT is empty: names a new EE built from scratch. CI uses a
+#   stable value (serverless-docker below) so each run updates one EE instead of
+#   creating a new per-run name tied to an ephemeral stack.
+#
 # To add a new case:
 #   1. Append a block below with a unique key.
 #   2. Copy an existing workflow from .github/workflows/afcomponentmcp-deploy-e2e-*.yaml
@@ -7,9 +17,8 @@
 #
 use_cases:
   serverless-docker:
-    # Empty DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT → build EE from docker/ (no pin).
-    # Stable EE name so CI reuses/upgrades one EE instead of creating per-run names.
-    description: Custom model (serverless) deploy building EE from docker/
+    # DEFAULT empty → build EE from app root. NAME set → stable CI EE (see file header).
+    description: Custom model (serverless) deploy building EE from app root
     workflow: afcomponentmcp-deploy-e2e-serverless-docker.yaml
     env:
       MCP_DEPLOYMENT_TYPE: ""
@@ -19,7 +28,7 @@ use_cases:
       DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME: "ci-e2e-mcp-server-docker-ee"
 
   serverless-ee:
-    # Non-empty DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT → reference platform EE (no docker/ build).
+    # DEFAULT set → reuse platform EE; NAME is ignored on this path.
     description: Custom model (serverless) deploy with pinned GenAI Agents EE
     workflow: afcomponentmcp-deploy-e2e-serverless-ee.yaml
     env:
@@ -29,7 +38,7 @@ use_cases:
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
 
   workload-docker:
-    description: Workload deploy using docker/Dockerfile (no pinned EE)
+    description: Workload deploy using root Dockerfile (no pinned EE)
     workflow: afcomponentmcp-deploy-e2e-workload-docker.yaml
     env:
       MCP_DEPLOYMENT_TYPE: datarobot-workload-preview

@@ -278,14 +278,14 @@ class TestResolveDockerfileRelativePath:
 
     def test_returns_default_when_dockerfile_exists(self, tmp_path) -> None:
         project_dir = tmp_path / "infra" / "infra"
-        docker_dir = tmp_path / "infra" / "{{mcp_app_name_file}}" / "docker"
+        docker_dir = tmp_path / "infra" / "{{mcp_app_name_file}}"
         docker_dir.mkdir(parents=True)
         (docker_dir / "Dockerfile").write_text("FROM scratch\n")
         with (
             patch.object(workload, "project_dir", project_dir),
             env(MCP_WORKLOAD_DOCKERFILE_PATH=None),
         ):
-            expected = "docker/Dockerfile"
+            expected = "Dockerfile"
             actual = workload._resolve_dockerfile_relative_path()
             assert actual == expected
 
@@ -456,11 +456,11 @@ class TestCreateWorkloadImageArtifact:
         ):
             workload._create_workload_image_artifact(
                 **artifact_kwargs,
-                dockerfile_relative_path="docker/Dockerfile",
+                dockerfile_relative_path="Dockerfile",
                 execution_environment=None,
             )
         actual = mock_cls.call_args.kwargs["dockerfile_relative_path"]
-        expected = "docker/Dockerfile"
+        expected = "Dockerfile"
         assert actual == expected
 
     def test_uses_generated_dockerfile(self, artifact_kwargs: dict) -> None:
@@ -493,7 +493,7 @@ class TestCreateWorkloadImageArtifact:
 
 class TestProvisionWorkloadMcpServer:
     def test_returns_mcp_endpoint_with_provided_dockerfile(self) -> None:
-        with stub_provision(dockerfile="docker/Dockerfile"):
+        with stub_provision(dockerfile="Dockerfile"):
             actual = workload.provision_workload_mcp_server(
                 mcp_server_asset_name="srv", get_deployments_app_files=list
             )["mcp_server_mcp_endpoint"]

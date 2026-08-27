@@ -44,7 +44,7 @@ def test_workload_artifact_spec_type_is_service():
                 provider="datarobot",
                 datarobot=CodeRefDatarobot(catalog_id="cat", catalog_version_id="ver"),
             ),
-            dockerfile=DockerfileProvided(path="docker/Dockerfile"),
+            dockerfile=DockerfileProvided(path="Dockerfile"),
         ),
         environment_vars=[{"name": "FOO", "value": "bar"}],
         routes=[{"path": "/.well-known/oauth-protected-resource", "auth": "required"}],

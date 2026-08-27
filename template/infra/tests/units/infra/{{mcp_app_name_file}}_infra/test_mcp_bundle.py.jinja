@@ -19,7 +19,7 @@ import pulumi
 import pytest
 
 from infra.{{mcp_app_name_file}}_infra.mcp_bundle import (
-    ensure_docker_dependency_files,
+    ensure_docker_build_context_files,
     get_docker_bundle_files,
     get_workload_source_files,
     merge_source_files,
@@ -39,9 +39,8 @@ def test_get_workload_source_files_includes_docker_assets_when_using_provided_do
     tmp_path: Path,
 ):
     deployments_path = tmp_path / "{{mcp_app_name_file}}"
-    docker_dir = deployments_path / "docker"
-    docker_dir.mkdir(parents=True)
-    (docker_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
+    deployments_path.mkdir(parents=True)
+    (deployments_path / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
     (deployments_path / "pyproject.toml").write_text("", encoding="utf-8")
     (deployments_path / "uv.lock").write_text("", encoding="utf-8")
     (deployments_path / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
@@ -50,31 +49,30 @@ def test_get_workload_source_files_includes_docker_assets_when_using_provided_do
 
     files = get_workload_source_files(
         deployments_path=deployments_path,
-        dockerfile_relative_path="docker/Dockerfile",
+        dockerfile_relative_path="Dockerfile",
         get_core_app_files=lambda: core_files,
     )
 
     rel_paths = {rel_path for _, rel_path in files}
-    assert rel_paths == {"app/main.py", "docker/Dockerfile"}
-    assert (docker_dir / "pyproject.toml").is_file()
-    assert (docker_dir / "uv.lock").is_file()
-    assert (docker_dir / "start_server.sh").is_file()
+    assert rel_paths == {"app/main.py", "Dockerfile"}
 
 
 def test_get_workload_source_files_bundles_a_custom_dockerfile_path(tmp_path: Path):
     """MCP_WORKLOAD_DOCKERFILE_PATH must reach the bundle, not just the artifact spec.
 
     The build looks for the Dockerfile at the catalog-relative path in the spec,
-    so uploading `docker/Dockerfile` while the spec says `custom/Dockerfile`
+    so uploading ``Dockerfile`` while the spec says ``custom/Dockerfile``
     fails the build.
     """
     deployments_path = tmp_path / "{{mcp_app_name_file}}"
+    deployments_path.mkdir(parents=True)
     (deployments_path / "custom").mkdir(parents=True)
     (deployments_path / "custom" / "Dockerfile").write_text(
         "FROM scratch\n", encoding="utf-8"
     )
     (deployments_path / "pyproject.toml").write_text("", encoding="utf-8")
     (deployments_path / "uv.lock").write_text("", encoding="utf-8")
+    (deployments_path / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
 
     files = get_workload_source_files(
         deployments_path=deployments_path,
@@ -113,9 +111,8 @@ def test_get_workload_source_files_skips_docker_assets_for_generated_mode(
 
 def test_get_docker_bundle_files_requires_pyproject_and_lock(tmp_path: Path):
     deployments_path = tmp_path / "{{mcp_app_name_file}}"
-    docker_dir = deployments_path / "docker"
-    docker_dir.mkdir(parents=True)
-    (docker_dir / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
+    deployments_path.mkdir(parents=True)
+    (deployments_path / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
 
     with (
         patch.object(pulumi, "error") as mock_error,
@@ -126,54 +123,26 @@ def test_get_docker_bundle_files_requires_pyproject_and_lock(tmp_path: Path):
     mock_error.assert_called_once()
 
 
-def test_ensure_docker_dependency_files_copies_when_missing(tmp_path: Path):
+def test_ensure_docker_build_context_files_passes_when_all_present(tmp_path: Path):
     deployments_path = tmp_path / "{{mcp_app_name_file}}"
     deployments_path.mkdir(parents=True)
-    (deployments_path / "pyproject.toml").write_text("new-content\n", encoding="utf-8")
-    (deployments_path / "uv.lock").write_text("lock-content\n", encoding="utf-8")
+    (deployments_path / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
+    (deployments_path / "pyproject.toml").write_text("content\n", encoding="utf-8")
+    (deployments_path / "uv.lock").write_text("lock\n", encoding="utf-8")
     (deployments_path / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
 
-    ensure_docker_dependency_files(deployments_path)
-
-    docker_dir = deployments_path / "docker"
-    assert (docker_dir / "pyproject.toml").read_text(
-        encoding="utf-8"
-    ) == "new-content\n"
-    assert (docker_dir / "uv.lock").read_text(encoding="utf-8") == "lock-content\n"
-    assert (docker_dir / "start_server.sh").read_text(encoding="utf-8") == "#!/bin/sh\n"
+    ensure_docker_build_context_files(deployments_path)
 
 
-def test_ensure_docker_dependency_files_overwrites_when_content_changes(tmp_path: Path):
+def test_ensure_docker_build_context_files_raises_when_missing(tmp_path: Path):
     deployments_path = tmp_path / "{{mcp_app_name_file}}"
-    docker_dir = deployments_path / "docker"
-    docker_dir.mkdir(parents=True)
-    (deployments_path / "pyproject.toml").write_text("new-content\n", encoding="utf-8")
-    (deployments_path / "uv.lock").write_text("lock-content\n", encoding="utf-8")
-    (deployments_path / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
-    (docker_dir / "pyproject.toml").write_text("old-content\n", encoding="utf-8")
-    (docker_dir / "uv.lock").write_text("old-lock\n", encoding="utf-8")
-    (docker_dir / "start_server.sh").write_text("#!/bin/old\n", encoding="utf-8")
+    deployments_path.mkdir(parents=True)
+    (deployments_path / "pyproject.toml").write_text("content\n", encoding="utf-8")
 
-    ensure_docker_dependency_files(deployments_path)
+    with (
+        patch.object(pulumi, "error") as mock_error,
+        pytest.raises(RuntimeError, match="Dockerfile"),
+    ):
+        ensure_docker_build_context_files(deployments_path)
 
-    assert (docker_dir / "pyproject.toml").read_text(
-        encoding="utf-8"
-    ) == "new-content\n"
-    assert (docker_dir / "uv.lock").read_text(encoding="utf-8") == "lock-content\n"
-
-
-def test_ensure_docker_dependency_files_skips_write_when_unchanged(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name_file}}"
-    docker_dir = deployments_path / "docker"
-    docker_dir.mkdir(parents=True)
-    (deployments_path / "pyproject.toml").write_text("same-content\n", encoding="utf-8")
-    (deployments_path / "uv.lock").write_text("same-lock\n", encoding="utf-8")
-    (deployments_path / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
-    (docker_dir / "pyproject.toml").write_text("same-content\n", encoding="utf-8")
-    (docker_dir / "uv.lock").write_text("same-lock\n", encoding="utf-8")
-    (docker_dir / "start_server.sh").write_text("#!/bin/sh\n", encoding="utf-8")
-    mtime_before = (docker_dir / "pyproject.toml").stat().st_mtime_ns
-
-    ensure_docker_dependency_files(deployments_path)
-
-    assert (docker_dir / "pyproject.toml").stat().st_mtime_ns == mtime_before
+    mock_error.assert_called_once()
