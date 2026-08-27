@@ -19,11 +19,9 @@ import pulumi
 import pytest
 
 from infra.{{mcp_app_name_file}}_infra.mcp_bundle import (
-    _matches_dockerignore,
     ensure_docker_build_context_files,
     get_docker_bundle_files,
     get_workload_source_files,
-    log_docker_build_context,
     merge_source_files,
 )
 
@@ -148,27 +146,3 @@ def test_ensure_docker_build_context_files_raises_when_missing(tmp_path: Path):
         ensure_docker_build_context_files(deployments_path)
 
     mock_error.assert_called_once()
-
-
-def test_matches_dockerignore_excludes_directory_prefix():
-    patterns = ["app/", "start_server.sh"]
-    assert _matches_dockerignore("app/main.py", patterns)
-    assert _matches_dockerignore("start_server.sh", patterns)
-    assert not _matches_dockerignore("pyproject.toml", patterns)
-
-
-def test_log_docker_build_context_reports_estimated_includes(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name_file}}"
-    deployments_path.mkdir(parents=True)
-    (deployments_path / ".dockerignore").write_text("app/\nstart_server.sh\n", encoding="utf-8")
-    (deployments_path / "pyproject.toml").write_text("", encoding="utf-8")
-    (deployments_path / "app").mkdir()
-    (deployments_path / "app" / "main.py").write_text("", encoding="utf-8")
-    (deployments_path / "start_server.sh").write_text("", encoding="utf-8")
-
-    with patch.object(pulumi, "info") as mock_info:
-        log_docker_build_context(deployments_path)
-
-    messages = " ".join(call.args[0] for call in mock_info.call_args_list)
-    assert "estimated" in messages
-    assert "pyproject.toml" in messages

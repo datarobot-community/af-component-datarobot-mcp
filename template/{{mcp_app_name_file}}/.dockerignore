@@ -12,6 +12,7 @@ tests/
 docs/
 examples/
 samples/
+img/
 
 .env
 .env.*
@@ -45,6 +46,12 @@ pytest.ini
 Taskfile.yaml
 .env.template
 oauth-config.yaml
+
+# Dev/CI config — not needed in deps-only EE images.
+.coveragerc
+.gitignore
+.licenserc.yaml
+.pre-commit-config.yaml
 
 # Runtime bootstrap for pinned platform EEs (serverless-ee). That path ships
 # start_server.sh via get_deployments_app_files() in the custom model bundle —

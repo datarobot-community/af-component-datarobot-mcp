@@ -54,22 +54,6 @@ RUN uv sync --frozen --no-install-project --no-progress --color never
 # app/ via Files catalog (not .dockerignore).
 COPY --chown=${UID}:${GID} . .
 
-# Log effective context in DataRobot build output (verify .dockerignore on EE builds).
-RUN set -e; \
-    echo "=== docker build context (files copied into image) ==="; \
-    find . -type f 2>/dev/null | sort | head -80; \
-    echo "context_file_count=$(find . -type f 2>/dev/null | wc -l | tr -d ' ')"; \
-    if find ./app -type f 2>/dev/null | head -1 | grep -q .; then \
-      echo "dockerignore_probe: app/ PRESENT (expected for workload-docker; for EE-only builds .dockerignore may be ignored)"; \
-    else \
-      echo "dockerignore_probe: app/ absent (expected for EE builds when .dockerignore applies)"; \
-    fi; \
-    if [ -f ./start_server.sh ]; then \
-      echo "dockerignore_probe: start_server.sh PRESENT"; \
-    else \
-      echo "dockerignore_probe: start_server.sh absent (expected for EE builds)"; \
-    fi
-
 RUN chown -R "${UID}:${GID}" /opt/venv
 
 # DL3066 wants a numeric uid, but this user is a build arg and a variable never
