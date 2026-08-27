@@ -18,7 +18,7 @@ RENDERED_DIR="${RENDERED_DIR:-./rendered}"
 STACK_NAME="${STACK_NAME:?STACK_NAME is required}"
 CASE_NAME="${CASE_NAME:?CASE_NAME is required}"
 WORKSPACE="${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
-PULUMI_STATE_DIR="${PULUMI_STATE_DIR:-${HOME}/.pulumi}"
+PULUMI_STATE_DIR="${PULUMI_STATE_DIR:-pulumi-state}"
 
 # shellcheck disable=SC1091
 source "${WORKSPACE}/fixtures/e2e/pulumi_e2e_lib.sh"
@@ -26,14 +26,20 @@ source "${WORKSPACE}/fixtures/e2e/pulumi_e2e_lib.sh"
 RENDERED_DIR="$(resolve_workspace_path "${WORKSPACE}" "${RENDERED_DIR}")"
 PULUMI_STATE_DIR="$(resolve_workspace_path "${WORKSPACE}" "${PULUMI_STATE_DIR}")"
 
+# The deploy job's backend dir (see pulumi_login_e2e_backend) travels via the
+# cleanup artifact; put it back at the same workspace-anchored location so the
+# destroy's login sees the deployed stack.
+BACKEND_DIR="${WORKSPACE}/pulumi-state"
 if [[ -d "${PULUMI_STATE_DIR}" ]] && [[ -n "$(ls -A "${PULUMI_STATE_DIR}" 2>/dev/null || true)" ]]; then
-  mkdir -p "${HOME}/.pulumi"
-  cp -a "${PULUMI_STATE_DIR}/." "${HOME}/.pulumi/"
+  if [[ "${PULUMI_STATE_DIR}" != "${BACKEND_DIR}" ]]; then
+    mkdir -p "${BACKEND_DIR}"
+    cp -a "${PULUMI_STATE_DIR}/." "${BACKEND_DIR}/"
+  fi
 elif [[ "${DEPLOY_JOB_RESULT:-}" == "success" && -z "${PULUMI_ACCESS_TOKEN:-}" ]]; then
   # Local backend: a successful deploy must hand its ~/.pulumi state over via
   # the artifact. Bail here with the precise cause rather than the later,
   # vaguer "stack not found". (Cloud backend keeps state server-side — skip.)
-  echo "::error::Deploy succeeded but no local Pulumi state was restored at ${PULUMI_STATE_DIR} — the stack's resources are still deployed. Check the pulumi-home hand-off in the cleanup artifact."
+  echo "::error::Deploy succeeded but no local Pulumi state was restored at ${PULUMI_STATE_DIR} — the stack's resources are still deployed. Check the pulumi-state hand-off in the cleanup artifact."
   exit 1
 fi
 

@@ -188,11 +188,7 @@ fi
 cd "${RENDERED_DIR}/infra"
 uv sync
 
-if [[ -n "${PULUMI_ACCESS_TOKEN:-}" ]]; then
-  echo "Using Pulumi Cloud backend"
-else
-  pulumi login --local
-fi
+pulumi_login_e2e_backend "${WORKSPACE}"
 
 # Reuse an existing stack on re-runs; surface real init errors instead of
 # hiding them behind the select fallback.

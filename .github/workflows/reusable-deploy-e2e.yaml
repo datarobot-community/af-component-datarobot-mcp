@@ -92,11 +92,13 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          mkdir -p cleanup-artifacts/pulumi-home cleanup-artifacts/rendered
-          if [[ -d /github/home/.pulumi ]]; then
-            cp -a /github/home/.pulumi/. cleanup-artifacts/pulumi-home/
-            # State only — the destroy job installs its own CLI and providers.
-            rm -rf cleanup-artifacts/pulumi-home/bin cleanup-artifacts/pulumi-home/plugins
+          mkdir -p cleanup-artifacts/rendered
+          # pulumi-state/ is the explicit workspace-anchored DIY backend the
+          # deploy logged into (pulumi_login_e2e_backend). Never stage
+          # ~/.pulumi: pulumi resolves ~ via the passwd entry (/root), not
+          # $HOME, so that dir only ever holds the installer's bin/.
+          if [[ -d pulumi-state ]]; then
+            cp -a pulumi-state cleanup-artifacts/
           fi
           if [[ -f rendered/.env ]]; then
             # Artifacts are downloadable by anyone with read access on a public
@@ -210,5 +212,5 @@ jobs:
           # not exist inside the container — that broke the state hand-off and
           # every destroy no-oped. The script resolves this against
           # $GITHUB_WORKSPACE (the container path).
-          PULUMI_STATE_DIR: e2e-artifacts/pulumi-home
+          PULUMI_STATE_DIR: e2e-artifacts/pulumi-state
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE != '' && secrets.PULUMI_CONFIG_PASSPHRASE || 'ci-e2e-pulumi-passphrase' }}
