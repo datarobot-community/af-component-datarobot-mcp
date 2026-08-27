@@ -33,7 +33,9 @@ def create_datarobot_api_session(
     Retries are limited to urllib3's default idempotent methods. POST is
     deliberately excluded: the Files and Workload APIs create resources with POST
     (catalogs, stages, artifacts, builds), so a retry after a request that
-    actually succeeded server-side would create a duplicate.
+    actually succeeded server-side would create a duplicate. The repeat-safe
+    POSTs (catalog/stage creation, stage uploads) layer their own transient
+    retry on top — see FilesApiClient._post_retrying_transient.
 
     ``raise_on_status=False`` keeps the final response instead of raising
     ``requests.exceptions.RetryError``, so callers' own error handling can still

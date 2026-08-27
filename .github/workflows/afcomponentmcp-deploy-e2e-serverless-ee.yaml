@@ -1,5 +1,5 @@
 ---
-name: E2E serverless-ee
+name: E2E
 on:
   pull_request:
     # TODO: drop "anatolii/BUZZOK-31992" once PR #58 merges and this PR retargets main.
@@ -32,8 +32,10 @@ concurrency:
   group: deploy-e2e-serverless-ee-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 jobs:
-  # Short job id: it is the middle segment of every check name.
+  # Job name is the middle check-name segment; the workflow name is the
+  # shared "E2E" prefix -> checks read: E2E / serverless-ee / Deploy|Destroy.
   e2e:
+    name: serverless-ee
     uses: ./.github/workflows/reusable-deploy-e2e.yaml
     secrets: inherit
     with:
