@@ -24,7 +24,7 @@ COPY --from=ghcr.io/astral-sh/uv@sha256:21fedfa1151bb363a6cb32e4a34a032e26f02b3e
 
 WORKDIR /opt/code
 ENV UV_PROJECT=/opt/code \
-    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_PROJECT_ENVIRONMENT=/opt/code/.venv \
     UV_COMPILE_BYTECODE=1
 
 # Dependencies only — all locked packages publish musllinux wheels (no build-base).
@@ -52,7 +52,7 @@ ENV HOME=/opt/code \
     PYTHONPATH=/opt/code \
     PATH="/opt/venv/bin:${PATH}"
 
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /opt/code/.venv /opt/venv
 COPY --from=builder /opt/code /opt/code
 
 RUN chown -R "$UNAME:$UNAME" /opt/code /opt/venv
