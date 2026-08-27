@@ -54,6 +54,11 @@ destroy_pulumi_stack() {
   fi
 
   if ! pulumi stack select "${stack_name}" >/dev/null 2>&1; then
+    if [[ "${DEPLOY_JOB_RESULT:-}" == "success" ]]; then
+      echo "::error::Deploy succeeded but Pulumi stack ${stack_name} is missing from the restored state — its resources are still deployed and would leak. Check the pulumi-home hand-off in the cleanup artifact."
+      set -e
+      return 1
+    fi
     echo "Pulumi stack ${stack_name} not found; nothing to destroy"
     set -e
     return 0

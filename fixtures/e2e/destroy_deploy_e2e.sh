@@ -31,6 +31,13 @@ if [[ -d "${PULUMI_STATE_DIR}" ]] && [[ -n "$(ls -A "${PULUMI_STATE_DIR}" 2>/dev
 fi
 
 if [[ ! -f "${RENDERED_DIR}/.env" ]]; then
+  # A successful deploy always stages rendered/.env — if it's missing here the
+  # artifact hand-off broke and exiting quietly would leak the whole stack
+  # (this exact failure hid the upload-artifact hidden-file exclusion bug).
+  if [[ "${DEPLOY_JOB_RESULT:-}" == "success" ]]; then
+    echo "::error::Deploy succeeded but ${RENDERED_DIR}/.env was not restored from the cleanup artifact — refusing to no-op; the stack's resources are still deployed. Check the upload/download of the e2e-pulumi artifact."
+    exit 1
+  fi
   echo "No rendered .env at ${RENDERED_DIR}/.env; stack may never have been created"
   exit 0
 fi

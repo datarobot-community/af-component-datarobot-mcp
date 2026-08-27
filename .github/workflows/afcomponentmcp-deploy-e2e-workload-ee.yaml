@@ -1,5 +1,5 @@
 ---
-name: Deploy E2E (workload-ee)
+name: E2E workload-ee
 on:
   pull_request:
     # TODO: drop "anatolii/BUZZOK-31992" once PR #58 merges and this PR retargets main.
@@ -32,7 +32,8 @@ concurrency:
   group: deploy-e2e-workload-ee-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 jobs:
-  deploy-e2e:
+  # Short job id: it is the middle segment of every check name.
+  e2e:
     uses: ./.github/workflows/reusable-deploy-e2e.yaml
     secrets: inherit
     with:

@@ -26,7 +26,9 @@ on:
         required: false
 jobs:
   deploy-e2e:
-    name: "Deploy E2E (${{ inputs.use-case-id }})"
+    # Check names read <caller workflow: E2E <case>> / e2e / <this name>,
+    # so keep this to the one word that distinguishes the two jobs.
+    name: "Deploy"
     runs-on: "ubuntu-latest"
     # Hard cap only; the deploy budget is a step-level timeout so a slow deploy
     # cannot cancel the post-run cache save / state upload after it succeeded.
@@ -62,9 +64,11 @@ jobs:
         id: load
         run: |
           set -euo pipefail
-          uvx --with pyyaml python "${GITHUB_WORKSPACE}/fixtures/e2e/load_use_case.py" "${USE_CASE_ID}" >> "${GITHUB_ENV}"
-          echo "STACK_NAME=ci-e2e-${USE_CASE_ID}-${GITHUB_RUN_ID}" >> "${GITHUB_ENV}"
-          echo "SESSION_SECRET_KEY=ci-e2e-${USE_CASE_ID}-${GITHUB_RUN_ID}" >> "${GITHUB_ENV}"
+          {
+            uvx --with pyyaml python "${GITHUB_WORKSPACE}/fixtures/e2e/load_use_case.py" "${USE_CASE_ID}"
+            echo "STACK_NAME=ci-e2e-${USE_CASE_ID}-${GITHUB_RUN_ID}"
+            echo "SESSION_SECRET_KEY=ci-e2e-${USE_CASE_ID}-${GITHUB_RUN_ID}"
+          } >> "${GITHUB_ENV}"
 
       - name: Install Pulumi CLI
         run: |
@@ -115,13 +119,18 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
           path: cleanup-artifacts/
+          # Required: upload-artifact v4.4+ silently drops dotfiles by default,
+          # which excluded rendered/.env — the destroy job then no-oped
+          # ("No rendered .env") and every stack's resources leaked. Safe to
+          # enable because the staged .env is secret-stripped above.
+          include-hidden-files: true
 
       - name: Mark deploy failure
         if: failure() && steps.deploy.outcome == 'failure'
         run: echo "::error::Deployment E2E failed (case=${CASE_NAME}, stack=${STACK_NAME})"
 
   destroy-e2e:
-    name: "Destroy E2E (${{ inputs.use-case-id }})"
+    name: "Destroy"
     needs: deploy-e2e
     if: always() && inputs.skip-destroy != 'true'
     runs-on: "ubuntu-latest"
@@ -156,8 +165,10 @@ jobs:
       - name: Load use case
         run: |
           set -euo pipefail
-          uvx --with pyyaml python "${GITHUB_WORKSPACE}/fixtures/e2e/load_use_case.py" "${USE_CASE_ID}" >> "${GITHUB_ENV}"
-          echo "STACK_NAME=ci-e2e-${USE_CASE_ID}-${GITHUB_RUN_ID}" >> "${GITHUB_ENV}"
+          {
+            uvx --with pyyaml python "${GITHUB_WORKSPACE}/fixtures/e2e/load_use_case.py" "${USE_CASE_ID}"
+            echo "STACK_NAME=ci-e2e-${USE_CASE_ID}-${GITHUB_RUN_ID}"
+          } >> "${GITHUB_ENV}"
 
       - name: Install Pulumi CLI
         run: |
@@ -189,6 +200,10 @@ jobs:
       - name: Run destroy E2E
         run: bash "${GITHUB_WORKSPACE}/fixtures/e2e/destroy_deploy_e2e.sh"
         env:
+          # Lets the destroy script fail loudly (instead of no-oping) when the
+          # deploy succeeded but its state never arrived — that means leaked
+          # resources, not "nothing to destroy".
+          DEPLOY_JOB_RESULT: ${{ needs.deploy-e2e.result }}
           RENDERED_DIR: ./rendered
           PULUMI_STATE_DIR: ${{ github.workspace }}/e2e-artifacts/pulumi-home
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE != '' && secrets.PULUMI_CONFIG_PASSPHRASE || 'ci-e2e-pulumi-passphrase' }}
