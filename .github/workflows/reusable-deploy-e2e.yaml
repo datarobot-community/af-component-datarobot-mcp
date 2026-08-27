@@ -13,10 +13,10 @@ on:
         default: "false"
         type: string
       deploy-timeout-minutes:
-        description: "Job timeout for deploy-e2e (Docker builds may need longer)"
+        description: "Timeout for the Run deployment E2E step (Docker builds may need longer)"
         required: false
-        default: "5"
-        type: string
+        default: 8
+        type: number
     secrets:
       DATAROBOT_API_TOKEN:
         required: true
@@ -28,7 +28,9 @@ jobs:
   deploy-e2e:
     name: "Deploy E2E (${{ inputs.use-case-id }})"
     runs-on: "ubuntu-latest"
-    timeout-minutes: ${{ fromJSON(inputs.deploy-timeout-minutes) }}
+    # Hard cap only; the deploy budget is a step-level timeout so a slow deploy
+    # cannot cancel the post-run cache save / state upload after it succeeded.
+    timeout-minutes: 20
     container:
       image: ghcr.io/astral-sh/uv:python3.11-bookworm
     defaults:
@@ -71,16 +73,12 @@ jobs:
         with:
           copier-args: "--defaults --trust --vcs-ref=HEAD"
 
-      - name: Install Task
-        uses: arduino/setup-task@v2
-
       - name: Run deployment E2E
         id: deploy
+        timeout-minutes: ${{ inputs.deploy-timeout-minutes }}
         run: bash "${GITHUB_WORKSPACE}/fixtures/e2e/run_deploy_e2e.sh"
         env:
           RENDERED_DIR: ./rendered
-          DATAROBOT_API_TOKEN: ${{ secrets.DATAROBOT_API_TOKEN }}
-          DATAROBOT_ENDPOINT: ${{ vars.DATAROBOT_ENDPOINT != '' && vars.DATAROBOT_ENDPOINT || 'https://app.datarobot.com/api/v2' }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE != '' && secrets.PULUMI_CONFIG_PASSPHRASE || 'ci-e2e-pulumi-passphrase' }}
 
       - name: Stage Pulumi state for cleanup
@@ -90,19 +88,27 @@ jobs:
           mkdir -p cleanup-artifacts/pulumi-home cleanup-artifacts/rendered
           if [[ -d /github/home/.pulumi ]]; then
             cp -a /github/home/.pulumi/. cleanup-artifacts/pulumi-home/
+            # State only — the destroy job installs its own CLI and providers.
+            rm -rf cleanup-artifacts/pulumi-home/bin cleanup-artifacts/pulumi-home/plugins
           fi
           if [[ -f rendered/.env ]]; then
-            cp rendered/.env cleanup-artifacts/rendered/.env
+            # Artifacts are downloadable by anyone with read access on a public
+            # repo: never ship secrets. The destroy job gets these from its own
+            # job/step env instead.
+            grep -vE '^(DATAROBOT_API_TOKEN|PULUMI_CONFIG_PASSPHRASE)=' rendered/.env \
+              > cleanup-artifacts/rendered/.env || true
           fi
           if [[ -d rendered/infra ]]; then
             cp -a rendered/infra cleanup-artifacts/rendered/
+            rm -rf cleanup-artifacts/rendered/infra/.venv
+            find cleanup-artifacts/rendered/infra -type d -name __pycache__ -prune -exec rm -rf {} +
           fi
 
       - name: Upload Pulumi state for cleanup
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-pulumi-${{ inputs.use-case-id }}-${{ github.run_id }}
+          name: e2e-pulumi-${{ inputs.use-case-id }}-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: ignore
           retention-days: 1
           path: cleanup-artifacts/
@@ -152,16 +158,14 @@ jobs:
           curl -fsSL https://get.pulumi.com | sh
           echo "/github/home/.pulumi/bin" >> "${GITHUB_PATH}"
 
-      - name: Render template
-        uses: ./.github/actions/render-copier-instance
-        with:
-          copier-args: "--defaults --trust --vcs-ref=HEAD"
-
+      # No copier render here: everything destroy needs (rendered/.env and
+      # rendered/infra) is restored from the deploy job's artifact, and the
+      # destroy script exits cleanly when the artifact is missing.
       - name: Download Pulumi state
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: e2e-pulumi-${{ inputs.use-case-id }}-${{ github.run_id }}
+          name: e2e-pulumi-${{ inputs.use-case-id }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: e2e-artifacts
 
       - name: Restore deploy artifacts

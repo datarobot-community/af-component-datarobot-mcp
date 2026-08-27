@@ -43,6 +43,44 @@ normalize_datarobot_api_endpoint() {
   fi
 }
 
+# POST a JSON-RPC initialize to the deployed MCP endpoint until it answers 2xx.
+# Catches images that build fine but crash at container start — the gateway then
+# returns 5xx, which the stack-outputs check alone would miss.
+probe_mcp_endpoint() {
+  local endpoint="$1"
+  local attempts="${MCP_PROBE_ATTEMPTS:-24}"
+  local delay="${MCP_PROBE_DELAY_S:-10}"
+  local payload='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci-e2e-probe","version":"0.0.1"}}}'
+  local body_file status attempt
+  body_file="$(mktemp)"
+
+  echo "Probing MCP endpoint ${endpoint}"
+  for attempt in $(seq 1 "${attempts}"); do
+    status="$(
+      curl -sS -o "${body_file}" -w '%{http_code}' --max-time 30 \
+        -X POST \
+        -H "Authorization: Bearer ${DATAROBOT_API_TOKEN}" \
+        -H 'Content-Type: application/json' \
+        -H 'Accept: application/json, text/event-stream' \
+        -d "${payload}" \
+        "${endpoint}" || echo "000"
+    )"
+    if [[ "${status}" == 2* ]]; then
+      echo "MCP endpoint answered initialize (HTTP ${status}, attempt ${attempt}/${attempts})"
+      rm -f "${body_file}"
+      return 0
+    fi
+    echo "MCP endpoint not ready (HTTP ${status}, attempt ${attempt}/${attempts}); retrying in ${delay}s"
+    sleep "${delay}"
+  done
+
+  echo "::error::MCP endpoint ${endpoint} never answered initialize with 2xx (last HTTP ${status})"
+  echo "Last response body:"
+  cat "${body_file}" || true
+  rm -f "${body_file}"
+  return 1
+}
+
 validate_datarobot_credentials() {
   local http_status
 
@@ -103,6 +141,32 @@ set +a
 cd "${RENDERED_DIR}/mcp_server"
 uv sync
 
+# Reuse the shared CI execution environment when the docker context is
+# unchanged: the NAME/import path in the template still rebuilds the EE image
+# on every fresh ephemeral stack (~7-10 min remote build), so CI stamps a
+# context hash on the EE and flips to the DEFAULT (get, no build) path on a
+# match. Runs after `uv sync` so uv.lock exists. EE_MARK_NAME is set only when
+# we build, so a successful `pulumi up` can stamp the hash for the next run.
+EE_MARK_NAME=""
+EE_MARK_HASH=""
+if [[ -n "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME:-}" && -z "${DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT:-}" ]]; then
+  EE_CONTEXT_HASH="$(cat Dockerfile pyproject.toml uv.lock .dockerignore | sha256sum | cut -c1-16)"
+  reuse_id="$(
+    python3 "${WORKSPACE}/fixtures/e2e/resolve_ee_reuse.py" resolve \
+      --name "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME}" \
+      --context-hash "${EE_CONTEXT_HASH}"
+  )"
+  if [[ -n "${reuse_id}" ]]; then
+    echo "Reusing execution environment ${reuse_id} (context-hash ${EE_CONTEXT_HASH} unchanged) — skipping EE build"
+    export DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT="${reuse_id}"
+    append_env_var DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT "${reuse_id}"
+  else
+    echo "No reusable execution environment for context-hash ${EE_CONTEXT_HASH}; building via Pulumi"
+    EE_MARK_NAME="${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME}"
+    EE_MARK_HASH="${EE_CONTEXT_HASH}"
+  fi
+fi
+
 effective_deployment_type="${MCP_DEPLOYMENT_TYPE:-datarobot-serverless}"
 if [[ "${effective_deployment_type}" != "datarobot-workload-preview" ]]; then
   echo "Loading MCP item metadata for datarobot-serverless deploy"
@@ -118,30 +182,44 @@ else
   pulumi login --local
 fi
 
-pulumi stack init "${STACK_NAME}" --non-interactive 2>/dev/null || pulumi stack select "${STACK_NAME}"
+# Reuse an existing stack on re-runs; surface real init errors instead of
+# hiding them behind the select fallback.
+pulumi stack select "${STACK_NAME}" 2>/dev/null || pulumi stack init "${STACK_NAME}" --non-interactive
 
 echo "Deploying stack ${STACK_NAME}"
 pulumi up --yes --non-interactive
+
+if [[ -n "${EE_MARK_NAME}" ]]; then
+  python3 "${WORKSPACE}/fixtures/e2e/resolve_ee_reuse.py" mark \
+    --name "${EE_MARK_NAME}" --context-hash "${EE_MARK_HASH}" || true
+fi
 
 python3 - <<'PY'
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 outputs = json.loads(subprocess.check_output(["pulumi", "stack", "output", "--json"], text=True))
 if not outputs:
     print("ERROR: pulumi stack produced no outputs", file=sys.stderr)
     sys.exit(1)
 
-endpoint_keys = [key for key in outputs if "MCP Endpoint" in key or "MCP Server MCP Endpoint" in key]
+endpoint_keys = [key for key in outputs if key.endswith("MCP Server MCP Endpoint")] or [
+    key for key in outputs if "MCP Endpoint" in key
+]
 if not endpoint_keys:
     print("ERROR: expected an MCP endpoint stack output", file=sys.stderr)
     print(json.dumps(sorted(outputs.keys()), indent=2), file=sys.stderr)
     sys.exit(1)
 
+Path("mcp_endpoint.txt").write_text(str(outputs[endpoint_keys[0]]), encoding="utf-8")
+
 print("Deployment outputs validated:")
 for key in sorted(outputs):
     print(f"  - {key}")
 PY
+
+probe_mcp_endpoint "$(cat mcp_endpoint.txt)"
 
 echo "Deployment E2E case ${CASE_NAME} succeeded"

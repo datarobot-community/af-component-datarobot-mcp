@@ -44,9 +44,10 @@ def _find_execution_environment_id_by_name(name: str) -> str | None:
     """Return the DataRobot id for a custom EE with an exact name match."""
     import datarobot as dr
 
+    # search_for narrows server-side; the comprehension keeps only exact matches.
     matches = [
         environment
-        for environment in dr.ExecutionEnvironment.list()
+        for environment in dr.ExecutionEnvironment.list(search_for=name)
         if getattr(environment, "name", None) == name
     ]
     if not matches:

@@ -2,6 +2,7 @@
 name: Deploy E2E (workload-ee)
 on:
   pull_request:
+    # TODO: drop "anatolii/BUZZOK-31992" once PR #58 merges and this PR retargets main.
     branches: ["main", "anatolii/BUZZOK-31992"]
     paths:
       - "fixtures/e2e/**"
@@ -36,4 +37,7 @@ jobs:
     secrets: inherit
     with:
       use-case-id: workload-ee
+      # Generated-Dockerfile builds start FROM the multi-GB GenAI Agents EE
+      # image, so they run ~1.5x longer than the workload-docker case.
+      deploy-timeout-minutes: 10
       skip-destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_destroy == 'true' && 'true' || 'false' }}

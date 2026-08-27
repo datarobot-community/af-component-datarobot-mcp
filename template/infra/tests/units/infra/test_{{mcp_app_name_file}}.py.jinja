@@ -50,18 +50,23 @@ def pulumi_mocks(monkeypatch, tmp_path):
     monkeypatch.setattr("infra.project_dir", mock_project_dir)
 
     # Create the mcp app directory structure expected by module-level code.
+    # mcp_execution_environment binds project_dir at its own import, so patch the
+    # submodule's global too — otherwise the docker-context check (and the tests'
+    # stub files) would run against the real rendered app directory.
+    monkeypatch.setattr(
+        "infra.{{mcp_app_name_file}}_infra.mcp_execution_environment.project_dir",
+        mock_project_dir,
+    )
     mcp_app_dir = tmp_path.parent / "{{mcp_app_name_file}}"
     mcp_app_dir.mkdir(exist_ok=True)
-    rendered_app_dir = Path(__file__).resolve().parents[4] / "{{mcp_app_name_file}}"
     docker_build_files = {
         "Dockerfile": "FROM scratch\n",
         "pyproject.toml": "",
         "uv.lock": "",
         "start_server.sh": "#!/bin/sh\n",
     }
-    rendered_app_dir.mkdir(parents=True, exist_ok=True)
     for filename, content in docker_build_files.items():
-        (rendered_app_dir / filename).write_text(content, encoding="utf-8")
+        (mcp_app_dir / filename).write_text(content, encoding="utf-8")
 
     # Mock user params module
     mock_user_params_module = MagicMock()
@@ -445,7 +450,9 @@ class TestGetDeploymentsAppFiles:
         app_dir.mkdir(parents=True)
         (app_dir / "main.py").write_text("print('hi')\n", encoding="utf-8")
         actual = {name for _, name in mcp_infra.get_deployments_app_files()}
-        expected = {"app/main.py"}
+        # The pulumi_mocks fixture stubs the essential root files in app_root,
+        # mirroring a real rendered app where they always exist.
+        expected = {"app/main.py", "pyproject.toml", "uv.lock", "start_server.sh"}
         assert actual == expected
 
     def test_get_deployments_app_files_excludes_test_paths(self, tmp_path) -> None:

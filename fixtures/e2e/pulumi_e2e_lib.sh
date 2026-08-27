@@ -66,8 +66,7 @@ destroy_pulumi_stack() {
   local destroy_rc=$?
 
   if [[ "${destroy_rc}" -eq 0 ]]; then
-    pulumi stack rm "${stack_name}" --yes --force
-    if [[ $? -eq 0 ]]; then
+    if pulumi stack rm "${stack_name}" --yes --force; then
       echo "Pulumi stack ${stack_name} destroyed and removed"
     else
       echo "::warning::pulumi stack rm failed for ${stack_name} (exit $?)"

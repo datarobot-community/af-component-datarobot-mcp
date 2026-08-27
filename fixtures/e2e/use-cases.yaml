@@ -9,6 +9,11 @@
 #   Only when DEFAULT is empty: names a new EE built from scratch. CI uses a
 #   stable value (serverless-docker below) so each run imports/updates one shared
 #   EE (survives stack destroy) instead of creating duplicates per workflow run.
+#   On top of that, run_deploy_e2e.sh hashes the docker context (Dockerfile,
+#   pyproject.toml, uv.lock, .dockerignore) and stamps it on the shared EE's
+#   description (resolve_ee_reuse.py): when the hash is unchanged the run flips
+#   to DEFAULT=<ee id> and skips the ~7-10 min remote image build entirely; any
+#   docker-context change still exercises the full build path.
 #
 # To add a new case:
 #   1. Append a block below with a unique key.
