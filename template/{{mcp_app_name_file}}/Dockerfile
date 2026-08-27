@@ -17,25 +17,11 @@ ARG UID=1000
 ARG GID=1000
 ARG UNAME=appuser
 
-# Pin uv by digest (linux/amd64). Update via: docker buildx imagetools inspect ghcr.io/astral-sh/uv:latest
-FROM datarobot/mirror_chainguard_datarobot.com_python-fips:3.12-dev AS builder
-
-COPY --from=ghcr.io/astral-sh/uv@sha256:21fedfa1151bb363a6cb32e4a34a032e26f02b3e9e288a96f126ac27d3b472d6 /uv /uvx /usr/local/bin/
-
-WORKDIR /opt/code
-ENV UV_PROJECT=/opt/code \
-    UV_PROJECT_ENVIRONMENT=/opt/code/.venv \
-    UV_COMPILE_BYTECODE=1
-
-# Dependencies only — all locked packages publish musllinux wheels (no build-base).
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-progress --color never
-
-# Remaining build-context files. For custom EE builds, .dockerignore excludes app/
-# (serverless ships code separately). Workload-docker bundles app/ via Files catalog.
-COPY . .
-
-FROM datarobot/mirror_chainguard_datarobot.com_python-fips:3.12-dev AS runtime
+# Single-stage image: DataRobot remote builds pay for each FROM and cross-stage
+# COPY; multi-stage added a second base pull and an extra tree copy/chown without
+# helping cache much on ephemeral CI stacks. Keep deps-before-app COPY for layer
+# reuse when lockfiles are unchanged.
+FROM datarobot/mirror_chainguard_datarobot.com_python-fips:3.12-dev
 
 ARG UID
 ARG GID
@@ -52,10 +38,39 @@ ENV HOME=/opt/code \
     PYTHONPATH=/opt/code \
     PATH="/opt/venv/bin:${PATH}"
 
-COPY --from=builder /opt/code/.venv /opt/venv
-COPY --from=builder /opt/code /opt/code
+# Pin uv by digest (linux/amd64). Update via: docker buildx imagetools inspect ghcr.io/astral-sh/uv:latest
+COPY --from=ghcr.io/astral-sh/uv@sha256:21fedfa1151bb363a6cb32e4a34a032e26f02b3e9e288a96f126ac27d3b472d6 /uv /uvx /usr/local/bin/
 
-RUN chown -R "$UNAME:$UNAME" /opt/code /opt/venv
+ENV UV_PROJECT=/opt/code \
+    UV_PROJECT_ENVIRONMENT=/opt/venv
+
+# Dependencies first — lockfile layer caches when pyproject.toml/uv.lock are unchanged.
+# --no-install-project: deps only; app runs via PYTHONPATH (see start_server.sh for pinned EE).
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project --no-progress --color never
+
+# Remaining build-context files. For custom EE builds, .dockerignore excludes app/
+# and start_server.sh (serverless ships code separately). Workload-docker bundles
+# app/ via Files catalog (not .dockerignore).
+COPY --chown=${UID}:${GID} . .
+
+# Log effective context in DataRobot build output (verify .dockerignore on EE builds).
+RUN set -e; \
+    echo "=== docker build context (files copied into image) ==="; \
+    find . -type f 2>/dev/null | sort | head -80; \
+    echo "context_file_count=$(find . -type f 2>/dev/null | wc -l | tr -d ' ')"; \
+    if find ./app -type f 2>/dev/null | head -1 | grep -q .; then \
+      echo "dockerignore_probe: app/ PRESENT (expected for workload-docker; for EE-only builds .dockerignore may be ignored)"; \
+    else \
+      echo "dockerignore_probe: app/ absent (expected for EE builds when .dockerignore applies)"; \
+    fi; \
+    if [ -f ./start_server.sh ]; then \
+      echo "dockerignore_probe: start_server.sh PRESENT"; \
+    else \
+      echo "dockerignore_probe: start_server.sh absent (expected for EE builds)"; \
+    fi
+
+RUN chown -R "${UID}:${GID}" /opt/venv
 
 # DL3066 wants a numeric uid, but this user is a build arg and a variable never
 # looks numeric to hadolint — acknowledged rather than hardcoding the id.
@@ -66,5 +81,5 @@ EXPOSE 8080
 
 ENTRYPOINT []
 
-# Same entrypoint as workload DEFAULT_ENTRYPOINT — deps are baked in builder.
+# Same entrypoint as workload DEFAULT_ENTRYPOINT — deps are baked at build time.
 CMD ["python", "-m", "app.main"]

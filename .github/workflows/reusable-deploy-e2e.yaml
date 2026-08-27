@@ -12,6 +12,11 @@ on:
         required: false
         default: "false"
         type: string
+      deploy-timeout-minutes:
+        description: "Job timeout for deploy-e2e (Docker builds may need longer)"
+        required: false
+        default: "6"
+        type: string
     secrets:
       DATAROBOT_API_TOKEN:
         required: true
@@ -23,7 +28,7 @@ jobs:
   deploy-e2e:
     name: "Deploy E2E (${{ inputs.use-case-id }})"
     runs-on: "ubuntu-latest"
-    timeout-minutes: 10
+    timeout-minutes: ${{ fromJSON(inputs.deploy-timeout-minutes) }}
     container:
       image: ghcr.io/astral-sh/uv:python3.11-bookworm
     defaults:
