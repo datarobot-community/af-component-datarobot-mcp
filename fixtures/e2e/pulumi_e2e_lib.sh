@@ -15,13 +15,17 @@
 
 # Shared helpers for deployment E2E scripts (deploy + dedicated destroy job).
 
-resolve_rendered_dir() {
+# Anchor a relative path to the workspace. Workflow env must pass paths
+# relative (or via $GITHUB_WORKSPACE): the `${{ github.workspace }}` context
+# expands to the runner HOST path in container jobs, which does not exist
+# inside the container.
+resolve_workspace_path() {
   local workspace="${1:?workspace}"
-  local rendered_dir="${2:-./rendered}"
-  if [[ "${rendered_dir}" != /* ]]; then
-    rendered_dir="${workspace}/${rendered_dir#./}"
+  local path="${2:?path}"
+  if [[ "${path}" != /* ]]; then
+    path="${workspace}/${path#./}"
   fi
-  printf '%s' "${rendered_dir}"
+  printf '%s' "${path}"
 }
 
 destroy_pulumi_stack() {

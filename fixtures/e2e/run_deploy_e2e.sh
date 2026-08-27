@@ -22,7 +22,7 @@ WORKSPACE="${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
 # shellcheck disable=SC1091
 source "${WORKSPACE}/fixtures/e2e/pulumi_e2e_lib.sh"
 
-RENDERED_DIR="$(resolve_rendered_dir "${WORKSPACE}" "${RENDERED_DIR}")"
+RENDERED_DIR="$(resolve_workspace_path "${WORKSPACE}" "${RENDERED_DIR}")"
 
 echo "Running deployment E2E case: ${CASE_NAME}"
 

@@ -23,11 +23,18 @@ PULUMI_STATE_DIR="${PULUMI_STATE_DIR:-${HOME}/.pulumi}"
 # shellcheck disable=SC1091
 source "${WORKSPACE}/fixtures/e2e/pulumi_e2e_lib.sh"
 
-RENDERED_DIR="$(resolve_rendered_dir "${WORKSPACE}" "${RENDERED_DIR}")"
+RENDERED_DIR="$(resolve_workspace_path "${WORKSPACE}" "${RENDERED_DIR}")"
+PULUMI_STATE_DIR="$(resolve_workspace_path "${WORKSPACE}" "${PULUMI_STATE_DIR}")"
 
 if [[ -d "${PULUMI_STATE_DIR}" ]] && [[ -n "$(ls -A "${PULUMI_STATE_DIR}" 2>/dev/null || true)" ]]; then
   mkdir -p "${HOME}/.pulumi"
   cp -a "${PULUMI_STATE_DIR}/." "${HOME}/.pulumi/"
+elif [[ "${DEPLOY_JOB_RESULT:-}" == "success" && -z "${PULUMI_ACCESS_TOKEN:-}" ]]; then
+  # Local backend: a successful deploy must hand its ~/.pulumi state over via
+  # the artifact. Bail here with the precise cause rather than the later,
+  # vaguer "stack not found". (Cloud backend keeps state server-side — skip.)
+  echo "::error::Deploy succeeded but no local Pulumi state was restored at ${PULUMI_STATE_DIR} — the stack's resources are still deployed. Check the pulumi-home hand-off in the cleanup artifact."
+  exit 1
 fi
 
 if [[ ! -f "${RENDERED_DIR}/.env" ]]; then

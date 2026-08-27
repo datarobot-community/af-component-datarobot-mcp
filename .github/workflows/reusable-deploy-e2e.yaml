@@ -205,5 +205,10 @@ jobs:
           # resources, not "nothing to destroy".
           DEPLOY_JOB_RESULT: ${{ needs.deploy-e2e.result }}
           RENDERED_DIR: ./rendered
-          PULUMI_STATE_DIR: ${{ github.workspace }}/e2e-artifacts/pulumi-home
+          # Relative on purpose: in container jobs `${{ github.workspace }}`
+          # expands to the RUNNER HOST path (/home/runner/work/...), which does
+          # not exist inside the container — that broke the state hand-off and
+          # every destroy no-oped. The script resolves this against
+          # $GITHUB_WORKSPACE (the container path).
+          PULUMI_STATE_DIR: e2e-artifacts/pulumi-home
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE != '' && secrets.PULUMI_CONFIG_PASSPHRASE || 'ci-e2e-pulumi-passphrase' }}
