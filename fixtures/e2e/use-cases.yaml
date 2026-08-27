@@ -7,8 +7,8 @@
 #
 # DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME
 #   Only when DEFAULT is empty: names a new EE built from scratch. CI uses a
-#   stable value (serverless-docker below) so each run updates one EE instead of
-#   creating a new per-run name tied to an ephemeral stack.
+#   stable value (serverless-docker below) so each run imports/updates one shared
+#   EE (survives stack destroy) instead of creating duplicates per workflow run.
 #
 # To add a new case:
 #   1. Append a block below with a unique key.

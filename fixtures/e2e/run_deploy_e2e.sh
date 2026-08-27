@@ -101,7 +101,7 @@ source "${RENDERED_DIR}/.env"
 set +a
 
 cd "${RENDERED_DIR}/mcp_server"
-uv sync --all-extras
+uv sync
 
 effective_deployment_type="${MCP_DEPLOYMENT_TYPE:-datarobot-serverless}"
 if [[ "${effective_deployment_type}" != "datarobot-workload-preview" ]]; then

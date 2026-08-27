@@ -47,14 +47,8 @@ ENV UV_PROJECT=/opt/code \
 # Dependencies first — lockfile layer caches when pyproject.toml/uv.lock are unchanged.
 # --no-install-project: deps only; app runs via PYTHONPATH (see start_server.sh for pinned EE).
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-install-project --no-progress --color never
-
-# Remaining build-context files. For custom EE builds, .dockerignore excludes app/
-# and start_server.sh (serverless ships code separately). Workload-docker bundles
-# app/ via Files catalog (not .dockerignore).
-COPY --chown=${UID}:${GID} . .
-
-RUN chown -R "${UID}:${GID}" /opt/venv
+RUN uv sync --frozen --no-install-project --no-progress --color never && \
+    chown -R "${UID}:${GID}" /opt/venv
 
 # DL3066 wants a numeric uid, but this user is a build arg and a variable never
 # looks numeric to hadolint — acknowledged rather than hardcoding the id.

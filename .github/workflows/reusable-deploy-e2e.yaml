@@ -44,6 +44,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Setup caching
+        uses: ./.github/actions/setup-caching
+        with:
+          python-version: python3.11
+          cache-key-suffix: e2e-deploy-${{ inputs.use-case-id }}
+          dependency-files: |
+            template/{{mcp_app_name_file}}/pyproject.toml.jinja
+            fixtures/e2e/infra/pyproject.toml
+
       - name: Load use case
         id: load
         run: |
@@ -122,6 +131,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Setup caching
+        uses: ./.github/actions/setup-caching
+        with:
+          python-version: python3.11
+          cache-key-suffix: e2e-destroy-${{ inputs.use-case-id }}
+          dependency-files: |
+            template/{{mcp_app_name_file}}/pyproject.toml.jinja
+            fixtures/e2e/infra/pyproject.toml
 
       - name: Load use case
         run: |
