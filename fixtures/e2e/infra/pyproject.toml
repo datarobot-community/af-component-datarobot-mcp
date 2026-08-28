@@ -1,0 +1,16 @@
+[project]
+name = "infra"
+version = "0.0.1"
+description = "Pulumi infra for MCP server deployment E2E CI tests"
+requires-python = ">=3.11"
+
+dependencies = [
+    "datarobot>=3.6.0",
+    "datarobot-pulumi-utils>=0.1.2",
+    "pulumi>=3.175.0",
+    "pulumi-datarobot>=0.10.33",
+    "pytz>=2024.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

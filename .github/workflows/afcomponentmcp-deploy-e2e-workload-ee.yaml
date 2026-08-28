@@ -1,0 +1,45 @@
+---
+name: E2E
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "fixtures/e2e/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/reusable-deploy-e2e.yaml"
+      - ".github/workflows/afcomponentmcp-deploy-e2e-workload-ee.yaml"
+  push:
+    branches: ["main"]
+    paths:
+      - "fixtures/e2e/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/reusable-deploy-e2e.yaml"
+      - ".github/workflows/afcomponentmcp-deploy-e2e-workload-ee.yaml"
+  workflow_dispatch:
+    inputs:
+      skip_destroy:
+        description: "Skip pulumi destroy after deploy (debug only)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+concurrency:
+  group: deploy-e2e-workload-ee-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  # Job name is the middle check-name segment; the workflow name is the
+  # shared "E2E" prefix -> checks read: E2E / workload-ee / Deploy|Destroy.
+  e2e:
+    name: workload-ee
+    uses: ./.github/workflows/reusable-deploy-e2e.yaml
+    secrets: inherit
+    with:
+      use-case-id: workload-ee
+      # Generated-Dockerfile builds start FROM the multi-GB GenAI Agents EE
+      # image, so they run ~1.5x longer than the workload-docker case.
+      deploy-timeout-minutes: 10
+      skip-destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_destroy == 'true' && 'true' || 'false' }}

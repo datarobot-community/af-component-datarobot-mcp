@@ -1,0 +1,45 @@
+---
+name: E2E
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "fixtures/e2e/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/reusable-deploy-e2e.yaml"
+      - ".github/workflows/afcomponentmcp-deploy-e2e-serverless-docker.yaml"
+  push:
+    branches: ["main"]
+    paths:
+      - "fixtures/e2e/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/reusable-deploy-e2e.yaml"
+      - ".github/workflows/afcomponentmcp-deploy-e2e-serverless-docker.yaml"
+  workflow_dispatch:
+    inputs:
+      skip_destroy:
+        description: "Skip pulumi destroy after deploy (debug only)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+concurrency:
+  group: deploy-e2e-serverless-docker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  # Job name is the middle check-name segment; the workflow name is the
+  # shared "E2E" prefix -> checks read: E2E / serverless-docker / Deploy|Destroy.
+  e2e:
+    name: serverless-docker
+    uses: ./.github/workflows/reusable-deploy-e2e.yaml
+    secrets: inherit
+    with:
+      use-case-id: serverless-docker
+      # Full remote EE image builds have taken up to ~10 min; unchanged docker
+      # inputs reuse the shared EE and finish in ~3 min (see run_deploy_e2e.sh).
+      deploy-timeout-minutes: 15
+      skip-destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_destroy == 'true' && 'true' || 'false' }}

@@ -21,29 +21,36 @@ from pathlib import Path
 
 import pulumi
 
-DOCKER_DIR = "docker"
-DOCKERFILE_RELATIVE_PATH = f"{DOCKER_DIR}/Dockerfile"
+DOCKERFILE_RELATIVE_PATH = "Dockerfile"
 PYPROJECT_RELATIVE_PATH = "pyproject.toml"
 UV_LOCK_RELATIVE_PATH = "uv.lock"
-DOCKER_DEPENDENCY_FILENAMES = (PYPROJECT_RELATIVE_PATH, UV_LOCK_RELATIVE_PATH)
+START_SERVER_RELATIVE_PATH = "start_server.sh"
+DOCKER_BUILD_CONTEXT_FILES = (
+    DOCKERFILE_RELATIVE_PATH,
+    PYPROJECT_RELATIVE_PATH,
+    UV_LOCK_RELATIVE_PATH,
+    START_SERVER_RELATIVE_PATH,
+)
 
 
-def ensure_docker_dependency_files(deployments_path: Path) -> None:
-    """Mirror pyproject.toml/uv.lock into docker/, overwriting only on change.
+def ensure_docker_build_context_files(deployments_path: Path) -> None:
+    """Verify Docker build files exist at the app root.
 
-    The Files Catalog bundle reads them straight from ``deployments_path``, so
-    this isn't needed for the remote build -- it's for a local
-    ``docker build`` run with ``docker/`` as the context. The mirrored copies
-    are gitignored; ``deployments_path`` stays the source of truth.
+    Custom execution-environment builds and workload DockerfileProvided builds
+    both use the app root as context. Source files live here permanently —
+    nothing is mirrored into a ``docker/`` subdirectory.
     """
-    docker_dir = deployments_path / DOCKER_DIR
-    docker_dir.mkdir(parents=True, exist_ok=True)
-    for filename in DOCKER_DEPENDENCY_FILENAMES:
-        content = (deployments_path / filename).read_bytes()
-        target = docker_dir / filename
-        if not target.is_file() or target.read_bytes() != content:
-            target.write_bytes(content)
-            pulumi.info(f"Copied {filename} into docker/ for local image builds")
+    missing = [
+        relative_path
+        for relative_path in DOCKER_BUILD_CONTEXT_FILES
+        if not (deployments_path / relative_path).is_file()
+    ]
+    if missing:
+        message = (
+            f"Docker build requires {', '.join(missing)} under {deployments_path}"
+        )
+        pulumi.error(message)
+        raise RuntimeError(message)
 
 
 def get_docker_bundle_files(
@@ -60,8 +67,8 @@ def get_docker_bundle_files(
 
     The Dockerfile installs uv and runs ``uv sync --frozen`` against
     ``pyproject.toml``/``uv.lock`` at the bundle root -- already included via
-    ``get_deployments_app_files`` -- so only their presence is checked here,
-    to fail fast instead of erroring deep in the remote Docker build.
+    ``get_deployments_app_files`` -- and expects ``start_server.sh`` at the
+    bundle root.
     """
     dockerfile_path = deployments_path / dockerfile_relative_path
 
@@ -69,6 +76,7 @@ def get_docker_bundle_files(
         (dockerfile_path, dockerfile_relative_path),
         (deployments_path / PYPROJECT_RELATIVE_PATH, PYPROJECT_RELATIVE_PATH),
         (deployments_path / UV_LOCK_RELATIVE_PATH, UV_LOCK_RELATIVE_PATH),
+        (deployments_path / START_SERVER_RELATIVE_PATH, START_SERVER_RELATIVE_PATH),
     ):
         if not required_path.is_file():
             message = (
@@ -77,8 +85,6 @@ def get_docker_bundle_files(
             )
             pulumi.error(message)
             raise RuntimeError(message)
-
-    ensure_docker_dependency_files(deployments_path)
 
     return [(str(dockerfile_path), dockerfile_relative_path)]
 

@@ -20,6 +20,7 @@ import requests
 
 from {{mcp_app_name_file}}_clients.files_api_client import (
     DEFAULT_REQUEST_TIMEOUT_S,
+    TRANSIENT_POST_ATTEMPTS,
     UPLOAD_TIMEOUT_S,
     FilesApiClient,
 )
@@ -80,6 +81,45 @@ class TestFilesApiClient:
         actual = post.call_args.kwargs["timeout"]
         expected = UPLOAD_TIMEOUT_S
         assert actual == expected
+
+    def test_upload_to_stage_retries_transient_gateway_errors(self) -> None:
+        client = FilesApiClient("https://api.example.com", "token")
+        responses = [
+            _json_response(502, {"detail": "Bad Gateway"}),
+            _json_response(503, {"detail": "Service Unavailable"}),
+            _json_response(200, {}),
+        ]
+        with (
+            patch.object(client._session, "post", side_effect=responses) as post,
+            patch("{{mcp_app_name_file}}_clients.files_api_client.time.sleep") as sleep,
+        ):
+            client.upload_to_stage("cat-1", "stage-1", "app.py", b"code")
+        assert post.call_count == 3
+        assert sleep.call_count == 2
+
+    def test_upload_to_stage_raises_after_exhausting_transient_retries(self) -> None:
+        client = FilesApiClient("https://api.example.com", "token")
+        response = _json_response(502, {"detail": "Bad Gateway"})
+        response.reason = "Bad Gateway"
+        with (
+            patch.object(client._session, "post", return_value=response) as post,
+            patch("{{mcp_app_name_file}}_clients.files_api_client.time.sleep"),
+            pytest.raises(requests.HTTPError),
+        ):
+            client.upload_to_stage("cat-1", "stage-1", "app.py", b"code")
+        assert post.call_count == TRANSIENT_POST_ATTEMPTS
+
+    def test_apply_stage_does_not_retry_transient_errors(self) -> None:
+        """Re-applying an already-applied stage fails, so apply must stay single-shot."""
+        client = FilesApiClient("https://api.example.com", "token")
+        response = _json_response(502, {"detail": "Bad Gateway"})
+        response.reason = "Bad Gateway"
+        with (
+            patch.object(client._session, "post", return_value=response) as post,
+            pytest.raises(requests.HTTPError),
+        ):
+            client.apply_stage("cat-1", "stage-1")
+        assert post.call_count == 1
 
     def test_upload_bundle_returns_catalog_and_version_ids(self) -> None:
         client = FilesApiClient("https://api.example.com", "token")

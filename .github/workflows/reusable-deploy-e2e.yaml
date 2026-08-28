@@ -1,0 +1,216 @@
+---
+name: Reusable Deploy E2E
+on:
+  workflow_call:
+    inputs:
+      use-case-id:
+        description: "Key from fixtures/e2e/use-cases.yaml"
+        required: true
+        type: string
+      skip-destroy:
+        description: "Skip pulumi destroy after deploy (debug only)"
+        required: false
+        default: "false"
+        type: string
+      deploy-timeout-minutes:
+        description: "Timeout for the Run deployment E2E step (Docker builds may need longer)"
+        required: false
+        default: 8
+        type: number
+    secrets:
+      DATAROBOT_API_TOKEN:
+        required: true
+      PULUMI_ACCESS_TOKEN:
+        required: false
+      PULUMI_CONFIG_PASSPHRASE:
+        required: false
+jobs:
+  deploy-e2e:
+    # Check names read: E2E / <case (caller job name)> / <this name>,
+    # so keep this to the one word that distinguishes the two jobs.
+    name: "Deploy"
+    runs-on: "ubuntu-latest"
+    # Hard cap only; the deploy budget is a step-level timeout so a slow deploy
+    # cannot cancel the post-run cache save / state upload after it succeeded.
+    timeout-minutes: 20
+    container:
+      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+    defaults:
+      run:
+        shell: bash
+    env:
+      UV_CACHE_DIR: /.uv_cache
+      # The cache mount and the workspace sit on different filesystems; uv would
+      # warn and fall back to copying anyway, so make it explicit.
+      UV_LINK_MODE: copy
+      DATAROBOT_API_TOKEN: ${{ secrets.DATAROBOT_API_TOKEN }}
+      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      DATAROBOT_ENDPOINT: ${{ vars.DATAROBOT_ENDPOINT != '' && vars.DATAROBOT_ENDPOINT || 'https://app.datarobot.com/api/v2' }}
+      USE_CASE_ID: ${{ inputs.use-case-id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup caching
+        uses: ./.github/actions/setup-caching
+        with:
+          python-version: python3.11
+          cache-key-suffix: e2e-deploy-${{ inputs.use-case-id }}
+          dependency-files: |
+            template/{{mcp_app_name_file}}/pyproject.toml.jinja
+            fixtures/e2e/infra/pyproject.toml
+
+      - name: Load use case
+        id: load
+        run: |
+          set -euo pipefail
+          {
+            uvx --with pyyaml python "${GITHUB_WORKSPACE}/fixtures/e2e/load_use_case.py" "${USE_CASE_ID}"
+            echo "STACK_NAME=ci-e2e-${USE_CASE_ID}-${GITHUB_RUN_ID}"
+            echo "SESSION_SECRET_KEY=ci-e2e-${USE_CASE_ID}-${GITHUB_RUN_ID}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Install Pulumi CLI
+        run: |
+          curl -fsSL https://get.pulumi.com | sh
+          echo "/github/home/.pulumi/bin" >> "${GITHUB_PATH}"
+
+      - name: Render template
+        uses: ./.github/actions/render-copier-instance
+        with:
+          copier-args: "--defaults --trust --vcs-ref=HEAD"
+
+      - name: Run deployment E2E
+        id: deploy
+        timeout-minutes: ${{ inputs.deploy-timeout-minutes }}
+        run: bash "${GITHUB_WORKSPACE}/fixtures/e2e/run_deploy_e2e.sh"
+        env:
+          RENDERED_DIR: ./rendered
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE != '' && secrets.PULUMI_CONFIG_PASSPHRASE || 'ci-e2e-pulumi-passphrase' }}
+
+      - name: Stage Pulumi state for cleanup
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p cleanup-artifacts/rendered
+          # pulumi-state/ is the explicit workspace-anchored DIY backend the
+          # deploy logged into (pulumi_login_e2e_backend). Never stage
+          # ~/.pulumi: pulumi resolves ~ via the passwd entry (/root), not
+          # $HOME, so that dir only ever holds the installer's bin/.
+          if [[ -d pulumi-state ]]; then
+            cp -a pulumi-state cleanup-artifacts/
+          fi
+          if [[ -f rendered/.env ]]; then
+            # Artifacts are downloadable by anyone with read access on a public
+            # repo: never ship secrets. The destroy job gets these from its own
+            # job/step env instead.
+            grep -vE '^(DATAROBOT_API_TOKEN|PULUMI_CONFIG_PASSPHRASE)=' rendered/.env \
+              > cleanup-artifacts/rendered/.env || true
+          fi
+          if [[ -d rendered/infra ]]; then
+            cp -a rendered/infra cleanup-artifacts/rendered/
+            rm -rf cleanup-artifacts/rendered/infra/.venv
+            find cleanup-artifacts/rendered/infra -type d -name __pycache__ -prune -exec rm -rf {} +
+          fi
+
+      - name: Upload Pulumi state for cleanup
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-pulumi-${{ inputs.use-case-id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: ignore
+          retention-days: 1
+          path: cleanup-artifacts/
+          # Required: upload-artifact v4.4+ silently drops dotfiles by default,
+          # which excluded rendered/.env — the destroy job then no-oped
+          # ("No rendered .env") and every stack's resources leaked. Safe to
+          # enable because the staged .env is secret-stripped above.
+          include-hidden-files: true
+
+      - name: Mark deploy failure
+        if: failure() && steps.deploy.outcome == 'failure'
+        run: echo "::error::Deployment E2E failed (case=${CASE_NAME}, stack=${STACK_NAME})"
+
+  destroy-e2e:
+    name: "Destroy"
+    needs: deploy-e2e
+    if: always() && inputs.skip-destroy != 'true'
+    runs-on: "ubuntu-latest"
+    timeout-minutes: 15
+    container:
+      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+    defaults:
+      run:
+        shell: bash
+    env:
+      UV_CACHE_DIR: /.uv_cache
+      # The cache mount and the workspace sit on different filesystems; uv would
+      # warn and fall back to copying anyway, so make it explicit.
+      UV_LINK_MODE: copy
+      DATAROBOT_API_TOKEN: ${{ secrets.DATAROBOT_API_TOKEN }}
+      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      DATAROBOT_ENDPOINT: ${{ vars.DATAROBOT_ENDPOINT != '' && vars.DATAROBOT_ENDPOINT || 'https://app.datarobot.com/api/v2' }}
+      USE_CASE_ID: ${{ inputs.use-case-id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup caching
+        uses: ./.github/actions/setup-caching
+        with:
+          python-version: python3.11
+          cache-key-suffix: e2e-destroy-${{ inputs.use-case-id }}
+          dependency-files: |
+            template/{{mcp_app_name_file}}/pyproject.toml.jinja
+            fixtures/e2e/infra/pyproject.toml
+
+      - name: Load use case
+        run: |
+          set -euo pipefail
+          {
+            uvx --with pyyaml python "${GITHUB_WORKSPACE}/fixtures/e2e/load_use_case.py" "${USE_CASE_ID}"
+            echo "STACK_NAME=ci-e2e-${USE_CASE_ID}-${GITHUB_RUN_ID}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Install Pulumi CLI
+        run: |
+          curl -fsSL https://get.pulumi.com | sh
+          echo "/github/home/.pulumi/bin" >> "${GITHUB_PATH}"
+
+      # No copier render here: everything destroy needs (rendered/.env and
+      # rendered/infra) is restored from the deploy job's artifact, and the
+      # destroy script exits cleanly when the artifact is missing.
+      - name: Download Pulumi state
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: e2e-pulumi-${{ inputs.use-case-id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: e2e-artifacts
+
+      - name: Restore deploy artifacts
+        run: |
+          set -euo pipefail
+          if [[ -f e2e-artifacts/rendered/.env ]]; then
+            mkdir -p rendered
+            cp e2e-artifacts/rendered/.env rendered/.env
+          fi
+          if [[ -d e2e-artifacts/rendered/infra ]]; then
+            mkdir -p rendered
+            cp -a e2e-artifacts/rendered/infra rendered/
+          fi
+
+      - name: Run destroy E2E
+        run: bash "${GITHUB_WORKSPACE}/fixtures/e2e/destroy_deploy_e2e.sh"
+        env:
+          # Lets the destroy script fail loudly (instead of no-oping) when the
+          # deploy succeeded but its state never arrived — that means leaked
+          # resources, not "nothing to destroy".
+          DEPLOY_JOB_RESULT: ${{ needs.deploy-e2e.result }}
+          RENDERED_DIR: ./rendered
+          # Relative on purpose: in container jobs `${{ github.workspace }}`
+          # expands to the RUNNER HOST path (/home/runner/work/...), which does
+          # not exist inside the container — that broke the state hand-off and
+          # every destroy no-oped. The script resolves this against
+          # $GITHUB_WORKSPACE (the container path).
+          PULUMI_STATE_DIR: e2e-artifacts/pulumi-state
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE != '' && secrets.PULUMI_CONFIG_PASSPHRASE || 'ci-e2e-pulumi-passphrase' }}

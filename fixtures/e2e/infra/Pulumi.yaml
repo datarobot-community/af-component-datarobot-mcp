@@ -1,0 +1,12 @@
+---
+name: mcp-server-e2e
+description: Pulumi project for MCP server deployment E2E CI tests
+runtime:
+  name: python
+  options:
+    toolchain: uv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: python
+  datarobot:tracecontext: ci-e2e

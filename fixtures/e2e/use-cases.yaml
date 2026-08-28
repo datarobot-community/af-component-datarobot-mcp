@@ -1,0 +1,61 @@
+# Deployment E2E use cases — one GitHub Actions workflow per entry.
+#
+# Execution environment env vars (also documented in mcp_execution_environment.py):
+#
+# DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT
+#   Selects an existing EE to reuse. Skips the Docker build (e.g. GenAI Agents).
+#
+# DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME
+#   Only when DEFAULT is empty: names a new EE built from scratch. CI uses a
+#   stable value (serverless-docker below) so each run imports/updates one shared
+#   EE (survives stack destroy) instead of creating duplicates per workflow run.
+#   On top of that, run_deploy_e2e.sh hashes the docker context (Dockerfile,
+#   pyproject.toml, uv.lock, .dockerignore) and stamps it on the shared EE's
+#   description (resolve_ee_reuse.py): when the hash is unchanged the run flips
+#   to DEFAULT=<ee id> and skips the ~7-10 min remote image build entirely; any
+#   docker-context change still exercises the full build path.
+#
+# To add a new case:
+#   1. Append a block below with a unique key.
+#   2. Copy an existing workflow from .github/workflows/afcomponentmcp-deploy-e2e-*.yaml
+#      and set workflow_call input use-case-id to the new key.
+#
+use_cases:
+  serverless-docker:
+    # DEFAULT empty → build EE from app root. NAME set → stable CI EE (see file header).
+    description: Custom model (serverless) deploy building EE from app root
+    workflow: afcomponentmcp-deploy-e2e-serverless-docker.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: ""
+      MCP_WORKLOAD_DOCKERFILE_PATH: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
+      DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME: "ci-e2e-mcp-server-docker-ee"
+
+  serverless-ee:
+    # DEFAULT set → reuse platform EE; NAME is ignored on this path.
+    description: Custom model (serverless) deploy with pinned GenAI Agents EE
+    workflow: afcomponentmcp-deploy-e2e-serverless-ee.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: ""
+      MCP_WORKLOAD_DOCKERFILE_PATH: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "[DataRobot] Python 3.11 GenAI Agents"
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
+
+  workload-docker:
+    description: Workload deploy using root Dockerfile (no pinned EE)
+    workflow: afcomponentmcp-deploy-e2e-workload-docker.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: datarobot-workload-preview
+      MCP_WORKLOAD_DOCKERFILE_PATH: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
+
+  workload-ee:
+    description: Workload deploy with generated Dockerfile and pinned GenAI Agents EE
+    workflow: afcomponentmcp-deploy-e2e-workload-ee.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: datarobot-workload-preview
+      MCP_WORKLOAD_DOCKERFILE_PATH: none
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "[DataRobot] Python 3.11 GenAI Agents"
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
