@@ -46,9 +46,7 @@ def ensure_docker_build_context_files(deployments_path: Path) -> None:
         if not (deployments_path / relative_path).is_file()
     ]
     if missing:
-        message = (
-            f"Docker build requires {', '.join(missing)} under {deployments_path}"
-        )
+        message = f"Docker build requires {', '.join(missing)} under {deployments_path}"
         pulumi.error(message)
         raise RuntimeError(message)
 

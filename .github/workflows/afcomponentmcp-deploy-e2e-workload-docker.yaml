@@ -29,6 +29,9 @@ on:
           - "true"
 concurrency:
   group: deploy-e2e-workload-docker-${{ github.event.pull_request.number || github.ref }}
+  # Never flip to true: cancelling a run in flight skips the not-yet-started
+  # Destroy job (GitHub ignores `if: always()` on run cancellation) and leaks
+  # the deployed DataRobot resources. New pushes queue behind the live run.
   cancel-in-progress: false
 jobs:
   # Job name is the middle check-name segment; the workflow name is the
