@@ -78,7 +78,6 @@ tasks:
     cmds:
       - echo "🔧 Installing dependencies.."
       - "{{.UV_CMD}} sync --all-extras"
-      - task: generate-docker-requirement-file
       # MCP item metadata is only consumed by datarobot-serverless provisioning.
       # (go-task has no `if:` on task calls, so this is a shell conditional.)
       - |
@@ -266,17 +265,6 @@ tasks:
         fi
         echo ""
         {{.UV_CMD}} run python test_interactive.py
-    silent: true
-
-  generate-docker-requirement-file:
-    desc: "🔨 Generate docker requirements.txt file"
-    cmds:
-      - echo "🔨 Generating docker requirements.txt file..."
-      # If the content of the requirement.txt file doesn't change, don't trigger an update
-      - >-
-        {{.UV_CMD}} export --format requirements-txt --no-emit-project --project . > ./docker/requirements.txt.tmp && if !
-        cmp -s ./docker/requirements.txt.tmp ./docker/requirements.txt; then mv ./docker/requirements.txt.tmp ./docker/requirements.txt;
-        else rm ./docker/requirements.txt.tmp; fi
     silent: true
 
   release_files:

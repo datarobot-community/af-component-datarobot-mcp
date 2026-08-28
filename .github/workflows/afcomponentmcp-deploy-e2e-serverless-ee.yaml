@@ -1,0 +1,45 @@
+---
+name: E2E
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "fixtures/e2e/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/reusable-deploy-e2e.yaml"
+      - ".github/workflows/afcomponentmcp-deploy-e2e-serverless-ee.yaml"
+  push:
+    branches: ["main"]
+    paths:
+      - "fixtures/e2e/**"
+      - "template/**"
+      - "copier.yml"
+      - ".github/workflows/reusable-deploy-e2e.yaml"
+      - ".github/workflows/afcomponentmcp-deploy-e2e-serverless-ee.yaml"
+  workflow_dispatch:
+    inputs:
+      skip_destroy:
+        description: "Skip pulumi destroy after deploy (debug only)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+concurrency:
+  group: deploy-e2e-serverless-ee-${{ github.event.pull_request.number || github.ref }}
+  # Never flip to true: cancelling a run in flight skips the not-yet-started
+  # Destroy job (GitHub ignores `if: always()` on run cancellation) and leaks
+  # the deployed DataRobot resources. New pushes queue behind the live run.
+  cancel-in-progress: false
+jobs:
+  # Job name is the middle check-name segment; the workflow name is the
+  # shared "E2E" prefix -> checks read: E2E / serverless-ee / Deploy|Destroy.
+  e2e:
+    name: serverless-ee
+    uses: ./.github/workflows/reusable-deploy-e2e.yaml
+    secrets: inherit
+    with:
+      use-case-id: serverless-ee
+      skip-destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_destroy == 'true' && 'true' || 'false' }}
