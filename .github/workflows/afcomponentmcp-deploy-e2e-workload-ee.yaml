@@ -2,8 +2,7 @@
 name: E2E
 on:
   pull_request:
-    # TODO: drop "anatolii/BUZZOK-31992" once PR #58 merges and this PR retargets main.
-    branches: ["main", "anatolii/BUZZOK-31992"]
+    branches: ["main"]
     paths:
       - "fixtures/e2e/**"
       - "template/**"
