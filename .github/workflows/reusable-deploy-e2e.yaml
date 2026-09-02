@@ -15,7 +15,7 @@ on:
       deploy-timeout-minutes:
         description: "Timeout for the Run deployment E2E step (Docker builds may need longer)"
         required: false
-        default: 8
+        default: 15
         type: number
     secrets:
       DATAROBOT_API_TOKEN:
