@@ -23,6 +23,7 @@ from infra.{{mcp_app_name_file}}_infra.mcp_bundle import (
     get_docker_bundle_files,
     get_workload_source_files,
     merge_source_files,
+    normalize_shell_scripts,
 )
 
 
@@ -146,3 +147,22 @@ def test_ensure_docker_build_context_files_raises_when_missing(tmp_path: Path):
         ensure_docker_build_context_files(deployments_path)
 
     mock_error.assert_called_once()
+
+
+def test_normalize_shell_scripts_rewrites_crlf_to_lf(tmp_path: Path):
+    script = tmp_path / "start_server.sh"
+    script.write_bytes(b"if [ 1 ]; then\r\n  echo hi\r\nfi\r\n")
+    bundle = [(str(script), "start_server.sh")]
+
+    assert normalize_shell_scripts(bundle) == bundle
+
+    assert script.read_bytes() == b"if [ 1 ]; then\n  echo hi\nfi\n"
+
+
+def test_normalize_shell_scripts_leaves_other_files_alone(tmp_path: Path):
+    module = tmp_path / "main.py"
+    module.write_bytes(b"x = 1\r\n")
+
+    normalize_shell_scripts([(str(module), "app/main.py")])
+
+    assert module.read_bytes() == b"x = 1\r\n"

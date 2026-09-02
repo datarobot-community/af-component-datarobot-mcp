@@ -32,6 +32,9 @@ DOCKER_BUILD_CONTEXT_FILES = (
     START_SERVER_RELATIVE_PATH,
 )
 
+CRLF = b"\r\n"
+LF = b"\n"
+
 
 def ensure_docker_build_context_files(deployments_path: Path) -> None:
     """Verify Docker build files exist at the app root.
@@ -110,3 +113,27 @@ def get_workload_source_files(
         return core_files
     docker_files = get_docker_bundle_files(deployments_path, dockerfile_relative_path)
     return merge_source_files(core_files, docker_files)
+
+
+def normalize_shell_scripts(
+    source_files: list[tuple[str, str]],
+) -> list[tuple[str, str]]:
+    """Rewrite bundled ``*.sh`` files to LF line endings and return the bundle.
+
+    These run under ``/bin/sh`` in a Linux container, where a trailing CR sticks
+    to the last token of every line -- ``then<CR>`` stops being the ``then``
+    keyword and the parser runs off the end of the file. Windows checkouts can
+    leave CRLF on disk and the bundle is uploaded byte for byte, so normalize
+    here, the last point we control. Idempotent, and rewriting in place keeps
+    the paths Pulumi tracks stable.
+    """
+    for abs_path, rel_path in source_files:
+        if not rel_path.endswith(".sh"):
+            continue
+        path = Path(abs_path)
+        content = path.read_bytes()
+        if CRLF not in content:
+            continue
+        path.write_bytes(content.replace(CRLF, LF))
+        pulumi.info(f"Normalized CRLF line endings to LF in {rel_path}")
+    return source_files
