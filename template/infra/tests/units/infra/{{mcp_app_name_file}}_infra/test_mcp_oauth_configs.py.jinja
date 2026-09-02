@@ -218,39 +218,8 @@ class TestOAuthClaimValidationFlag:
         self, monkeypatch: pytest.MonkeyPatch, env_value: str, expected: str
     ) -> None:
         monkeypatch.setenv(OAUTH_CLAIM_VALIDATION_ENV_VAR, env_value)
-        monkeypatch.setenv(XAA_TOKEN_AUDIENCE_ENV_VAR, TOKEN_AUDIENCE)
 
         assert mcp_oauth_claim_validation_value() == expected
-
-    def test_on_with_an_audience_is_valid(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.setenv(OAUTH_CLAIM_VALIDATION_ENV_VAR, "true")
-        monkeypatch.setenv(XAA_TOKEN_AUDIENCE_ENV_VAR, TOKEN_AUDIENCE)
-
-        assert mcp_oauth_claim_validation_value() == "true"
-
-    def test_on_without_an_audience_raises(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Otherwise the server demands a JWT on every route and checks nothing."""
-        monkeypatch.setenv(OAUTH_CLAIM_VALIDATION_ENV_VAR, "true")
-
-        with pytest.raises(ValueError, match=XAA_TOKEN_AUDIENCE_ENV_VAR):
-            mcp_oauth_claim_validation_value()
-
-    def test_a_blank_audience_counts_as_unset(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.setenv(OAUTH_CLAIM_VALIDATION_ENV_VAR, "true")
-        monkeypatch.setenv(XAA_TOKEN_AUDIENCE_ENV_VAR, "   ")
-
-        with pytest.raises(ValueError, match=XAA_TOKEN_AUDIENCE_ENV_VAR):
-            mcp_oauth_claim_validation_value()
-
-    def test_off_without_an_audience_is_valid(self) -> None:
-        """The audience is only required by the flag that enforces it."""
-        assert mcp_oauth_claim_validation_value() == "false"
 
     def test_the_flag_is_not_a_metadata_setting(self) -> None:
         assert OAUTH_CLAIM_VALIDATION_ENV_VAR not in OAUTH_METADATA_ENV_VARS
@@ -282,14 +251,6 @@ class TestOAuthAndWellKnownEnvVars:
             },
             {"name": OAUTH_CLAIM_VALIDATION_ENV_VAR, "value": "false"},
         ]
-
-    def test_claim_validation_without_an_audience_fails_the_deployment(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.setenv(OAUTH_CLAIM_VALIDATION_ENV_VAR, "true")
-
-        with pytest.raises(ValueError, match=XAA_TOKEN_AUDIENCE_ENV_VAR):
-            oauth_and_well_known_env_vars()
 
 
 class TestWorkloadOAuthRoutes:

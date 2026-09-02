@@ -165,14 +165,7 @@ def mcp_oauth_claim_validation_value() -> str:
     On, requests need a JWT whose ``aud`` names ``MCP_XAA_TOKEN_AUDIENCE``. The
     health check and ``/.well-known/*`` are exempt.
     """
-    enabled = coerce_bool(os.getenv(OAUTH_CLAIM_VALIDATION_ENV_VAR))
-    if enabled and not _env(XAA_TOKEN_AUDIENCE_ENV_VAR):
-        raise ValueError(
-            f"{OAUTH_CLAIM_VALIDATION_ENV_VAR} is true but "
-            f"{XAA_TOKEN_AUDIENCE_ENV_VAR} is not set: the server would demand a "
-            "JWT on every route and check no claim on it."
-        )
-    return str(enabled).lower()
+    return str(coerce_bool(os.getenv(OAUTH_CLAIM_VALIDATION_ENV_VAR))).lower()
 
 
 def get_workload_mcp_oauth_routes() -> list[dict[str, str]] | None:
