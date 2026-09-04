@@ -36,9 +36,7 @@ ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_ENV_VAR = (
     "MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE"
 )
 
-#: No ``MCP_`` prefix: the server resolves it from the field name
-#: ``MCPServerConfig.oauth_claim_validation``.
-OAUTH_CLAIM_VALIDATION_ENV_VAR = "OAUTH_CLAIM_VALIDATION"
+ENABLE_OAUTH_CLAIM_VALIDATION_ENV_VAR = "MCP_ENABLE_OAUTH_CLAIM_VALIDATION"
 
 RESOURCE_ENV_VAR = "MCP_OAUTH_RESOURCE"
 AUTHORIZATION_SERVERS_ENV_VAR = "MCP_OAUTH_AUTHORIZATION_SERVERS"
@@ -159,13 +157,13 @@ def mcp_enable_unauthenticated_well_known_route_value() -> str:
     return str(enabled).lower()
 
 
-def mcp_oauth_claim_validation_value() -> str:
+def mcp_enable_oauth_claim_validation_value() -> str:
     """The claim-validation flag, normalized to ``"true"`` / ``"false"``.
 
     On, requests need a JWT whose ``aud`` names ``MCP_XAA_TOKEN_AUDIENCE``. The
     health check and ``/.well-known/*`` are exempt.
     """
-    return str(coerce_bool(os.getenv(OAUTH_CLAIM_VALIDATION_ENV_VAR))).lower()
+    return str(coerce_bool(os.getenv(ENABLE_OAUTH_CLAIM_VALIDATION_ENV_VAR))).lower()
 
 
 def get_workload_mcp_oauth_routes() -> list[dict[str, str]] | None:
@@ -195,8 +193,8 @@ def oauth_and_well_known_env_vars() -> list[dict[str, str]]:
             "value": mcp_enable_unauthenticated_well_known_route_value(),
         },
         {
-            "name": OAUTH_CLAIM_VALIDATION_ENV_VAR,
-            "value": mcp_oauth_claim_validation_value(),
+            "name": ENABLE_OAUTH_CLAIM_VALIDATION_ENV_VAR,
+            "value": mcp_enable_oauth_claim_validation_value(),
         },
         *mcp_oauth_metadata_env_vars(),
     ]
