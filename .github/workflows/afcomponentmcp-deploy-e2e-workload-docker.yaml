@@ -43,3 +43,5 @@ jobs:
     with:
       use-case-id: workload-docker
       skip-destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_destroy == 'true' && 'true' || 'false' }}
+      deploy-timeout-minutes: 18
+      
