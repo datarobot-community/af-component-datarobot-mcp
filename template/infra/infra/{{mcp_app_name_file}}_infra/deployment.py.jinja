@@ -50,6 +50,7 @@ from .mcp_oauth_configs import (
     mcp_enable_oauth_claim_validation_value,
     mcp_enable_unauthenticated_well_known_route_value,
     mcp_oauth_metadata_env_vars,
+    mcp_tag_scope_env_vars,
 )
 
 
@@ -209,6 +210,14 @@ def provision_deployment_mcp_server(
             value=env_var["value"],
         )
         for env_var in mcp_oauth_metadata_env_vars()
+    )
+    deployments_model_runtime_parameters.extend(
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key=env_var["name"].lower(),
+            type="string",
+            value=env_var["value"],
+        )
+        for env_var in mcp_tag_scope_env_vars()
     )
     custom_model_files = get_deployments_app_files()
 
