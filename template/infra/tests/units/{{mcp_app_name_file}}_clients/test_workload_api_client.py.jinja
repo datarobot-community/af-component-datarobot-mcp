@@ -31,6 +31,7 @@ from {{mcp_app_name_file}}_clients.workload_api_client import (
     _create_and_build_artifact,
     build_artifact_from_image_uri,
 )
+from infra.dr_mcp_infra.mcp_oauth_configs import WorkloadArtifactContainerRoute
 
 
 def test_workload_artifact_spec_type_is_service():
@@ -81,7 +82,11 @@ def test_image_uri_pulumi_args_use_the_provider_shape():
                 "key": "apiToken",
             },
         ],
-        routes=[{"path": "/.well-known/oauth-protected-resource", "auth": "disabled"}],
+        routes=[
+            WorkloadArtifactContainerRoute(
+                path="/.well-known/oauth-protected-resource", auth="disabled"
+            )
+        ],
     )
 
     args = spec.to_pulumi_args()
