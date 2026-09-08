@@ -235,10 +235,10 @@ class TestFileBundler:
 
         assert build_dir.exists()
         assert (build_dir / "app").exists()
-        assert (build_dir / "uv.lock").exists()
         assert (build_dir / "start_server.sh").exists()
         assert (build_dir / "pyproject.toml").exists()
         assert (build_dir / "Dockerfile").exists()
+        # no check for uv.lock because the base mcp template doesn't have one
         assert not (build_dir / ".dockerignore").exists()
 
     def test_setup_build_dir_for_workload_artifact_source_dir__for_generated_dockerfile(
@@ -254,9 +254,9 @@ class TestFileBundler:
 
         assert build_dir.exists()
         assert (build_dir / "app").exists()
-        assert (build_dir / "uv.lock").exists()
         assert (build_dir / "start_server.sh").exists()
         assert (build_dir / "pyproject.toml").exists()
+        # no check for uv.lock because the base mcp template doesn't have one
         assert not (build_dir / "Dockerfile").exists()
         assert not (build_dir / ".dockerignore").exists()
 
