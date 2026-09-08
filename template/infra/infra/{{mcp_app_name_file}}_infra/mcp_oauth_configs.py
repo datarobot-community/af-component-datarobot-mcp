@@ -157,7 +157,6 @@ def mcp_oauth_metadata_env_vars() -> list[dict[str, str]]:
         value = _env(name)
         if value:
             env_vars.append({"name": name, "value": value, "source": "string"})
-    env_vars.extend(mcp_tag_scope_env_vars())
     return env_vars
 
 
