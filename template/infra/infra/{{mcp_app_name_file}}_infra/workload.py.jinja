@@ -81,7 +81,7 @@ DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
 def _require_env(name: str) -> str:
     value = os.getenv(name, "").strip()
     if not value:
-        message = (f"{name} is required for MCP_DEPLOYMENT_TYPE 'datarobot-workload' or 'datarobot-workload-preview'")
+        message = f"{name} is required for MCP_DEPLOYMENT_TYPE 'datarobot-workload' or 'datarobot-workload-preview'"
         pulumi.error(message)
         raise RuntimeError(message)
     return value
@@ -622,7 +622,12 @@ class WorkloadContainerEnvironmentVars:
         def get_from_os(os_env_var_name: str, field_value: Any):
             return os.getenv(os_env_var_name, field_value)
 
-        session_secret_key_ = _session_secret_env_vars(mcp_server_asset_name)[-1]
+        session_secret_key_list = _session_secret_env_vars(mcp_server_asset_name)
+        if not session_secret_key_list:
+            raise RuntimeError(
+                "A SESSION_SECRET_KEY is required in your env for deployments."
+            )
+        session_secret_key_ = session_secret_key_list[0]
         session_secret_key = WorkloadArtifactContainerDataRobotCredentialEnvVar(
             name=session_secret_key_["name"],
             dr_credential_id=session_secret_key_["drCredentialId"],
@@ -813,6 +818,7 @@ class WorkloadConfiguration:
 
     @classmethod
     def from_os_env(cls, mcp_server_asset_name: str) -> "WorkloadConfiguration":
+        routes = get_workload_mcp_oauth_routes()
         return cls(
             workload_importance=os.getenv(
                 WorkloadConfigurationEnvVars.MCP_WORKLOAD_IMPORTANCE.name,
@@ -851,9 +857,7 @@ class WorkloadConfiguration:
             container_environment_variables=WorkloadContainerEnvironmentVars.from_os_env(
                 mcp_server_asset_name
             ).to_pulumi_objects(),
-            container_routes=[
-                el.to_pulumi_object() for el in (get_workload_mcp_oauth_routes() or [])
-            ],
+            container_routes=[el.to_pulumi_object() for el in routes] if routes else None,
         )
 
     @classmethod
