@@ -621,7 +621,7 @@ class WorkloadContainerEnvironmentVars:
     @classmethod
     def from_os_env(
         cls, mcp_server_asset_name: str
-    ) -> "WorkloadContainerEnvironmentVars":
+    ) -> WorkloadContainerEnvironmentVars:
         def get_from_os(os_env_var_name: str, field_value: Any):
             return os.getenv(os_env_var_name, field_value)
 
@@ -825,7 +825,7 @@ class WorkloadConfiguration:
     ) = None
 
     @classmethod
-    def from_os_env(cls, mcp_server_asset_name: str) -> "WorkloadConfiguration":
+    def from_os_env(cls, mcp_server_asset_name: str) -> WorkloadConfiguration:
         routes = get_workload_mcp_oauth_routes()
         return cls(
             workload_importance=os.getenv(

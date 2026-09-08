@@ -17,6 +17,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
+from infra.{{mcp_app_name_file}}_infra.mcp_oauth_configs import WorkloadArtifactContainerRoute
 from {{mcp_app_name_file}}_clients.workload_api_client import (
     WORKLOAD_ARTIFACT_TYPE,
     ArtifactSpecFromImageBuildConfig,
@@ -31,7 +32,6 @@ from {{mcp_app_name_file}}_clients.workload_api_client import (
     _create_and_build_artifact,
     build_artifact_from_image_uri,
 )
-from infra.{{mcp_app_name_file}}_infra.mcp_oauth_configs import WorkloadArtifactContainerRoute
 
 
 def test_workload_artifact_spec_type_is_service():
