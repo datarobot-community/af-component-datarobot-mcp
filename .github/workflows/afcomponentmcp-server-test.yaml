@@ -15,9 +15,16 @@ on:
       - "template/**"
       - "copier.yml"
       - ".github/workflows/afcomponentmcp-server-test.yaml"
+  # Lets the "Trigger a fresh CI run" step below re-run this workflow after
+  # auto-pushing a regenerated uv.lock — a GITHUB_TOKEN push doesn't trigger
+  # push/pull_request events on its own, so this is how the new commit gets checked.
+  workflow_dispatch: {}
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+permissions:
+  contents: write
+  actions: write
 jobs:
   test-mcp-server:
     name: "Test MCP Server Startup & Tools"
@@ -30,6 +37,11 @@ jobs:
     steps:
       - name: Checkout
         uses: "actions/checkout@v6"
+        with:
+          # Only pin to the PR head branch for a same-repo PR — that's the one case
+          # where a later step here pushes a fix and needs an accurate parent commit.
+          # Fork PRs and push events keep the default (safe, doesn't attempt a push).
+          ref: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) && github.head_ref || github.ref }}
 
       - name: Setup caching
         uses: ./.github/actions/setup-caching
@@ -46,12 +58,58 @@ jobs:
           copier-args: "--defaults --trust --vcs-ref=HEAD"
 
       - name: Check uv.lock is up to date
+        id: lock_check
         working-directory: ./rendered/mcp_server
+        continue-on-error: true
         run: |
           echo "Checking uv.lock matches pyproject.toml. If this fails, run 'task lock' at the repo root and commit the regenerated template/{{mcp_app_name_file}}/uv.lock.jinja."
           uv lock --check
         env:
           UV_CACHE_DIR: /.uv_cache
+
+      - name: Regenerate stale uv.lock and push it to this PR branch
+        if: steps.lock_check.outcome == 'failure' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          uv lock --directory ./rendered/mcp_server
+          python3 <<'PYEOF'
+          content = open("./rendered/mcp_server/uv.lock").read()
+          content = content.replace(
+              'name = "mcp-server"',
+              'name = "{{ mcp_app_name | replace("_", "-") }}"',
+              1,
+          )
+          open("./template/{{mcp_app_name_file}}/uv.lock.jinja", "w").write(content)
+          PYEOF
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "./template/{{mcp_app_name_file}}/uv.lock.jinja"
+          git commit -m "chore: regenerate uv.lock"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
+        env:
+          UV_CACHE_DIR: /.uv_cache
+
+      # A GITHUB_TOKEN push doesn't trigger a new push/pull_request run on its own
+      # (GitHub's anti-recursion rule), so kick one off explicitly via workflow_dispatch.
+      - name: Trigger a fresh CI run on the regenerated branch
+        if: steps.lock_check.outcome == 'failure' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/afcomponentmcp-server-test.yaml/dispatches" \
+            -d "{\"ref\":\"${GITHUB_HEAD_REF}\"}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail if uv.lock was stale
+        if: steps.lock_check.outcome == 'failure'
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
+            echo "::error::uv.lock was stale. It has been regenerated and pushed to this branch, and a fresh CI run was triggered — check that run instead of this one."
+          else
+            echo "::error::uv.lock is out of date with pyproject.toml. Run 'task lock' at the repo root, commit the regenerated template/{{mcp_app_name_file}}/uv.lock.jinja, and push."
+          fi
+          exit 1
 
       - name: Install dependencies
         working-directory: ./rendered/mcp_server
