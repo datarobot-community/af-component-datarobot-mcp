@@ -622,6 +622,11 @@ class WorkloadContainerEnvironmentVars:
         def get_from_os(os_env_var_name: str, field_value: Any):
             return os.getenv(os_env_var_name, field_value)
 
+        def get_strbool_from_os(os_env_var_name: str, field_value: Any) -> str:
+            value = str(get_from_os(os_env_var_name, field_value))
+            truthy_values = frozenset({"true", "1", "yes", "on"})
+            return str(value.strip().lower() in truthy_values).lower()
+
         session_secret_key_list = _session_secret_env_vars(mcp_server_asset_name)
         if not session_secret_key_list:
             raise RuntimeError(
@@ -678,11 +683,11 @@ class WorkloadContainerEnvironmentVars:
                 WorkloadArtifactSpecContainerEnvVar(el["name"], el["value"])
                 for el in tool_flag_env_vars()
             ],
-            mcp_enable_unauthenticated_well_known_route=get_from_os(
+            mcp_enable_unauthenticated_well_known_route=get_strbool_from_os(
                 MCPAppEnvironmentVarNames.MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE.name,
                 cls.mcp_enable_unauthenticated_well_known_route,
             ),
-            mcp_enable_oauth_claim_validation=get_from_os(
+            mcp_enable_oauth_claim_validation=get_strbool_from_os(
                 MCPAppEnvironmentVarNames.MCP_ENABLE_OAUTH_CLAIM_VALIDATION.name,
                 cls.mcp_enable_oauth_claim_validation,
             ),
@@ -857,7 +862,11 @@ class WorkloadConfiguration:
             container_environment_variables=WorkloadContainerEnvironmentVars.from_os_env(
                 mcp_server_asset_name
             ).to_pulumi_objects(),
-            container_routes=[el.to_pulumi_object() for el in routes] if routes else None,
+            container_routes=(
+                [el.to_pulumi_object() for el in routes]
+                if routes
+                else None
+            ),
         )
 
     @classmethod
