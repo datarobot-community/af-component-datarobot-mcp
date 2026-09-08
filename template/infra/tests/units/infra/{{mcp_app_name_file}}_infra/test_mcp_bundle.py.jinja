@@ -202,7 +202,7 @@ class TestFileBundler:
 
     @pytest.fixture
     def deployment_app_path(self, project_dir):
-        yield project_dir / "dr_mcp"
+        yield project_dir / "{{mcp_app_name_file}}"
 
     def test_setup_build_dir_for_workload_artifact_source_dir_return(self, tmp_path):
         ignore_patterns = ["file.py"]
@@ -290,7 +290,7 @@ class TestFileBundler:
     def test_resolve_dockerfile_relative_path__returns_default_dockerfile(
         self, tmp_path
     ):
-        mcp_dir = tmp_path / "infra" / "dr_mcp"
+        mcp_dir = tmp_path / "infra" / "{{mcp_app_name_file}}"
         mcp_dir.mkdir(parents=True)
         (mcp_dir / "Dockerfile").write_text("FROM scratch\n")
         with (

@@ -641,7 +641,17 @@ class TestWorkloadProvider:
         assert actual == expected
 
 
+@pytest.mark.usefixtures("mock_require_env")
 class TestWorkloadProvidedDockerfileManager:
+    @pytest.fixture
+    def mock_require_env(self):
+        with patch.object(
+            workload,
+            "_require_env",
+            return_value="configured",
+        ) as require_env:
+            yield require_env
+
     @pytest.fixture
     def mock_file_bundler(self, tmp_path):
         file_bundler = Mock()
@@ -682,7 +692,17 @@ class TestWorkloadProvidedDockerfileManager:
         assert actual == expected
 
 
+@pytest.mark.usefixtures("mock_require_env")
 class TestWorkloadGeneratedDockerfileManager:
+    @pytest.fixture
+    def mock_require_env(self):
+        with patch.object(
+            workload,
+            "_require_env",
+            return_value="configured",
+        ) as require_env:
+            yield require_env
+
     @pytest.fixture
     def mock_file_bundler(self, tmp_path):
         file_bundler = Mock()

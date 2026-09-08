@@ -315,6 +315,7 @@ class TestTagScopeEnvVars:
         assert forwarded == [
             {
                 "name": f"{TAG_SCOPES_ENV_VAR_PREFIX}DATABASE",
+                "value": "mcp:tools:write",
                 "source": "string",
             },
             {
