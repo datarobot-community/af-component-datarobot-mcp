@@ -180,7 +180,7 @@ if [[ -n "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME:-}" && -z "${DATAROBOT_DEFA
 fi
 
 effective_deployment_type="${MCP_DEPLOYMENT_TYPE:-datarobot-serverless}"
-if [[ "${effective_deployment_type}" != "datarobot-workload-preview" ]]; then
+if [[ "${effective_deployment_type}" == "datarobot-serverless" ]]; then
   echo "Loading MCP item metadata for datarobot-serverless deploy"
   uv run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata
 fi
