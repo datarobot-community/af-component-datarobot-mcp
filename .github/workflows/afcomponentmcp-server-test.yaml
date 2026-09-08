@@ -38,11 +38,20 @@ jobs:
           cache-key-suffix: mcp-server
           dependency-files: |
             template/{{mcp_app_name_file}}/pyproject.toml.jinja
+            template/{{mcp_app_name_file}}/uv.lock.jinja
 
       - name: Render template
         uses: ./.github/actions/render-copier-instance
         with:
           copier-args: "--defaults --trust --vcs-ref=HEAD"
+
+      - name: Check uv.lock is up to date
+        working-directory: ./rendered/mcp_server
+        run: |
+          echo "Checking uv.lock matches pyproject.toml. If this fails, run 'task lock' at the repo root and commit the regenerated template/{{mcp_app_name_file}}/uv.lock.jinja."
+          uv lock --check
+        env:
+          UV_CACHE_DIR: /.uv_cache
 
       - name: Install dependencies
         working-directory: ./rendered/mcp_server
