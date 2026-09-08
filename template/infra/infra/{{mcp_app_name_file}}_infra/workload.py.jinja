@@ -321,8 +321,7 @@ def _create_workload_image_artifact(
     dockerfile_relative_path: str | None,
     execution_environment: pulumi_datarobot.ExecutionEnvironment | None,
 ) -> WorkloadImageArtifact | WorkloadGeneratedImageArtifact:
-    routes_ = get_workload_mcp_oauth_routes()
-    routes = [r.to_dict() for r in routes_]
+    routes_val = [r.to_dict() for r in routes] if routes else None
     if dockerfile_relative_path:
         pulumi.info(
             f"Workload image build: DockerfileProvided (path={dockerfile_relative_path})"
@@ -337,7 +336,7 @@ def _create_workload_image_artifact(
             container_name=WORKLOAD_CONTAINER_NAME,
             container_port=_resolve_container_port(),
             environment_vars=environment_vars,
-            routes=routes if routes else None,
+            routes=routes_val,
             source_hash=bundle_hash,
             build_timeout_s=build_timeout_s,
             opts=pulumi.ResourceOptions(depends_on=[catalog]),
@@ -367,7 +366,7 @@ def _create_workload_image_artifact(
         container_name=WORKLOAD_CONTAINER_NAME,
         container_port=_resolve_container_port(),
         environment_vars=environment_vars,
-        routes=routes if routes else None,
+        routes=routes_val,
         source_hash=bundle_hash,
         build_timeout_s=build_timeout_s,
         opts=pulumi.ResourceOptions(depends_on=[catalog, execution_environment]),
@@ -470,7 +469,7 @@ def provision_workload_mcp_server_from_image_uri(
     )
 
     routes_ = get_workload_mcp_oauth_routes()
-    routes = [r.to_dict() for r in routes_]
+    routes = [r.to_dict() for r in routes_] if routes_ else None
     workload_artifact_spec = build_artifact_from_image_uri(
         artifact_name=mcp_server_asset_name,
         container_name=WORKLOAD_CONTAINER_NAME,
@@ -479,7 +478,7 @@ def provision_workload_mcp_server_from_image_uri(
         environment_vars=_workload_environment_vars(mcp_server_asset_name),
         # Only override the image's own entrypoint when explicitly configured.
         entrypoints=_explicit_workload_entrypoint(),
-        routes=routes if routes else None,
+        routes=routes,
     )
 
     artifact = pulumi_datarobot.Artifact(

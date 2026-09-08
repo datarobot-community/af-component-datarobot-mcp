@@ -205,9 +205,7 @@ class WorkloadArtifactSpecFromImageUri:
         if container.routes is not None:
             # path/auth are spelled the same on both wires. Provider releases
             # that predate route support reject the key at preview time.
-            args["routes"] = [
-                {"path": route["path"], "auth": route["auth"]} for route in container.routes
-            ]
+            args["routes"] = container.routes
         return args
 
 
