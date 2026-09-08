@@ -46,7 +46,7 @@ use_cases:
     description: Workload deploy using root Dockerfile (no pinned EE)
     workflow: afcomponentmcp-deploy-e2e-workload-docker.yaml
     env:
-      MCP_DEPLOYMENT_TYPE: datarobot-workload-preview
+      MCP_DEPLOYMENT_TYPE: datarobot-workload
       MCP_WORKLOAD_DOCKERFILE_PATH: ""
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: ""
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
@@ -54,6 +54,24 @@ use_cases:
   workload-ee:
     description: Workload deploy with generated Dockerfile and pinned GenAI Agents EE
     workflow: afcomponentmcp-deploy-e2e-workload-ee.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: datarobot-workload
+      MCP_WORKLOAD_DOCKERFILE_PATH: none
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "[DataRobot] Python 3.11 GenAI Agents"
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
+
+  workload-preview-docker:
+    description: Workload deploy using root Dockerfile (no pinned EE)
+    workflow: afcomponentmcp-deploy-e2e-workload-preview-docker.yaml
+    env:
+      MCP_DEPLOYMENT_TYPE: datarobot-workload-preview
+      MCP_WORKLOAD_DOCKERFILE_PATH: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: ""
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
+
+  workload-preview-ee:
+    description: Workload deploy with generated Dockerfile and pinned GenAI Agents EE
+    workflow: afcomponentmcp-deploy-e2e-workload-preview-ee.yaml
     env:
       MCP_DEPLOYMENT_TYPE: datarobot-workload-preview
       MCP_WORKLOAD_DOCKERFILE_PATH: none

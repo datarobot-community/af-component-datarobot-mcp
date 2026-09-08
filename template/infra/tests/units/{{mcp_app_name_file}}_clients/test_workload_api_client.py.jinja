@@ -17,6 +17,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
+from infra.{{mcp_app_name_file}}_infra.mcp_oauth_configs import WorkloadArtifactContainerRoute
 from {{mcp_app_name_file}}_clients.workload_api_client import (
     WORKLOAD_ARTIFACT_TYPE,
     ArtifactSpecFromImageBuildConfig,
@@ -81,7 +82,11 @@ def test_image_uri_pulumi_args_use_the_provider_shape():
                 "key": "apiToken",
             },
         ],
-        routes=[{"path": "/.well-known/oauth-protected-resource", "auth": "disabled"}],
+        routes=[
+            WorkloadArtifactContainerRoute(
+                path="/.well-known/oauth-protected-resource", auth="disabled"
+            ).to_dict()
+        ],
     )
 
     args = spec.to_pulumi_args()

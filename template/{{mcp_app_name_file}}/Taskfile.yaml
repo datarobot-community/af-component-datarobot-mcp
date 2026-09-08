@@ -51,7 +51,7 @@ tasks:
     cmds:
       - |
         case "{{.RAW_MCP_DEPLOYMENT_TYPE}}" in
-          datarobot-serverless|datarobot-workload-preview)
+          datarobot-serverless|datarobot-workload-preview|datarobot-workload)
             echo "✅ MCP deployment type is set up as MCP_DEPLOYMENT_TYPE={{.RAW_MCP_DEPLOYMENT_TYPE}}"
             ;;
           "")
@@ -59,12 +59,14 @@ tasks:
             echo "ℹ️  To choose explicitly, set in .env or your shell:"
             echo "       MCP_DEPLOYMENT_TYPE=datarobot-serverless"
             echo "    or MCP_DEPLOYMENT_TYPE=datarobot-workload-preview"
+            echo "    or MCP_DEPLOYMENT_TYPE=datarobot-workload"
             ;;
           *)
             echo "❌  Invalid MCP_DEPLOYMENT_TYPE '{{.RAW_MCP_DEPLOYMENT_TYPE}}'."
             echo "ℹ️  Set a valid value in .env or your shell:"
             echo "       MCP_DEPLOYMENT_TYPE=datarobot-serverless"
             echo "    or MCP_DEPLOYMENT_TYPE=datarobot-workload-preview"
+            echo "    or MCP_DEPLOYMENT_TYPE=datarobot-workload"
             exit 1
             ;;
         esac
