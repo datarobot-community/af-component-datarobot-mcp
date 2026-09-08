@@ -131,7 +131,7 @@ class ContainerImageUri:
     environment_vars: list[dict[str, str]] = field(default_factory=list)
     # None omits the key so the image's own entrypoint is used.
     entrypoints: list[str] | None = None
-    routes: list[WorkloadArtifactContainerRoute] | None = None
+    routes: list[dict[str, str]] | None = None
 
 
 @dataclass
@@ -206,7 +206,7 @@ class WorkloadArtifactSpecFromImageUri:
             # path/auth are spelled the same on both wires. Provider releases
             # that predate route support reject the key at preview time.
             args["routes"] = [
-                {"path": route.path, "auth": route.auth} for route in container.routes
+                {"path": route["path"], "auth": route["auth"]} for route in container.routes
             ]
         return args
 
@@ -461,7 +461,7 @@ def build_artifact_from_image_uri(
     image_uri: str,
     environment_vars: list[dict[str, str]] | None = None,
     entrypoints: list[str] | None = None,
-    routes: list[WorkloadArtifactContainerRoute] | None = None,
+    routes: list[dict[str, str]] | None = None,
 ) -> WorkloadArtifactSpecFromImageUri:
     container = ContainerImageUri(
         name=container_name,

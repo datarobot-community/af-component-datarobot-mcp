@@ -85,7 +85,7 @@ def test_image_uri_pulumi_args_use_the_provider_shape():
         routes=[
             WorkloadArtifactContainerRoute(
                 path="/.well-known/oauth-protected-resource", auth="disabled"
-            )
+            ).to_dict()
         ],
     )
 

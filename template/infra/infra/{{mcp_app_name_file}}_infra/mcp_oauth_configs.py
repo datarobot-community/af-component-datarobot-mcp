@@ -100,6 +100,9 @@ class WorkloadArtifactContainerRoute:
             path=self.path, auth=self.auth
         )
 
+    def to_dict(self):
+        return {"path": self.path, "auth": self.auth}
+
 
 def coerce_bool(value: Any) -> bool:
     if isinstance(value, str):

@@ -25,8 +25,6 @@ from pulumi.dynamic import (
     ResourceProvider,
 )
 
-from infra.{{mcp_app_name_file}}_infra.mcp_oauth_configs import WorkloadArtifactContainerRoute
-
 from .credentials import datarobot_api_token
 from .workload_api_client import (
     WorkloadClient,
@@ -154,7 +152,7 @@ class WorkloadImageArtifact(Resource):
         container_name: str,
         container_port: int,
         environment_vars: list[dict[str, str]],
-        routes: list[WorkloadArtifactContainerRoute] | None,
+        routes: list[dict[str, str]] | None,
         source_hash: str,
         build_timeout_s: int = 6000,
         opts: Any = None,
@@ -200,7 +198,7 @@ class WorkloadGeneratedImageArtifact(Resource):
         container_name: str,
         container_port: int,
         environment_vars: list[dict[str, str]],
-        routes: list[WorkloadArtifactContainerRoute] | None,
+        routes: list[dict[str, str]] | None,
         source_hash: str,
         build_timeout_s: int = 6000,
         opts: Any = None,
