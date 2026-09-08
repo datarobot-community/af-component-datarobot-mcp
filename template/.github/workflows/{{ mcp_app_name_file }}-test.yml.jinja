@@ -6,11 +6,18 @@ on:
     branches: ["main"]
     paths:
       - '{{ mcp_app_name }}/**.py'
+      - '{{ mcp_app_name }}/pyproject.toml'
+      - '{{ mcp_app_name }}/uv.lock'
 
   pull_request:
     branches: ["main"]
     paths:
       - '{{ mcp_app_name }}/**.py'
+      - '{{ mcp_app_name }}/pyproject.toml'
+      - '{{ mcp_app_name }}/uv.lock'
+
+permissions:
+  contents: write
 
 jobs:
   tests:
@@ -26,6 +33,8 @@ jobs:
 
     steps:
       - uses: "actions/checkout@v6"
+        with:
+          ref: {% raw %}${{ github.head_ref || github.ref }}{% endraw %}
 
       # Ref: https://docs.astral.sh/uv/guides/integration/github/#installation
       - name: Setup uv
@@ -41,6 +50,33 @@ jobs:
         with:
           version: 3.x
           repo-token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
+
+      # Runs before `task install` on purpose: `uv sync` silently rewrites a
+      # stale uv.lock, which would hide the very drift this step exists to catch.
+      - name: Check uv.lock is up to date
+        id: lock_check
+        working-directory: {{ mcp_app_name }}
+        continue-on-error: true
+        run: |
+          echo "Checking uv.lock matches pyproject.toml. If this fails, run 'task lock' and commit the result."
+          task lock-check
+
+      - name: Regenerate stale uv.lock and push to PR
+        if: {% raw %}steps.lock_check.outcome == 'failure' && github.event_name == 'pull_request' && matrix.python-version == '3.11'{% endraw %}
+        working-directory: {{ mcp_app_name }}
+        run: |
+          task lock
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git commit -m "chore: regenerate uv.lock"
+          git push origin HEAD:{% raw %}${{ github.head_ref }}{% endraw %}
+
+      - name: Fail if uv.lock was stale
+        if: {% raw %}steps.lock_check.outcome == 'failure'{% endraw %}
+        run: |
+          echo "::error::{{ mcp_app_name }}/uv.lock is out of date with pyproject.toml."
+          exit 1
 
       - name: Install Dependencies
         working-directory: {{ mcp_app_name }}

@@ -175,6 +175,20 @@ tasks:
       - "{{.UV_CMD}} run mypy --pretty --exclude 'app/tests' ."
     silent: true
 
+  lock-check:
+    desc: "🔒 Fail if uv.lock is out of date with pyproject.toml"
+    cmds:
+      - "{{.UV_CMD}} lock --check"
+    silent: true
+
+  lock:
+    desc: "🔒 Regenerate uv.lock from scratch"
+    cmds:
+      - echo "🔒 Regenerating uv.lock"
+      - rm -f uv.lock
+      - "{{.UV_CMD}} lock"
+    silent: true
+
   test:
     desc: "🧪 Run tests"
     cmds:
