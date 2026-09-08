@@ -15,16 +15,11 @@ on:
       - "template/**"
       - "copier.yml"
       - ".github/workflows/afcomponentmcp-server-test.yaml"
-  # Lets the "Trigger a fresh CI run" step below re-run this workflow after
-  # auto-pushing a regenerated uv.lock — a GITHUB_TOKEN push doesn't trigger
-  # push/pull_request events on its own, so this is how the new commit gets checked.
-  workflow_dispatch: {}
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 permissions:
   contents: write
-  actions: write
 jobs:
   test-mcp-server:
     name: "Test MCP Server Startup & Tools"
@@ -67,6 +62,10 @@ jobs:
         env:
           UV_CACHE_DIR: /.uv_cache
 
+      # Fixes and continues in the SAME run — no second triggered run, so no
+      # bot-actor approval gate ever comes into play. The freshly regenerated
+      # ./rendered/mcp_server/uv.lock is what the rest of this job installs
+      # and tests against; the push just carries the fix back to the branch.
       - name: Regenerate stale uv.lock and push it to this PR branch
         if: steps.lock_check.outcome == 'failure' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
@@ -88,27 +87,13 @@ jobs:
         env:
           UV_CACHE_DIR: /.uv_cache
 
-      # A GITHUB_TOKEN push doesn't trigger a new push/pull_request run on its own
-      # (GitHub's anti-recursion rule), so kick one off explicitly via workflow_dispatch.
-      - name: Trigger a fresh CI run on the regenerated branch
-        if: steps.lock_check.outcome == 'failure' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+      # Only reached when we couldn't self-heal: a fork PR (can't push to someone
+      # else's fork) or a push straight to main (auto-committing there is worse
+      # than failing loudly). A same-repo PR never hits this — it's fixed above.
+      - name: Fail if uv.lock was stale and could not be auto-fixed
+        if: steps.lock_check.outcome == 'failure' && !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
         run: |
-          curl -sS -X POST \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/afcomponentmcp-server-test.yaml/dispatches" \
-            -d "{\"ref\":\"${GITHUB_HEAD_REF}\"}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Fail if uv.lock was stale
-        if: steps.lock_check.outcome == 'failure'
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
-            echo "::error::uv.lock was stale. It has been regenerated and pushed to this branch, and a fresh CI run was triggered — check that run instead of this one."
-          else
-            echo "::error::uv.lock is out of date with pyproject.toml. Run 'task lock' at the repo root, commit the regenerated template/{{mcp_app_name_file}}/uv.lock.jinja, and push."
-          fi
+          echo "::error::uv.lock is out of date with pyproject.toml. Run 'task lock' at the repo root, commit the regenerated template/{{mcp_app_name_file}}/uv.lock.jinja, and push."
           exit 1
 
       - name: Install dependencies
