@@ -54,7 +54,7 @@ class MCPAppEnvironmentVarNames(Enum):
     MCP_SERVER_PROMPT_REGISTRATION_DUPLICATE_BEHAVIOR = auto()
     OTEL_ATTRIBUTES = auto()
     OTEL_ENABLED = auto()
-    OTEL_ENABLED_HTTP_INSTRUMENTORS = ()
+    OTEL_ENABLED_HTTP_INSTRUMENTORS = auto()
     OTEL_COLLECTOR_BASE_URL = auto()
     OTEL_ENTITY_ID = auto()
     AUTH_RESOLUTION_STRATEGY = auto()  # requires method to evaluate
