@@ -237,7 +237,7 @@ class TestOAuthAndWellKnownEnvVars:
             {
                 "name": ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_ENV_VAR,
                 "value": "true",
-            "source": "string",
+                "source": "string",
             },
             {
                 "name": ENABLE_OAUTH_CLAIM_VALIDATION_ENV_VAR,
@@ -263,7 +263,7 @@ class TestOAuthAndWellKnownEnvVars:
                 "name": XAA_SCOPES_ENV_VAR,
                 "value": "scope",
                 "source": "string",
-            }
+            },
         ]
 
     def test_only_the_flags_when_no_metadata_is_configured(self) -> None:
@@ -271,7 +271,7 @@ class TestOAuthAndWellKnownEnvVars:
             {
                 "name": ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_ENV_VAR,
                 "value": "false",
-            "source": "string",
+                "source": "string",
             },
             {
                 "name": ENABLE_OAUTH_CLAIM_VALIDATION_ENV_VAR,

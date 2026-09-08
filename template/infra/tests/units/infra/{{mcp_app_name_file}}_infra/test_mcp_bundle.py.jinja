@@ -34,6 +34,7 @@ from infra.{{mcp_app_name_file}}_infra.workload import (
     PROVIDED_DOCKERFILE_BUILD_DIR_IGNORE_PATTERNS,
 )
 
+
 def test_merge_source_files_keeps_last_duplicate_relative_path():
     merged = merge_source_files(
         [("/tmp/a", "requirements.txt"), ("/tmp/b", "app/main.py")],

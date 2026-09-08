@@ -54,8 +54,6 @@ from .mcp_api_keys import (
 from .mcp_bundle import (
     FileBundler,
     get_workload_source_files,
-    stage_workload_build_dir,
-    workload_build_dir,
 )
 from .mcp_cli_configs import tool_flag_env_vars
 from .mcp_execution_environment import provision_mcp_execution_environment
@@ -83,9 +81,7 @@ DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
 def _require_env(name: str) -> str:
     value = os.getenv(name, "").strip()
     if not value:
-        message = (
-            f"{name} is required for MCP_DEPLOYMENT_TYPE 'datarobot-workload' or 'datarobot-workload-preview'"
-        )
+        message = (f"{name} is required for MCP_DEPLOYMENT_TYPE 'datarobot-workload' or 'datarobot-workload-preview'")
         pulumi.error(message)
         raise RuntimeError(message)
     return value
