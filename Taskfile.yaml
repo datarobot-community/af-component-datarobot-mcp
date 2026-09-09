@@ -41,6 +41,36 @@ tasks:
       - uv run ruff check "$SRCDIR" --config "$APPDIR"/pyproject.toml "$SRCDIR"
       - uv run mypy --pretty "$SRCDIR"
 
+  lock-check:
+    desc: "🔒 Fail if the committed uv.lock is stale against a fresh render of pyproject.toml.jinja"
+    cmds:
+      - echo "🔒 Checking uv.lock"
+      - rm -rf ./tmp/lock-check
+      - uv run copier copy --defaults --trust --vcs-ref=HEAD . ./tmp/lock-check
+      - uv lock --check --directory ./tmp/lock-check/mcp_server
+
+  lock:
+    desc: "🔒 Regenerate uv.lock cleanly and write it back into the template"
+    vars:
+      APP_TEMPLATE_DIR: './template/{{"{{"}}mcp_app_name_file{{"}}"}}'
+    cmds:
+      - echo "🔒 Regenerating uv.lock"
+      - rm -rf ./tmp/lock-check
+      - uv run copier copy --defaults --trust --vcs-ref=HEAD . ./tmp/lock-check
+      - rm -f ./tmp/lock-check/mcp_server/uv.lock
+      - uv lock --directory ./tmp/lock-check/mcp_server
+      - |
+        python3 -c '
+        ob, cb = "{" * 2, "}" * 2
+        placeholder = ob + " mcp_app_name | replace(\"_\", \"-\") " + cb
+        p = "./tmp/lock-check/mcp_server/uv.lock"
+        out = "{{.APP_TEMPLATE_DIR}}/uv.lock.jinja"
+        content = open(p).read()
+        content = content.replace("name = \"mcp-server\"", "name = \"" + placeholder + "\"", 1)
+        open(out, "w").write(content)
+        '
+      - echo "🔒 Wrote {{.APP_TEMPLATE_DIR}}/uv.lock.jinja — review and commit it"
+
   validate-windows-compatibility:
     desc: "Validate that file paths don't contain characters illegal on Windows"
     cmds:
