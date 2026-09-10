@@ -169,7 +169,13 @@ def user_param_env_vars() -> list[dict[str, str]]:
             }
         )
     for el in MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS:
-        env_vars.append(dr_credential_env_var(str(el.name).upper(), el.value))
+        api_token_credential = pulumi_datarobot.ApiTokenCredential(
+            f"[{PROJECT_NAME}] {el.name}",
+            args=pulumi_datarobot.ApiTokenCredentialArgs(api_token=el.value),
+        )
+        env_vars.append(
+            dr_credential_env_var(str(el.name).upper(), api_token_credential.id)
+        )
     return env_vars
 
 

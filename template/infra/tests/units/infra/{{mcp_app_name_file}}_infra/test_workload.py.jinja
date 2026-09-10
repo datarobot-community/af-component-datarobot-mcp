@@ -211,24 +211,30 @@ class TestUserParamEnvVars:
             assert actual[1]["name"] == "MY_SECRET"
 
     def test_credential_params_become_dr_credential_references(self) -> None:
-        credential_params = [
+                credential_params = [
             MCPRuntimeParameterAPITokenCredential(
-                name="my_secret", value="credential-id"
+                name="my_secret", value="credential-raw-value"
             ),
         ]
+        mock_pulumi_output = Mock(id="some-id")
+        mock_api_token_credential_cls = MagicMock(return_value=mock_pulumi_output)
         with (
             patch.object(
                 workload, "MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS", credential_params
             ),
             patch.object(workload, "MCP_USER_RUNTIME_PARAMETERS", []),
+            patch.object(
+                pulumi_datarobot, "ApiTokenCredential", mock_api_token_credential_cls
+            ),
         ):
-            env_vars = workload.user_param_env_vars()
+            actual = workload.user_param_env_vars()
 
-        assert env_vars == [
+        mock_api_token_credential_cls.assert_called_once()
+        assert actual == [
             {
                 "name": "MY_SECRET",
                 "source": "dr-credential",
-                "drCredentialId": "credential-id",
+                "drCredentialId": mock_pulumi_output.id,
                 "key": DR_CREDENTIAL_API_TOKEN_KEY,
             },
         ]
