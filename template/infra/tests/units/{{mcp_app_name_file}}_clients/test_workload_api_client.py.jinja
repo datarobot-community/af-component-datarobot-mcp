@@ -17,7 +17,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from infra.{{mcp_app_name_file}}_infra.mcp_oauth_configs import WorkloadArtifactContainerRoute
 from {{mcp_app_name_file}}_clients.workload_api_client import (
     WORKLOAD_ARTIFACT_TYPE,
     ArtifactSpecFromImageBuildConfig,
@@ -32,6 +31,8 @@ from {{mcp_app_name_file}}_clients.workload_api_client import (
     _create_and_build_artifact,
     build_artifact_from_image_uri,
 )
+from infra.{{mcp_app_name_file}}_infra.mcp_oauth_configs import WorkloadArtifactContainerRoute
+from infra.{{mcp_app_name_file}}_infra.mcp_utils import DR_CREDENTIAL_API_TOKEN_KEY
 
 
 def test_workload_artifact_spec_type_is_service():
@@ -79,7 +80,7 @@ def test_image_uri_pulumi_args_use_the_provider_shape():
                 "name": "SESSION_SECRET_KEY",
                 "source": "dr-credential",
                 "drCredentialId": "cred-123",
-                "key": "apiToken",
+                "key": DR_CREDENTIAL_API_TOKEN_KEY,
             },
         ],
         routes=[
@@ -104,7 +105,7 @@ def test_image_uri_pulumi_args_use_the_provider_shape():
             "name": "SESSION_SECRET_KEY",
             "source": "dr-credential",
             "credential_id": "cred-123",
-            "key": "apiToken",
+            "key": DR_CREDENTIAL_API_TOKEN_KEY,
         },
     ]
 
