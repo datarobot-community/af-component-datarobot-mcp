@@ -211,7 +211,7 @@ class TestUserParamEnvVars:
             assert actual[1]["name"] == "MY_SECRET"
 
     def test_credential_params_become_dr_credential_references(self) -> None:
-                credential_params = [
+        credential_params = [
             MCPRuntimeParameterAPITokenCredential(
                 name="my_secret", value="credential-raw-value"
             ),
