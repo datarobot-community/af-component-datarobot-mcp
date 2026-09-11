@@ -50,10 +50,10 @@ tasks:
     cmds:
       - |
         case "{{.RAW_ENABLE_MCP_ON_WORKLOAD_API}}" in
-          true|1|yes|on|y)
+          true)
             echo "✅ ENABLE_MCP_ON_WORKLOAD_API resolves to True — deploying as DataRobot workload."
             ;;
-          false|0|no|off|n)
+          false)
             echo "✅ ENABLE_MCP_ON_WORKLOAD_API resolves to False — deploying as DataRobot serverless."
             ;;
           "")
@@ -82,7 +82,7 @@ tasks:
       - "{{.UV_CMD}} sync --all-extras"
       - |
         case "{{.EFFECTIVE_ENABLE_MCP_ON_WORKLOAD_API}}" in
-          false|0|no|off|n)
+          false)
             echo "🔧 Loading and saving MCP item metadata.."
             {{.UV_CMD}} run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata
             ;;

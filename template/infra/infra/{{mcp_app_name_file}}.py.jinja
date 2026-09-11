@@ -126,12 +126,8 @@ INVALID_MCP_DEPLOYMENT_TYPE: Final[str] = "not-found-mcp-deployment-type"
 class InitialConfiguration:
     def __init__(self, configuration_var: str):
         self.configuration_var = configuration_var.strip().lower()
-        self._truthy_values: Final[frozenset[str]] = frozenset(
-            {"true", "1", "yes", "on", "y"}
-        )
-        self._falsy_values: Final[frozenset[str]] = frozenset(
-            {"false", "0", "no", "off", "n"}
-        )
+        self._truthy_values: Final[frozenset[str]] = frozenset({"true"})
+        self._falsy_values: Final[frozenset[str]] = frozenset({"false"})
 
     def _resolve_enable_mcp_on_workload_api(self) -> bool:
         default = False
