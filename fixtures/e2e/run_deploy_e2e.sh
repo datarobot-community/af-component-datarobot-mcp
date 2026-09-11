@@ -26,6 +26,31 @@ RENDERED_DIR="$(resolve_workspace_path "${WORKSPACE}" "${RENDERED_DIR}")"
 
 echo "Running deployment E2E case: ${CASE_NAME}"
 
+validate_deployment_mode() {
+  local configured_mode="${ENABLE_MCP_ON_WORKLOAD_API:-}"
+
+  case "${CASE_NAME}" in
+    serverless-*)
+      if [[ "${configured_mode}" != "" && "${configured_mode}" != "false" ]]; then
+        echo "::error::${CASE_NAME} requires ENABLE_MCP_ON_WORKLOAD_API to be false or empty; got '${configured_mode}'"
+        exit 1
+      fi
+      ;;
+    workload-*)
+      if [[ "${configured_mode}" != "true" ]]; then
+        echo "::error::${CASE_NAME} requires ENABLE_MCP_ON_WORKLOAD_API=true; got '${configured_mode}'"
+        exit 1
+      fi
+      ;;
+    *)
+      echo "::error::Unknown deployment mode for E2E case '${CASE_NAME}'. Use a serverless-* or workload-* case name."
+      exit 1
+      ;;
+  esac
+}
+
+validate_deployment_mode
+
 append_env_var() {
   local key="$1"
   local value="$2"
