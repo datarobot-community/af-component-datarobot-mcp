@@ -1,0 +1,27 @@
+---
+# True when this PR changes pyproject.toml.jinja (dependency bump). Standalone server/E2E
+# workflows skip so Update uv.lock owns lock + tests without duplicate deploys.
+name: Dep PR path filter
+on:
+  workflow_call:
+    outputs:
+      pyproject:
+        description: "true if template pyproject.toml.jinja changed in the PR"
+        value: ${{ jobs.filter.outputs.pyproject }}
+jobs:
+  filter:
+    name: Check for pyproject dependency change
+    runs-on: ubuntu-latest
+    outputs:
+      pyproject: ${{ steps.filter.outputs.pyproject }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Detect pyproject.toml.jinja in PR diff
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            pyproject:
+              - 'template/{{mcp_app_name_file}}/pyproject.toml.jinja'

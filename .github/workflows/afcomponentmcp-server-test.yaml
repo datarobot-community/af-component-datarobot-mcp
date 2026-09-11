@@ -27,8 +27,20 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  dep-pr-filter:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/reusable-dep-pr-paths-filter.yaml
+
   test-mcp-server:
     name: "Test MCP Server Startup & Tools"
+    needs: dep-pr-filter
+    if: >-
+      always() &&
+      (github.event_name == 'workflow_call' ||
+      (github.event_name == 'pull_request' &&
+      needs.dep-pr-filter.result == 'success' &&
+      needs.dep-pr-filter.outputs.pyproject != 'true') ||
+      github.event_name == 'push')
     runs-on: "ubuntu-latest"
     container:
       image: ghcr.io/astral-sh/uv:python3.11-bookworm

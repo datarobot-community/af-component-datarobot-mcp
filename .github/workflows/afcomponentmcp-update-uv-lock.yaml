@@ -1,6 +1,6 @@
 ---
-# Regenerates uv.lock.jinja on pyproject dependency changes, then runs server + E2E
-# in this same workflow run. Bot pushes do not retrigger separate workflows (GITHUB_TOKEN).
+# Dependency PR pipeline: regenerate/push uv.lock, server smoke test, then four E2E
+# deploys in parallel. Standalone server/E2E skip when pyproject changes (no duplicates).
 name: Update uv.lock
 on:
   pull_request:
@@ -138,40 +138,14 @@ jobs:
     with:
       git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
 
-  e2e-workload-docker:
-    name: E2E workload-docker (post-lock)
-    needs: update-uv-lock
-    if: >-
-      github.event_name == 'pull_request' &&
-      needs.update-uv-lock.result == 'success'
-    uses: ./.github/workflows/reusable-deploy-e2e.yaml
-    secrets: inherit
-    with:
-      use-case-id: workload-docker
-      deploy-timeout-minutes: 18
-      skip-destroy: ${{ 'false' }}
-      git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
-
-  e2e-workload-ee:
-    name: E2E workload-ee (post-lock)
-    needs: update-uv-lock
-    if: >-
-      github.event_name == 'pull_request' &&
-      needs.update-uv-lock.result == 'success'
-    uses: ./.github/workflows/reusable-deploy-e2e.yaml
-    secrets: inherit
-    with:
-      use-case-id: workload-ee
-      deploy-timeout-minutes: 18
-      skip-destroy: ${{ 'false' }}
-      git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
-
   e2e-serverless-docker:
-    name: E2E serverless-docker (post-lock)
-    needs: update-uv-lock
+    name: E2E serverless-docker
+    needs:
+      - update-uv-lock
+      - server-test
     if: >-
       github.event_name == 'pull_request' &&
-      needs.update-uv-lock.result == 'success'
+      needs.server-test.result == 'success'
     uses: ./.github/workflows/reusable-deploy-e2e.yaml
     secrets: inherit
     with:
@@ -181,14 +155,48 @@ jobs:
       git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
 
   e2e-serverless-ee:
-    name: E2E serverless-ee (post-lock)
-    needs: update-uv-lock
+    name: E2E serverless-ee
+    needs:
+      - update-uv-lock
+      - server-test
     if: >-
       github.event_name == 'pull_request' &&
-      needs.update-uv-lock.result == 'success'
+      needs.server-test.result == 'success'
     uses: ./.github/workflows/reusable-deploy-e2e.yaml
     secrets: inherit
     with:
       use-case-id: serverless-ee
+      skip-destroy: ${{ 'false' }}
+      git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
+
+  e2e-workload-docker:
+    name: E2E workload-docker
+    needs:
+      - update-uv-lock
+      - server-test
+    if: >-
+      github.event_name == 'pull_request' &&
+      needs.server-test.result == 'success'
+    uses: ./.github/workflows/reusable-deploy-e2e.yaml
+    secrets: inherit
+    with:
+      use-case-id: workload-docker
+      deploy-timeout-minutes: 18
+      skip-destroy: ${{ 'false' }}
+      git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
+
+  e2e-workload-ee:
+    name: E2E workload-ee
+    needs:
+      - update-uv-lock
+      - server-test
+    if: >-
+      github.event_name == 'pull_request' &&
+      needs.server-test.result == 'success'
+    uses: ./.github/workflows/reusable-deploy-e2e.yaml
+    secrets: inherit
+    with:
+      use-case-id: workload-ee
+      deploy-timeout-minutes: 18
       skip-destroy: ${{ 'false' }}
       git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
