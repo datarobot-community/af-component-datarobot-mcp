@@ -51,22 +51,22 @@ tasks:
       - |
         case "{{.RAW_ENABLE_MCP_ON_WORKLOAD_API}}" in
           true)
-            echo "✅ ENABLE_MCP_ON_WORKLOAD_API resolves to True — deploying as DataRobot workload."
+            echo "✅ ENABLE_MCP_ON_WORKLOAD_API resolves to true — deploying as DataRobot workload."
             ;;
           false)
-            echo "✅ ENABLE_MCP_ON_WORKLOAD_API resolves to False — deploying as DataRobot serverless."
+            echo "✅ ENABLE_MCP_ON_WORKLOAD_API resolves to false — deploying as DataRobot serverless."
             ;;
           "")
             echo "⚠️  ENABLE_MCP_ON_WORKLOAD_API is not set; deploy will default to DataRobot serverless."
             echo "ℹ️  To choose explicitly, set in .env or your shell:"
-            echo "       ENABLE_MCP_ON_WORKLOAD_API=False for DataRobot serverless deployment"
-            echo "    or ENABLE_MCP_ON_WORKLOAD_API=True for DataRobot workload deployment."
+            echo "       ENABLE_MCP_ON_WORKLOAD_API=false for DataRobot serverless deployment"
+            echo "    or ENABLE_MCP_ON_WORKLOAD_API=true for DataRobot workload deployment."
             ;;
           *)
             echo "❌  Invalid ENABLE_MCP_ON_WORKLOAD_API '{{.RAW_ENABLE_MCP_ON_WORKLOAD_API}}'."
             echo "ℹ️  Set a valid value in .env or your shell:"
-            echo "       ENABLE_MCP_ON_WORKLOAD_API=False for DataRobot serverless deployment"
-            echo "    or ENABLE_MCP_ON_WORKLOAD_API=True for DataRobot workload deployment."
+            echo "       ENABLE_MCP_ON_WORKLOAD_API=false for DataRobot serverless deployment"
+            echo "    or ENABLE_MCP_ON_WORKLOAD_API=true for DataRobot workload deployment."
             exit 1
             ;;
         esac
