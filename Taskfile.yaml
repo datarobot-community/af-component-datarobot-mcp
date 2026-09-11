@@ -57,18 +57,11 @@ tasks:
       - echo "🔒 Regenerating uv.lock"
       - rm -rf ./tmp/lock-check
       - uv run copier copy --defaults --trust --vcs-ref=HEAD . ./tmp/lock-check
-      - rm -f ./tmp/lock-check/mcp_server/uv.lock
       - uv lock --directory ./tmp/lock-check/mcp_server
-      - |
-        python3 -c '
-        ob, cb = "{" * 2, "}" * 2
-        placeholder = ob + " mcp_app_name | replace(\"_\", \"-\") " + cb
-        p = "./tmp/lock-check/mcp_server/uv.lock"
-        out = "{{.APP_TEMPLATE_DIR}}/uv.lock.jinja"
-        content = open(p).read()
-        content = content.replace("name = \"mcp-server\"", "name = \"" + placeholder + "\"", 1)
-        open(out, "w").write(content)
-        '
+      - >-
+        python3 ./.github/scripts/write_uv_lock_jinja.py
+        ./tmp/lock-check/mcp_server/uv.lock
+        {{.APP_TEMPLATE_DIR}}/uv.lock.jinja
       - echo "🔒 Wrote {{.APP_TEMPLATE_DIR}}/uv.lock.jinja — review and commit it"
 
   validate-windows-compatibility:

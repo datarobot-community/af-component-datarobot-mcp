@@ -1,0 +1,49 @@
+name: Regenerate uv.lock template
+description: >-
+  Run uv lock against a rendered MCP app tree and write template/{{mcp_app_name_file}}/uv.lock.jinja
+  with the copier package-name placeholder restored.
+inputs:
+  rendered-mcp-dir:
+    description: Directory containing rendered pyproject.toml (default copier output)
+    required: false
+    default: ./rendered/mcp_server
+  template-lock-jinja:
+    description: Path to uv.lock.jinja in the component template
+    required: false
+    default: ./template/{{mcp_app_name_file}}/uv.lock.jinja
+  rendered-package-name:
+    description: Root package name in the rendered lock (mcp_server → mcp-server)
+    required: false
+    default: mcp-server
+  upgrade-packages:
+    description: >-
+      Newline-separated PyPI names to refresh with `uv lock --upgrade-package`.
+      Leave empty to update the existing lock in place (minimal diff).
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Regenerate uv.lock
+      shell: bash
+      run: |
+        set -euo pipefail
+        dir="${{ inputs.rendered-mcp-dir }}"
+        args=()
+        while IFS= read -r pkg; do
+          if [ -n "${pkg}" ]; then
+            args+=(--upgrade-package "${pkg}")
+          fi
+        done <<< "${{ inputs.upgrade-packages }}"
+        # Keep the rendered template lock and patch it — do not delete uv.lock (full re-resolve).
+        uv lock --directory "${dir}" "${args[@]}"
+      env:
+        UV_CACHE_DIR: /.uv_cache
+
+    - name: Write uv.lock.jinja with copier placeholder
+      shell: bash
+      run: |
+        python3 "${GITHUB_WORKSPACE}/.github/scripts/write_uv_lock_jinja.py" \
+          "${{ inputs.rendered-mcp-dir }}/uv.lock" \
+          "${{ inputs.template-lock-jinja }}" \
+          --rendered-package-name "${{ inputs.rendered-package-name }}"

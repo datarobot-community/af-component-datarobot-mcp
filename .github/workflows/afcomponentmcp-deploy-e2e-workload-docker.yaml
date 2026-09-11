@@ -6,6 +6,7 @@ on:
     paths:
       - "fixtures/e2e/**"
       - "template/**"
+      - "!template/{{mcp_app_name_file}}/pyproject.toml.jinja"
       - "copier.yml"
       - ".github/workflows/reusable-deploy-e2e.yaml"
       - ".github/workflows/afcomponentmcp-deploy-e2e-workload-docker.yaml"
@@ -34,10 +35,20 @@ concurrency:
   # the deployed DataRobot resources. New pushes queue behind the live run.
   cancel-in-progress: false
 jobs:
+  dep-pr-filter:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/reusable-dep-pr-paths-filter.yaml
+
   # Job name is the middle check-name segment; the workflow name is the
   # shared "E2E" prefix -> checks read: E2E / workload-docker / Deploy|Destroy.
   e2e:
     name: workload-docker
+    needs: dep-pr-filter
+    if: >-
+      always() &&
+      (github.event_name != 'pull_request' ||
+      (needs.dep-pr-filter.result == 'success' &&
+      needs.dep-pr-filter.outputs.pyproject != 'true'))
     uses: ./.github/workflows/reusable-deploy-e2e.yaml
     secrets: inherit
     with:
