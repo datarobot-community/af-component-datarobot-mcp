@@ -38,15 +38,17 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Checkout
+      - name: Checkout (reusable / workflow_call)
+        if: github.event_name == 'workflow_call'
         uses: "actions/checkout@v6"
         with:
-          ref: >-
-            ${{
-              inputs.git-ref != '' && inputs.git-ref ||
-              (github.event_name == 'pull_request' && github.head_ref) ||
-              github.ref
-            }}
+          ref: ${{ inputs.git-ref != '' && inputs.git-ref || github.ref }}
+
+      - name: Checkout
+        if: github.event_name != 'workflow_call'
+        uses: "actions/checkout@v6"
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
 
       - name: Setup caching
         uses: ./.github/actions/setup-caching
