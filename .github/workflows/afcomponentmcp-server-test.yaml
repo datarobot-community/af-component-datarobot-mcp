@@ -1,6 +1,13 @@
 ---
 name: af-component-datarobot-mcp Server
 on:
+  workflow_call:
+    inputs:
+      git-ref:
+        description: "Optional commit or branch to checkout (used after uv.lock bot push)"
+        required: false
+        type: string
+        default: ""
   push:
     branches: ["main"]
     paths:
@@ -33,6 +40,13 @@ jobs:
     steps:
       - name: Checkout
         uses: "actions/checkout@v6"
+        with:
+          ref: >-
+            ${{
+              inputs.git-ref != '' && inputs.git-ref ||
+              (github.event_name == 'pull_request' && github.head_ref) ||
+              github.ref
+            }}
 
       - name: Setup caching
         uses: ./.github/actions/setup-caching
