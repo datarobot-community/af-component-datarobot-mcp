@@ -149,7 +149,7 @@ jobs:
     with:
       use-case-id: workload-docker
       deploy-timeout-minutes: 18
-      skip-destroy: "false"
+      skip-destroy: ${{ 'false' }}
       git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
 
   e2e-workload-ee:
@@ -163,7 +163,7 @@ jobs:
     with:
       use-case-id: workload-ee
       deploy-timeout-minutes: 18
-      skip-destroy: "false"
+      skip-destroy: ${{ 'false' }}
       git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
 
   e2e-serverless-docker:
@@ -177,7 +177,7 @@ jobs:
     with:
       use-case-id: serverless-docker
       deploy-timeout-minutes: 15
-      skip-destroy: "false"
+      skip-destroy: ${{ 'false' }}
       git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}
 
   e2e-serverless-ee:
@@ -190,5 +190,5 @@ jobs:
     secrets: inherit
     with:
       use-case-id: serverless-ee
-      skip-destroy: "false"
+      skip-destroy: ${{ 'false' }}
       git-ref: ${{ needs.update-uv-lock.outputs.head_sha }}

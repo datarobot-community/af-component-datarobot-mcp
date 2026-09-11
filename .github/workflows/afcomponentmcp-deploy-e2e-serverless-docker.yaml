@@ -6,11 +6,10 @@ on:
     paths:
       - "fixtures/e2e/**"
       - "template/**"
+      - "!template/{{mcp_app_name_file}}/pyproject.toml.jinja"
       - "copier.yml"
       - ".github/workflows/reusable-deploy-e2e.yaml"
       - ".github/workflows/afcomponentmcp-deploy-e2e-serverless-docker.yaml"
-    paths-ignore:
-      - "template/{{mcp_app_name_file}}/pyproject.toml.jinja"
   push:
     branches: ["main"]
     paths:

@@ -20,11 +20,9 @@ on:
     paths:
       - "fixtures/**"
       - "template/**"
+      - "!template/{{mcp_app_name_file}}/pyproject.toml.jinja"
       - "copier.yml"
       - ".github/workflows/afcomponentmcp-server-test.yaml"
-    paths-ignore:
-      # pull_request only: defer until Update uv.lock commits uv.lock.jinja (push still runs checks).
-      - "template/{{mcp_app_name_file}}/pyproject.toml.jinja"
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
