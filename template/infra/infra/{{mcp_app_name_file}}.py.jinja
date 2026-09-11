@@ -141,13 +141,13 @@ class InitialConfiguration:
             )
             return default
         if self.configuration_var in self._truthy_values:
-            pulumi.info(f"ENABLE_MCP_ON_WORKLOAD_API value resolved to True.")
+            pulumi.info("ENABLE_MCP_ON_WORKLOAD_API value resolved to True.")
             return True
         if self.configuration_var in self._falsy_values:
-            pulumi.info(f"ENABLE_MCP_ON_WORKLOAD_API value resolved to False.")
+            pulumi.info("ENABLE_MCP_ON_WORKLOAD_API value resolved to False.")
             return False
         pulumi.error(
-            f"ENABLE_MCP_ON_WORKLOAD_API user's value is invalid, it should be True or False."
+            "ENABLE_MCP_ON_WORKLOAD_API user's value is invalid, it should be True or False."
         )
         sys.exit(1)
 
