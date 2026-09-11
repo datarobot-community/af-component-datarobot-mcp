@@ -37,7 +37,7 @@ use_cases:
     description: Custom model (serverless) deploy with pinned GenAI Agents EE
     workflow: afcomponentmcp-deploy-e2e-serverless-ee.yaml
     env:
-      ENABLE_MCP_ON_WORKLOAD_API: "False"
+      ENABLE_MCP_ON_WORKLOAD_API: "false"
       MCP_WORKLOAD_DOCKERFILE_PATH: ""
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "[DataRobot] Python 3.11 GenAI Agents"
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
@@ -46,7 +46,7 @@ use_cases:
     description: Workload deploy using root Dockerfile (no pinned EE)
     workflow: afcomponentmcp-deploy-e2e-workload-docker.yaml
     env:
-      ENABLE_MCP_ON_WORKLOAD_API: "True"
+      ENABLE_MCP_ON_WORKLOAD_API: "true"
       MCP_WORKLOAD_DOCKERFILE_PATH: ""
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: ""
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
@@ -55,7 +55,7 @@ use_cases:
     description: Workload deploy with generated Dockerfile and pinned GenAI Agents EE
     workflow: afcomponentmcp-deploy-e2e-workload-ee.yaml
     env:
-      ENABLE_MCP_ON_WORKLOAD_API: "True"
+      ENABLE_MCP_ON_WORKLOAD_API: "true"
       MCP_WORKLOAD_DOCKERFILE_PATH: none
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "[DataRobot] Python 3.11 GenAI Agents"
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
