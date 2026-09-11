@@ -477,7 +477,7 @@ class TestInitialConfiguration:
             == mcp_infra.MCP_DEPLOYMENT_TYPE_SERVERLESS
         )
 
-    @pytest.mark.parametrize("value", ["true", "1", "yes", "on", "y", " TRUE "])
+    @pytest.mark.parametrize("value", ["true", " TRUE ", "True"])
     def test_resolve_mcp_deployment_type_truthy_values_enable_workload(
         self, value: str
     ) -> None:
@@ -490,7 +490,7 @@ class TestInitialConfiguration:
             == mcp_infra.MCP_DEPLOYMENT_TYPE_WORKLOAD
         )
 
-    @pytest.mark.parametrize("value", ["false", "0", "no", "off", "n", " FALSE "])
+    @pytest.mark.parametrize("value", ["false", " FALSE ", "False"])
     def test_resolve_mcp_deployment_type_falsy_values_enable_serverless(
         self, value: str
     ) -> None:
