@@ -26,6 +26,31 @@ RENDERED_DIR="$(resolve_workspace_path "${WORKSPACE}" "${RENDERED_DIR}")"
 
 echo "Running deployment E2E case: ${CASE_NAME}"
 
+validate_deployment_mode() {
+  local configured_mode="${ENABLE_MCP_ON_WORKLOAD_API:-}"
+
+  case "${CASE_NAME}" in
+    serverless-*)
+      if [[ "${configured_mode}" != "" && "${configured_mode}" != "false" ]]; then
+        echo "::error::${CASE_NAME} requires ENABLE_MCP_ON_WORKLOAD_API to be false or empty; got '${configured_mode}'"
+        exit 1
+      fi
+      ;;
+    workload-*)
+      if [[ "${configured_mode}" != "true" ]]; then
+        echo "::error::${CASE_NAME} requires ENABLE_MCP_ON_WORKLOAD_API=true; got '${configured_mode}'"
+        exit 1
+      fi
+      ;;
+    *)
+      echo "::error::Unknown deployment mode for E2E case '${CASE_NAME}'. Use a serverless-* or workload-* case name."
+      exit 1
+      ;;
+  esac
+}
+
+validate_deployment_mode
+
 append_env_var() {
   local key="$1"
   local value="$2"
@@ -137,7 +162,7 @@ append_env_var DATAROBOT_ENDPOINT "${DATAROBOT_ENDPOINT}"
 append_env_var DATAROBOT_API_TOKEN "${DATAROBOT_API_TOKEN}"
 append_env_var PULUMI_CONFIG_PASSPHRASE "${PULUMI_CONFIG_PASSPHRASE}"
 append_env_var SESSION_SECRET_KEY "${SESSION_SECRET_KEY}"
-append_env_var MCP_DEPLOYMENT_TYPE "${MCP_DEPLOYMENT_TYPE:-}"
+append_env_var ENABLE_MCP_ON_WORKLOAD_API "${ENABLE_MCP_ON_WORKLOAD_API:-}"
 append_env_var MCP_WORKLOAD_DOCKERFILE_PATH "${MCP_WORKLOAD_DOCKERFILE_PATH:-}"
 # DEFAULT: reuse an existing EE (skip Docker build). NAME: only when DEFAULT is empty;
 # names a new EE built from scratch (CI uses a stable NAME — see use-cases.yaml header).
@@ -179,9 +204,9 @@ if [[ -n "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME:-}" && -z "${DATAROBOT_DEFA
   fi
 fi
 
-effective_deployment_type="${MCP_DEPLOYMENT_TYPE:-datarobot-serverless}"
-if [[ "${effective_deployment_type}" == "datarobot-serverless" ]]; then
-  echo "Loading MCP item metadata for datarobot-serverless deploy"
+is_workload_deployment="${ENABLE_MCP_ON_WORKLOAD_API:-false}"
+if [[ "${is_workload_deployment}" == "false" ]]; then
+  echo "Loading MCP item metadata for DataRobot serverless deploy"
   uv run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata
 fi
 

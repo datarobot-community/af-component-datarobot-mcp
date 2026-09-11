@@ -27,7 +27,7 @@ except ImportError as exc:  # pragma: no cover - CI installs pyyaml via uvx
     ) from exc
 
 ENV_KEYS = (
-    "MCP_DEPLOYMENT_TYPE",
+    "ENABLE_MCP_ON_WORKLOAD_API",
     "MCP_WORKLOAD_DOCKERFILE_PATH",
     "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT",
     "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
