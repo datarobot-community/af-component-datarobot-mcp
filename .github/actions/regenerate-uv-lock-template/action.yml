@@ -15,15 +15,28 @@ inputs:
     description: Root package name in the rendered lock (mcp_server → mcp-server)
     required: false
     default: mcp-server
+  upgrade-packages:
+    description: >-
+      Newline-separated PyPI names to refresh with `uv lock --upgrade-package`.
+      Leave empty to update the existing lock in place (minimal diff).
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
     - name: Regenerate uv.lock
       shell: bash
       run: |
-        # Match `task lock`: resolve from pyproject only, not the committed template lock.
-        rm -f "${{ inputs.rendered-mcp-dir }}/uv.lock"
-        uv lock --directory "${{ inputs.rendered-mcp-dir }}"
+        set -euo pipefail
+        dir="${{ inputs.rendered-mcp-dir }}"
+        args=()
+        while IFS= read -r pkg; do
+          if [ -n "${pkg}" ]; then
+            args+=(--upgrade-package "${pkg}")
+          fi
+        done <<< "${{ inputs.upgrade-packages }}"
+        # Keep the rendered template lock and patch it — do not delete uv.lock (full re-resolve).
+        uv lock --directory "${dir}" "${args[@]}"
       env:
         UV_CACHE_DIR: /.uv_cache
 

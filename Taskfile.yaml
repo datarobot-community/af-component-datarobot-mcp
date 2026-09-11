@@ -57,7 +57,6 @@ tasks:
       - echo "🔒 Regenerating uv.lock"
       - rm -rf ./tmp/lock-check
       - uv run copier copy --defaults --trust --vcs-ref=HEAD . ./tmp/lock-check
-      - rm -f ./tmp/lock-check/mcp_server/uv.lock
       - uv lock --directory ./tmp/lock-check/mcp_server
       - >-
         python3 ./.github/scripts/write_uv_lock_jinja.py
