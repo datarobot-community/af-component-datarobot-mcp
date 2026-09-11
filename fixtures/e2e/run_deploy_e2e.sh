@@ -137,7 +137,7 @@ append_env_var DATAROBOT_ENDPOINT "${DATAROBOT_ENDPOINT}"
 append_env_var DATAROBOT_API_TOKEN "${DATAROBOT_API_TOKEN}"
 append_env_var PULUMI_CONFIG_PASSPHRASE "${PULUMI_CONFIG_PASSPHRASE}"
 append_env_var SESSION_SECRET_KEY "${SESSION_SECRET_KEY}"
-append_env_var MCP_DEPLOYMENT_TYPE "${MCP_DEPLOYMENT_TYPE:-}"
+append_env_var ENABLE_MCP_ON_WORKLOAD_API "${ENABLE_MCP_ON_WORKLOAD_API:-}"
 append_env_var MCP_WORKLOAD_DOCKERFILE_PATH "${MCP_WORKLOAD_DOCKERFILE_PATH:-}"
 # DEFAULT: reuse an existing EE (skip Docker build). NAME: only when DEFAULT is empty;
 # names a new EE built from scratch (CI uses a stable NAME — see use-cases.yaml header).
@@ -179,8 +179,8 @@ if [[ -n "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME:-}" && -z "${DATAROBOT_DEFA
   fi
 fi
 
-effective_deployment_type="${MCP_DEPLOYMENT_TYPE:-datarobot-serverless}"
-if [[ "${effective_deployment_type}" == "datarobot-serverless" ]]; then
+effective_deployment_type="${ENABLE_MCP_ON_WORKLOAD_API:-false}"
+if [[ "${effective_deployment_type}" == "false" ]]; then
   echo "Loading MCP item metadata for datarobot-serverless deploy"
   uv run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata
 fi
