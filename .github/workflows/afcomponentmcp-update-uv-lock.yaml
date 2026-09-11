@@ -1,0 +1,96 @@
+---
+name: Update uv.lock
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "template/{{mcp_app_name_file}}/pyproject.toml.jinja"
+      - ".github/workflows/afcomponentmcp-update-uv-lock.yaml"
+      - ".github/actions/regenerate-uv-lock-template/**"
+      - ".github/scripts/write_uv_lock_jinja.py"
+  push:
+    branches: ["main"]
+    paths:
+      - "template/{{mcp_app_name_file}}/pyproject.toml.jinja"
+      - ".github/workflows/afcomponentmcp-update-uv-lock.yaml"
+      - ".github/actions/regenerate-uv-lock-template/**"
+      - ".github/scripts/write_uv_lock_jinja.py"
+concurrency:
+  group: uv-lock-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  update-uv-lock:
+    name: Regenerate uv.lock.jinja
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) && github.head_ref || github.ref }}
+
+      - name: Setup caching
+        uses: ./.github/actions/setup-caching
+        with:
+          python-version: python3.11
+          cache-key-suffix: uv-lock
+          dependency-files: |
+            template/{{mcp_app_name_file}}/pyproject.toml.jinja
+            template/{{mcp_app_name_file}}/uv.lock.jinja
+
+      - name: Render template
+        uses: ./.github/actions/render-copier-instance
+        with:
+          copier-args: "--defaults --trust --vcs-ref=HEAD"
+
+      - name: Check uv.lock is up to date
+        id: lock_check
+        working-directory: ./rendered/mcp_server
+        continue-on-error: true
+        run: uv lock --check
+        env:
+          UV_CACHE_DIR: /.uv_cache
+
+      - name: Regenerate uv.lock.jinja
+        id: regenerate_lock
+        if: >-
+          steps.lock_check.outcome == 'failure' &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: ./.github/actions/regenerate-uv-lock-template
+
+      - name: Verify regenerated lock matches pyproject.toml
+        if: steps.regenerate_lock.outcome == 'success'
+        working-directory: ./rendered/mcp_server
+        run: uv lock --check
+        env:
+          UV_CACHE_DIR: /.uv_cache
+
+      - name: Commit and push lockfile update
+        if: steps.regenerate_lock.outcome == 'success'
+        run: |
+          if git diff --quiet -- "./template/{{mcp_app_name_file}}/uv.lock.jinja"; then
+            echo "::error::uv lock --check failed but regeneration produced no changes to uv.lock.jinja. Run 'task lock' locally and commit the result."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "./template/{{mcp_app_name_file}}/uv.lock.jinja"
+          git commit -m "chore: regenerate uv.lock"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
+
+      - name: Fail if uv.lock is stale and cannot be auto-updated
+        if: >-
+          steps.lock_check.outcome == 'failure' &&
+          !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        run: |
+          echo "::error::uv.lock is out of date with pyproject.toml. Run 'task lock' at the repo root, commit template/{{mcp_app_name_file}}/uv.lock.jinja, and push."
+          exit 1

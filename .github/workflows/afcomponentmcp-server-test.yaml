@@ -15,11 +15,12 @@ on:
       - "template/**"
       - "copier.yml"
       - ".github/workflows/afcomponentmcp-server-test.yaml"
+    paths-ignore:
+      # pull_request only: defer until Update uv.lock commits uv.lock.jinja (push still runs checks).
+      - "template/{{mcp_app_name_file}}/pyproject.toml.jinja"
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
-permissions:
-  contents: write
 jobs:
   test-mcp-server:
     name: "Test MCP Server Startup & Tools"
@@ -32,11 +33,6 @@ jobs:
     steps:
       - name: Checkout
         uses: "actions/checkout@v6"
-        with:
-          # Only pin to the PR head branch for a same-repo PR — that's the one case
-          # where a later step here pushes a fix and needs an accurate parent commit.
-          # Fork PRs and push events keep the default (safe, doesn't attempt a push).
-          ref: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) && github.head_ref || github.ref }}
 
       - name: Setup caching
         uses: ./.github/actions/setup-caching
@@ -53,48 +49,12 @@ jobs:
           copier-args: "--defaults --trust --vcs-ref=HEAD"
 
       - name: Check uv.lock is up to date
-        id: lock_check
         working-directory: ./rendered/mcp_server
-        continue-on-error: true
         run: |
           echo "Checking uv.lock matches pyproject.toml. If this fails, run 'task lock' at the repo root and commit the regenerated template/{{mcp_app_name_file}}/uv.lock.jinja."
           uv lock --check
         env:
           UV_CACHE_DIR: /.uv_cache
-
-      # Fixes and continues in the SAME run — no second triggered run, so no
-      # bot-actor approval gate ever comes into play. The freshly regenerated
-      # ./rendered/mcp_server/uv.lock is what the rest of this job installs
-      # and tests against; the push just carries the fix back to the branch.
-      - name: Regenerate stale uv.lock and push it to this PR branch
-        if: steps.lock_check.outcome == 'failure' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          uv lock --directory ./rendered/mcp_server
-          python3 <<'PYEOF'
-          content = open("./rendered/mcp_server/uv.lock").read()
-          content = content.replace(
-              'name = "mcp-server"',
-              'name = "{{ mcp_app_name | replace("_", "-") }}"',
-              1,
-          )
-          open("./template/{{mcp_app_name_file}}/uv.lock.jinja", "w").write(content)
-          PYEOF
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "./template/{{mcp_app_name_file}}/uv.lock.jinja"
-          git commit -m "chore: regenerate uv.lock"
-          git push origin "HEAD:${GITHUB_HEAD_REF}"
-        env:
-          UV_CACHE_DIR: /.uv_cache
-
-      # Only reached when we couldn't self-heal: a fork PR (can't push to someone
-      # else's fork) or a push straight to main (auto-committing there is worse
-      # than failing loudly). A same-repo PR never hits this — it's fixed above.
-      - name: Fail if uv.lock was stale and could not be auto-fixed
-        if: steps.lock_check.outcome == 'failure' && !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
-        run: |
-          echo "::error::uv.lock is out of date with pyproject.toml. Run 'task lock' at the repo root, commit the regenerated template/{{mcp_app_name_file}}/uv.lock.jinja, and push."
-          exit 1
 
       - name: Install dependencies
         working-directory: ./rendered/mcp_server
