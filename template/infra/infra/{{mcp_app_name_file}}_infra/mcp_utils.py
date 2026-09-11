@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
+from typing import Final
 
 import pulumi
 import pulumi_datarobot
+
+DR_CREDENTIAL_API_TOKEN_KEY: Final[str] = "apiToken"
 
 
 @dataclass
@@ -67,3 +70,24 @@ class MCPAppEnvironmentVarNames(Enum):
     USER_NAME = auto()
     #  session_secret
     SESSION_SECRET_KEY = auto()
+
+
+@dataclass
+class MCPRuntimeParameter:
+    name: str
+    value: str
+    type: str = "string"
+
+    def __post_init__(self):
+        self.name = self.name.upper()
+
+
+@dataclass
+class MCPRuntimeParameterAPITokenCredential:
+    name: str
+    value: str
+    type: str = field(init=False, default="credential")
+    key: str = field(init=False, default=DR_CREDENTIAL_API_TOKEN_KEY)
+
+    def __post_init__(self):
+        self.name = self.name.upper()

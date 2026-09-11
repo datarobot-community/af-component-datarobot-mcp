@@ -26,6 +26,7 @@ from typing import Any, cast
 
 import pulumi
 import pulumi_datarobot
+from datarobot_pulumi_utils.pulumi.stack import PROJECT_NAME
 
 # The trailing commas below are load-bearing: this file is a copier template and
 # the package prefix grows with the user's app name. A magic trailing comma keeps
@@ -44,7 +45,10 @@ from {{mcp_app_name_file}}_clients.workload_artifact_pulumi import (
 )
 
 from .. import project_dir
-from ..{{mcp_app_name_file}}_user_params import MCP_USER_RUNTIME_PARAMETERS
+from ..{{mcp_app_name_file}}_user_params import (
+    MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS,
+    MCP_USER_RUNTIME_PARAMETERS,
+)
 from .mcp_api_keys import (
     SESSION_SECRET_KEY,
     auth_resolution_strategy,
@@ -65,8 +69,11 @@ from .mcp_oauth_configs import (
     oauth_and_well_known_env_vars,
 )
 from .mcp_utils import (
+    DR_CREDENTIAL_API_TOKEN_KEY,
     InfraProviderOutput,
     MCPAppEnvironmentVarNames,
+    MCPRuntimeParameter,
+    MCPRuntimeParameterAPITokenCredential,
     PulumiOutputEndpoints,
 )
 
@@ -151,18 +158,23 @@ def user_param_env_vars() -> list[dict[str, str]]:
     """
     env_vars: list[dict[str, str]] = []
     for param in MCP_USER_RUNTIME_PARAMETERS:
-        if param.type == "credential":
-            env_vars.append(dr_credential_env_var(str(param.key).upper(), param.value))
-            continue
         # Values are pulumi Inputs; they are resolved before the dynamic
         # provider posts the payload, and pulumi_datarobot.Artifact accepts
         # them directly.
         env_vars.append(
             {
-                "name": str(param.key).upper(),
+                "name": str(param.name).upper(),
                 "value": cast(str, param.value),
                 "source": "string",
             }
+        )
+    for el in MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS:
+        api_token_credential = pulumi_datarobot.ApiTokenCredential(
+            f"[{PROJECT_NAME}] {el.name}",
+            args=pulumi_datarobot.ApiTokenCredentialArgs(api_token=el.value),
+        )
+        env_vars.append(
+            dr_credential_env_var(str(el.name).upper(), api_token_credential.id)
         )
     return env_vars
 
@@ -551,8 +563,8 @@ GENERATED_DOCKERFILE_BUILD_DIR_IGNORE_PATTERNS = (
 @dataclass
 class WorkloadArtifactContainerDataRobotCredentialEnvVar:
     name: str
-    dr_credential_id: str
-    key: str = "apiToken"
+    dr_credential_id: str | pulumi.output.Output[str]
+    key: str = DR_CREDENTIAL_API_TOKEN_KEY
     source: str = "dr-credential"
 
     def to_pulumi_object(
@@ -564,6 +576,23 @@ class WorkloadArtifactContainerDataRobotCredentialEnvVar:
             dr_credential_id=self.dr_credential_id,
             key=self.key,
             value=None,
+        )
+
+    @classmethod
+    def from_user_runtime_param(
+        cls, runtime_param: MCPRuntimeParameterAPITokenCredential
+    ) -> WorkloadArtifactContainerDataRobotCredentialEnvVar:
+        api_token_credential = pulumi_datarobot.ApiTokenCredential(
+            f"[{PROJECT_NAME}] {runtime_param.name}",
+            args=pulumi_datarobot.ApiTokenCredentialArgs(api_token=runtime_param.value),
+        )
+        return cls(
+            name=runtime_param.name,
+            dr_credential_id=api_token_credential.id,
+            source="dr-credential"
+            if runtime_param.type == "credential"
+            else runtime_param.type,
+            key=runtime_param.key,
         )
 
 
@@ -582,6 +611,16 @@ class WorkloadArtifactSpecContainerEnvVar:
             value=self.value,
             dr_credential_id=None,
             key=None,
+        )
+
+    @classmethod
+    def from_user_runtime_param(
+        cls, runtime_param: MCPRuntimeParameter
+    ) -> WorkloadArtifactSpecContainerEnvVar:
+        return cls(
+            name=runtime_param.name,
+            value=runtime_param.value,
+            source=runtime_param.type,
         )
 
 
@@ -613,7 +652,12 @@ class WorkloadContainerEnvironmentVars:
     _mcp_scopes: list[WorkloadArtifactSpecContainerEnvVar] = field(
         default_factory=list
     )  # requires func mcp_tag_scope_env_vars()
-    user_name: str = "default-user"
+    _mcp_user_runtime_parameters: list[WorkloadArtifactSpecContainerEnvVar] = field(
+        default_factory=list
+    )
+    _mcp_user_credential_runtime_parameters: list[
+        WorkloadArtifactContainerDataRobotCredentialEnvVar
+    ] = field(default_factory=list)
     _credential_env_vars: list[WorkloadArtifactContainerDataRobotCredentialEnvVar] = (
         field(default_factory=list)
     )  # requires func workload_credential_env_vars()
@@ -702,9 +746,16 @@ class WorkloadContainerEnvironmentVars:
                 WorkloadArtifactSpecContainerEnvVar(el["name"], el["value"])
                 for el in mcp_tag_scope_env_vars()
             ],
-            user_name=get_from_os(
-                MCPAppEnvironmentVarNames.USER_NAME.name, cls.user_name
-            ),
+            _mcp_user_runtime_parameters=[
+                WorkloadArtifactSpecContainerEnvVar.from_user_runtime_param(el)
+                for el in MCP_USER_RUNTIME_PARAMETERS
+            ],
+            _mcp_user_credential_runtime_parameters=[
+                WorkloadArtifactContainerDataRobotCredentialEnvVar.from_user_runtime_param(
+                    el
+                )
+                for el in MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS
+            ],
             _credential_env_vars=[
                 WorkloadArtifactContainerDataRobotCredentialEnvVar(
                     el["name"], el["drCredentialId"]
@@ -776,7 +827,11 @@ class WorkloadContainerEnvironmentVars:
             ),
             *[el.to_pulumi_object() for el in self._mcp_oauth_metadata],
             *[el.to_pulumi_object() for el in self._mcp_scopes],
-            make_pulumi_obj(MCPAppEnvironmentVarNames.USER_NAME.name, self.user_name),
+            *[el.to_pulumi_object() for el in self._mcp_user_runtime_parameters],
+            *[
+                el.to_pulumi_object()
+                for el in self._mcp_user_credential_runtime_parameters
+            ],
             *[el.to_pulumi_object() for el in self._credential_env_vars],
             self.session_secret_key.to_pulumi_object(),
         ]

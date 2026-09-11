@@ -22,7 +22,13 @@ import pulumi_datarobot
 import pytest
 
 from infra.{{mcp_app_name_file}}_infra import workload
-from infra.{{mcp_app_name_file}}_infra.mcp_utils import InfraProviderOutput, PulumiOutputEndpoints
+from infra.{{mcp_app_name_file}}_infra.mcp_utils import (
+    DR_CREDENTIAL_API_TOKEN_KEY,
+    InfraProviderOutput,
+    MCPRuntimeParameter,
+    MCPRuntimeParameterAPITokenCredential,
+    PulumiOutputEndpoints,
+)
 from infra.{{mcp_app_name_file}}_infra.workload import (
     WorkloadBuilder,
     WorkloadConfiguration,
@@ -185,46 +191,68 @@ class TestWorkloadEntrypoint:
 
 class TestUserParamEnvVars:
     def test_string_params_become_uppercased_env_vars(self) -> None:
-        params = [
-            pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-                key="user_name", type="string", value="alice"
+        credential_params = [
+            MCPRuntimeParameterAPITokenCredential(
+                name="my_secret", value="credential-id"
             ),
         ]
-        with patch.object(workload, "MCP_USER_RUNTIME_PARAMETERS", params):
-            assert workload.user_param_env_vars() == [
-                {"name": "USER_NAME", "value": "alice", "source": "string"}
-            ]
+        params = [
+            MCPRuntimeParameter(name="user_name", type="string", value="alice"),
+        ]
+        with (
+            patch.object(
+                workload, "MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS", credential_params
+            ),
+            patch.object(workload, "MCP_USER_RUNTIME_PARAMETERS", params),
+        ):
+            actual = workload.user_param_env_vars()
+
+            assert actual[0]["name"] == "USER_NAME"
+            assert actual[1]["name"] == "MY_SECRET"
 
     def test_credential_params_become_dr_credential_references(self) -> None:
-        params = [
-            pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-                key="my_secret", type="credential", value="credential-id"
-            ),
-            pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-                key="user_name", type="string", value="alice"
+        credential_params = [
+            MCPRuntimeParameterAPITokenCredential(
+                name="my_secret", value="credential-raw-value"
             ),
         ]
-        with patch.object(workload, "MCP_USER_RUNTIME_PARAMETERS", params):
-            env_vars = workload.user_param_env_vars()
+        mock_pulumi_output = Mock(id="some-id")
+        mock_api_token_credential_cls = MagicMock(return_value=mock_pulumi_output)
+        with (
+            patch.object(
+                workload, "MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS", credential_params
+            ),
+            patch.object(workload, "MCP_USER_RUNTIME_PARAMETERS", []),
+            patch.object(
+                pulumi_datarobot, "ApiTokenCredential", mock_api_token_credential_cls
+            ),
+        ):
+            actual = workload.user_param_env_vars()
 
-        assert env_vars == [
+        mock_api_token_credential_cls.assert_called_once()
+        assert actual == [
             {
                 "name": "MY_SECRET",
                 "source": "dr-credential",
-                "drCredentialId": "credential-id",
-                "key": "apiToken",
+                "drCredentialId": mock_pulumi_output.id,
+                "key": DR_CREDENTIAL_API_TOKEN_KEY,
             },
-            {"name": "USER_NAME", "value": "alice", "source": "string"},
         ]
 
     def test_user_params_included_in_workload_environment_vars(self) -> None:
-        params = [
-            pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-                key="user_name", type="string", value="alice"
+        credential_params = [
+            MCPRuntimeParameterAPITokenCredential(
+                name="my_secret", value="credential-id"
             ),
+        ]
+        params = [
+            MCPRuntimeParameter(name="user_name", type="string", value="alice"),
         ]
         with (
             env(MCP_SERVER_NAME=None, SESSION_SECRET_KEY=None),
+            patch.object(
+                workload, "MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS", credential_params
+            ),
             patch.object(workload, "MCP_USER_RUNTIME_PARAMETERS", params),
         ):
             env_vars = workload._workload_environment_vars(ASSET_NAME)
@@ -247,7 +275,7 @@ class TestSessionSecretEnvVars:
         entry = entries[0]
         assert entry["name"] == "SESSION_SECRET_KEY"
         assert entry["source"] == "dr-credential"
-        assert entry["key"] == "apiToken"
+        assert entry["key"] == DR_CREDENTIAL_API_TOKEN_KEY
         assert "super-secret" not in str(entry.get("value", ""))
 
 
@@ -354,6 +382,7 @@ class TestWorkloadEnvironmentVars:
             forwarded = {
                 v["name"]: v["value"]
                 for v in workload._workload_environment_vars("[test]")
+                if v.get("source") not in {"credential", "dr-credential"}
             }
 
         assert forwarded["MCP_ENABLE_OAUTH_CLAIM_VALIDATION"] == "true"
@@ -377,6 +406,7 @@ class TestWorkloadEnvironmentVars:
             forwarded = {
                 v["name"]: v["value"]
                 for v in workload._workload_environment_vars("[test]")
+                if v.get("source") not in {"credential", "dr-credential"}
             }
 
         for name, default in self.DEPLOYMENT_PARITY_DEFAULTS.items():
@@ -397,6 +427,7 @@ class TestWorkloadEnvironmentVars:
             forwarded = {
                 v["name"]: v["value"]
                 for v in workload._workload_environment_vars("[test]")
+                if v.get("source") not in {"credential", "dr-credential"}
             }
 
         assert forwarded["MCP_SERVER_LOG_LEVEL"] == "DEBUG"
