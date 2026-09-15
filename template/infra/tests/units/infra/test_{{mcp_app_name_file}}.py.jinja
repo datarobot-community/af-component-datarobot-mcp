@@ -15,6 +15,7 @@ import os
 import sys
 from collections import namedtuple
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 import pytest
@@ -94,14 +95,16 @@ def pulumi_mocks(monkeypatch, tmp_path):
     )
     monkeypatch.setattr("pulumi_datarobot.CustomModelTagArgs", MagicMock())
 
-    # Patch the id property of the RuntimeEnvironment instance for PYTHON_311_GENAI_AGENTS
+    # Patch the id property on the RuntimeEnvironment class itself so no enum
+    # member (whichever the installed datarobot-pulumi-utils release carries)
+    # does a live executionEnvironments API lookup from a unit test.
     from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironments
 
     patcher = patch.object(
         RuntimeEnvironments.PYTHON_311_GENAI_AGENTS.value.__class__,
         "id",
         new_callable=PropertyMock,
-        return_value="python-311-genai-agents-id",
+        return_value="runtime-environments-enum-id",
     )
     patcher.start()
 
@@ -233,12 +236,26 @@ def test_execution_environment_name_override_imports_existing(monkeypatch):
     )
 
 
+def _stub_runtime_environments(monkeypatch, *, with_mcp_member: bool):
+    """Pin the module-level RuntimeEnvironments to a stub so the PYTHON_3_MCP
+    member's presence does not depend on the installed datarobot-pulumi-utils."""
+    import infra.{{mcp_app_name_file}}_infra.mcp_execution_environment as mcp_ee
+
+    if with_mcp_member:
+        member = SimpleNamespace(value=SimpleNamespace(id="python-3-mcp-id"))
+        stub = SimpleNamespace(PYTHON_3_MCP=member)
+    else:
+        stub = SimpleNamespace()
+    monkeypatch.setattr(mcp_ee, "RuntimeEnvironments", stub)
+
+
 def test_execution_environment_default_set(monkeypatch):
-    """Test execution environment when DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT is set to default value."""
+    """The default EE name resolves through the RuntimeEnvironments enum member."""
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT",
-        "[DataRobot] Python 3.11 GenAI Agents",
+        "[DataRobot] Python 3 MCP",
     )
+    _stub_runtime_environments(monkeypatch, with_mcp_member=True)
 
     import importlib
 
@@ -246,30 +263,34 @@ def test_execution_environment_default_set(monkeypatch):
 
     importlib.reload(mcp_infra)
 
-    mcp_infra.pulumi.info.assert_any_call(
-        "Using default GenAI Agentic Execution Environment."
-    )
+    mcp_infra.pulumi.info.assert_any_call("Using default MCP Execution Environment.")
 
     # Check that ExecutionEnvironment.get was called with the correct parameters
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.assert_called_once()
     _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
 
-    assert kwargs["id"] == "python-311-genai-agents-id"
+    assert kwargs["id"] == "python-3-mcp-id"
     assert kwargs["version_id"] is None
 
     # ExecutionEnvironment constructor should not be called when using default env
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.assert_not_called()
 
 
-def test_execution_environment_pinned_set(monkeypatch):
-    """Test execution environment when pinned version ID is set."""
+def test_execution_environment_default_name_without_enum_member(monkeypatch):
+    """On a datarobot-pulumi-utils without PYTHON_3_MCP, the default name resolves
+    via the search API fallback."""
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT",
-        "[DataRobot] Python 3.11 GenAI Agents",
+        "[DataRobot] Python 3 MCP",
     )
-    monkeypatch.setenv(
-        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
-        "690cd2f698419673f938f7c4",
+    _stub_runtime_environments(monkeypatch, with_mcp_member=False)
+    existing = MagicMock()
+    existing.id = "python-3-mcp-searched-id"
+    existing.name = "[DataRobot] Python 3 MCP"
+    existing.created = "2026-08-27T00:00:00Z"
+    monkeypatch.setattr(
+        "datarobot.ExecutionEnvironment.list",
+        MagicMock(return_value=[existing]),
     )
 
     import importlib
@@ -278,27 +299,83 @@ def test_execution_environment_pinned_set(monkeypatch):
 
     importlib.reload(mcp_infra)
 
-    mcp_infra.pulumi.info.assert_any_call(
-        "Using default GenAI Agentic Execution Environment."
+    mcp_infra.pulumi.info.assert_any_call("Using default MCP Execution Environment.")
+
+    mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.assert_called_once()
+    _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
+
+    assert kwargs["id"] == "python-3-mcp-searched-id"
+    assert kwargs["version_id"] is None
+
+
+def test_execution_environment_pinned_set(monkeypatch):
+    """Test execution environment when pinned version ID is set."""
+    monkeypatch.setenv(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT",
+        "[DataRobot] Python 3 MCP",
     )
+    monkeypatch.setenv(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
+        "690cd2f698419673f938f7c4",
+    )
+    _stub_runtime_environments(monkeypatch, with_mcp_member=True)
+
+    import importlib
+
+    import infra.{{mcp_app_name_file}} as mcp_infra
+
+    importlib.reload(mcp_infra)
+
+    mcp_infra.pulumi.info.assert_any_call("Using default MCP Execution Environment.")
     mcp_infra.pulumi.info.assert_any_call(
-        "Using existing execution environment: python-311-genai-agents-id"
+        "Using existing execution environment: python-3-mcp-id"
         " Version ID: 690cd2f698419673f938f7c4"
     )
 
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.assert_called_once()
     _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
 
-    assert kwargs["id"] == "python-311-genai-agents-id"
+    assert kwargs["id"] == "python-3-mcp-id"
     assert kwargs["version_id"] == "690cd2f698419673f938f7c4"
 
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.assert_not_called()
 
 
-def test_execution_environment_custom_set(monkeypatch):
-    """Test execution environment when DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT is set to a custom value."""
+def test_execution_environment_raw_id_passes_through(monkeypatch):
+    """A 24-hex value is used as the EE id verbatim — no name lookup."""
+    monkeypatch.setenv(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "6a871a01922a6a76e1a23647"
+    )
+    list_mock = MagicMock()
+    monkeypatch.setattr("datarobot.ExecutionEnvironment.list", list_mock)
+
+    import importlib
+
+    import infra.{{mcp_app_name_file}} as mcp_infra
+
+    importlib.reload(mcp_infra)
+
+    mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.assert_called_once()
+    _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
+
+    assert kwargs["id"] == "6a871a01922a6a76e1a23647"
+    assert kwargs["version_id"] is None
+    list_mock.assert_not_called()
+
+
+def test_execution_environment_custom_name_resolves_by_search(monkeypatch):
+    """Any non-id value (e.g. the legacy GenAI Agents name or a custom EE name)
+    resolves to an id through the search API instead of failing in .get()."""
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "Custom Execution Environment"
+    )
+    existing = MagicMock()
+    existing.id = "custom-ee-id"
+    existing.name = "Custom Execution Environment"
+    existing.created = "2026-08-27T00:00:00Z"
+    monkeypatch.setattr(
+        "datarobot.ExecutionEnvironment.list",
+        MagicMock(return_value=[existing]),
     )
 
     import importlib
@@ -308,17 +385,35 @@ def test_execution_environment_custom_set(monkeypatch):
     importlib.reload(mcp_infra)
 
     mcp_infra.pulumi.info.assert_any_call(
-        "Using existing execution environment: Custom Execution Environment"
-        " Version ID: None"
+        "Using existing execution environment: custom-ee-id Version ID: None"
     )
 
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.assert_called_once()
     _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
 
-    assert kwargs["id"] == "Custom Execution Environment"
+    assert kwargs["id"] == "custom-ee-id"
     assert kwargs["version_id"] is None
 
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.assert_not_called()
+
+
+def test_execution_environment_unknown_name_raises(monkeypatch):
+    """A name with no exact match fails loudly instead of reaching .get()."""
+    monkeypatch.setenv(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "No Such Environment"
+    )
+    monkeypatch.setattr(
+        "datarobot.ExecutionEnvironment.list", MagicMock(return_value=[])
+    )
+
+    import importlib
+
+    import infra.{{mcp_app_name_file}} as mcp_infra
+
+    with pytest.raises(ValueError, match="No execution environment named"):
+        importlib.reload(mcp_infra)
+
+    mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.assert_not_called()
 
 
 def test_resolve_execution_environment_version_not_found_returns_none(monkeypatch):

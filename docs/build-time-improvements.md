@@ -12,7 +12,7 @@ run 33109580288 and its re-run):
 |-------------------------------|-------------|------------------------------------------------|
 | serverless-ee                 | ~2:40       | pulumi up against a pinned platform EE         |
 | workload-docker               | ~2:45       | remote image build from the slim root image    |
-| workload-ee                   | ~4:00       | remote build FROM the multi-GB GenAI Agents EE |
+| workload-ee                   | ~4:00       | remote build FROM the pinned platform EE image |
 | serverless-docker (hash miss) | ~8 min      | EE version build 239 s + Deployment create 116 s |
 | serverless-docker (hash hit)  | ~2:42       | get-path — no EE build at all                  |
 
@@ -101,13 +101,18 @@ endpoint probe together add only seconds.
 
 ## 4. Container start time
 
-- **`start_server.sh` reuses the baked `/opt/venv`** when present
-  (docker-built images): `uv sync --frozen --active` is a near no-op. Only
-  pinned platform EEs (no custom Dockerfile) pay for a real sync into a
-  project-local venv.
+- **`start_server.sh` reuses an existing venv** when the image provides one:
+  docker-built images bake `/opt/venv`, and the "[DataRobot] Python 3 MCP" EE
+  points `VENV_DIR` at its own baked venv — either way
+  `uv sync --frozen --active` is a delta-sync (near no-op when the bundle's
+  lock matches the bake). Only legacy pinned EEs without a usable venv pay for
+  a full sync into a project-local venv.
 - **Docker-built paths never run `start_server.sh`** —
-  `CMD ["python", "-m", "app.main"]` with deps baked at build time (matches
-  the workload `DEFAULT_ENTRYPOINT`), so no bootstrap work at container start.
+  `CMD ["python", "-m", "app.main"]` with deps baked at build time, so no
+  bootstrap work at container start. (Generated-Dockerfile workloads DO run it
+  — `DEFAULT_GENERATED_ENTRYPOINT` — because the platform's generated build
+  does not install the bundle's lock; the sync there is what keeps the
+  bundle's pinned versions authoritative over the EE bake.)
 
 ## 5. Failing fast (time not wasted is time saved)
 
@@ -151,13 +156,87 @@ destroy split out, endpoint probe **added**, serverless-docker on a hash hit).
 
 ## Known immovable costs
 
-- The remote builder's pull of the multi-GB GenAI Agents base image
-  (workload-ee) — platform-side.
+- The remote builder's pull of the pinned platform EE base image
+  (workload-ee) — platform-side. Shrunk substantially by switching from the
+  multi-GB GenAI Agents EE to the slim "[DataRobot] Python 3 MCP" EE
+  (132-package lock vs 417); re-measure once the new EE is live.
 - The EE version build itself when docker inputs genuinely change
   (serverless-docker cache miss) — that build is exactly what the case tests.
 
 ## Change log
 
+- **2026-09-14 (moved onto latest main: #68, #69, #71, #72)** — The EE-switch
+  changes now sit directly on `main` (`fa1d852`) instead of the
+  `anatolii/BUZZOK-31992` branch. #69 replaced
+  `MCP_DEPLOYMENT_TYPE` with the `ENABLE_MCP_ON_WORKLOAD_API` boolean and
+  deleted the `workload-preview-*` e2e cases/workflows (our preview-ee edits
+  from 09-10 are gone with them; the four remaining cases carry the MCP EE id
+  pin). #71 bumped genai to `>=0.29.41` and added the "Update uv.lock" PR
+  pipeline that regenerates `uv.lock.jinja` whenever `pyproject.toml.jinja`
+  changes — the EE now pins the same `>=0.29.41,<0.30.0` and its lock was
+  refreshed to match (delta vs upstream is still just genai + psutil). #72
+  bumped the CLI's default `..._VERSION_ID` to a new GenAI Agents version id;
+  kept our empty default (the bump itself is the argument: pinned version ids
+  go stale on every rebuild, and a GenAI Agents id is wrong for the MCP EE).
+  `.env.template` follows main's trimmed workload block; `_require_env`'s
+  error message no longer names the removed `MCP_DEPLOYMENT_TYPE`.
+- **2026-09-10 (merged origin/main; upstream catch-up)** — `origin/main`
+  (#58, #63–#67) merged into the branch: it already carried squash-merged
+  copies of this branch's work, plus the GA `datarobot-workload` deployment
+  type (#66, new `workload-preview-*` e2e cases for the old API), the
+  `OAUTH_CLAIM_VALIDATION` env var (#63), a committed `uv.lock.jinja` with a
+  stale-lock CI check and `task lock` (#67, genai floor `>=0.29.30`), and LF
+  normalization for bundled shell scripts (#64/#65). Reconciled: adopted
+  main's genai floor (EE bumped to the same `>=0.29.30,<0.30.0`) and the 18-min
+  workload-ee budget; applied the `sh start_server.sh` generated-entrypoint
+  default to the GA path too (`WorkloadConfiguration.resolve_workload_entrypoint`
+  still said `python -m app.main`); pointed `workload-ee` **and** the new
+  `workload-preview-ee` at the MCP EE id (main left both on GenAI Agents);
+  fixed the `.env.template` workload comments (header said preview-only,
+  entrypoint default was stale). Upstream elsewhere: user-models #2367 adopted
+  the `[DataRobot] Python 3 MCP` rename and dropped `datarobot[core]` (its
+  `uv.lock` was left stale — relocked here), #2372 switched the Dockerfile to a
+  literal `USER mcp` for SAST; pulumi-utils #42 added `PYTHON_3_MCP`
+  (unreleased, floors' TODO stands); harness-infra #2313/#2314 landed our
+  catalog-info change verbatim.
+- **2026-09-03 (upstream merge, MODEL-24813)** — datarobot-user-models landed
+  PR #2361 in parallel: same `python312_mcp` → `python3_mcp` folder rename,
+  genai bumped to `>=0.29.23,<0.30.0` (range pin, same policy as ours), new EE
+  version `6a9811f6cec15a076d1aa668` released on the v11.13.0 train, and five
+  of our seven `.harness/python3_mcp_*` files adopted byte-identical. Local
+  work rebased onto it: adopted their genai floor (template + EE now pin
+  `>=0.29.23,<0.30.0`), kept our divergences as the local delta — display-name
+  rename to `[DataRobot] Python 3 MCP` (upstream kept `3.12`), no
+  `datarobot[core]` (extra only gates psutil), EE start script deleted (they
+  renamed it to `start_server.sh` and still bake it; the bundle's script must
+  stay authoritative), Dockerfile `VENV_DIR`=baked venv + `/opt` perms +
+  header, README rewrite, `update_deps.sh`, and the trivy/update-env-version
+  input sets they didn't add. Relock delta vs upstream is exactly psutil
+  removed; EE version re-bumped to `6a99f2d79673ef373cbee1aa`. Because
+  v11.13.0 shipped under the old name, e2e `use-cases.yaml` now pins the
+  rename-stable id `6a871a01922a6a76e1a23647` (TODO: flip back to the name
+  once the rename releases).
+- **2026-08-28 (MCP execution environment)** — Switched the pinned-EE default
+  from `[DataRobot] Python 3.11 GenAI Agents` (417-package, multi-GB image full
+  of agent frameworks MCP never imports) to the purpose-built
+  `[DataRobot] Python 3 MCP` (132-package lock; datarobot-user-models
+  `public_dropin_environments/python3_mcp`, renamed from `python312_mcp` — the
+  version-less name lets the interpreter move within Python 3 without renames).
+  Expected wins: much smaller base-image pull on workload-ee, and near-no-op
+  cold-start syncs on serverless-ee because the EE bakes the same
+  `datarobot-genai[drmcp]` range the template ships and `VENV_DIR` now points
+  at the baked venv (delta-sync instead of fresh-venv install). Also:
+  generated-Dockerfile workloads now start via the bundle's `start_server.sh`
+  (`DEFAULT_GENERATED_ENTRYPOINT`) because the platform's generated build
+  installs nothing — the runtime sync keeps the bundle's lock authoritative
+  when the EE bake lags; `start_server.sh` now fails loudly (3 retries) instead
+  of silently serving a stale baked set; EE names in
+  `DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT` resolve via the search API
+  (any name, not just a hardcoded sentinel), version-id default is empty
+  (latest); template genai range bumped to `>=0.29.9,<0.30.0` in lockstep with
+  the EE. e2e passes only once the renamed EE is installed on the target —
+  its rename-stable id `6a871a01922a6a76e1a23647` is the interim fallback.
+  Re-measure workload-ee/serverless-ee deploy times after release.
 - **2026-08-27 (upload retry)** — A workload-ee deploy died in 3 s on a
   transient 502 from the Files catalog staged-upload endpoint. The shared HTTP
   session retries only idempotent methods (POST deliberately excluded —

@@ -81,14 +81,22 @@ WORKLOAD_CONTAINER_NAME = "mcp-server"
 DEFAULT_WORKLOAD_CONTAINER_PORT = 8080
 DEFAULT_DOCKERFILE_RELATIVE_PATH = "Dockerfile"
 DEFAULT_BUILD_TIMEOUT_S = 6000
-DEFAULT_ENTRYPOINT = ["python", "-m", "app.main"]
+# Generated-Dockerfile builds only (DockerfileProvided images carry their own CMD).
+# start_server.sh rather than `python -m app.main` on purpose: the platform's
+# generated build does NOT install the bundle's dependencies — the EE's baked venv
+# would be the only package source, silently serving stale (possibly breaking-minor
+# older) versions when the EE bake lags the bundle. The bundle's start_server.sh
+# delta-syncs the bundle's own uv.lock into the baked venv, then execs the server.
+# It resolves relative to the generated image's WORKDIR — the same bundle-root
+# assumption a bare `python -m app.main` entrypoint already relied on.
+DEFAULT_GENERATED_ENTRYPOINT = ["sh", "start_server.sh"]
 DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
 
 
 def _require_env(name: str) -> str:
     value = os.getenv(name, "").strip()
     if not value:
-        message = f"{name} is required for MCP_DEPLOYMENT_TYPE 'datarobot-workload' or 'datarobot-workload-preview'"
+        message = f"{name} is required for workload deployments (ENABLE_MCP_ON_WORKLOAD_API=true)"
         pulumi.error(message)
         raise RuntimeError(message)
     return value
@@ -139,7 +147,7 @@ def _explicit_workload_entrypoint() -> list[str] | None:
 
 
 def _resolve_workload_entrypoint() -> list[str]:
-    return _explicit_workload_entrypoint() or list(DEFAULT_ENTRYPOINT)
+    return _explicit_workload_entrypoint() or list(DEFAULT_GENERATED_ENTRYPOINT)
 
 
 def _resolve_container_port() -> int:
@@ -949,8 +957,10 @@ class WorkloadConfiguration:
 
     @classmethod
     def resolve_workload_entrypoint(cls) -> list[str]:
-        default_entrypoint = ["python", "-m", "app.main"]
-        return cls._explicit_workload_entrypoint() or list(default_entrypoint)
+        # Only consulted for the generated-Dockerfile build, which installs nothing
+        # from the bundle -- see DEFAULT_GENERATED_ENTRYPOINT for why it is not
+        # `python -m app.main`.
+        return cls._explicit_workload_entrypoint() or list(DEFAULT_GENERATED_ENTRYPOINT)
 
 
 class WorkloadBuilder:
