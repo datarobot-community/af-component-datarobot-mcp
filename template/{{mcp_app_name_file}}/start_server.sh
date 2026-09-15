@@ -29,7 +29,11 @@
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-export UV_PROJECT="${CODE_DIR:-/opt/code}"
+# The project is wherever this bundle landed: /opt/code for custom models, the
+# generated image's WORKDIR for workloads. Not CODE_DIR -- the MCP EE sets that to
+# /opt/code at image level, and a workload image inherits it regardless of where
+# the platform copied the bundle.
+export UV_PROJECT="${SCRIPT_DIR}"
 export UV_COMPILE_BYTECODE=0
 
 # Use a cache dir under the code tree; /tmp/uv-cache is often root-owned on

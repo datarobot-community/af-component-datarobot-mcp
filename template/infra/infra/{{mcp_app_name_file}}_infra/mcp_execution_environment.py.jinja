@@ -28,6 +28,12 @@ from .. import project_dir
 from .mcp_bundle import ensure_docker_build_context_files
 
 DEFAULT_EXECUTION_ENVIRONMENT = "Python 3 MCP"
+# The public MCP EE keeps this id on every DataRobot install: the environment
+# installer creates it with the id recorded in datarobot-user-models'
+# public_dropin_environments/python3_mcp/env_info.json. Last-resort fallback when
+# the default name does not resolve -- e.g. an install whose copy still carries the
+# pre-rename "[DataRobot] Python 3.12 MCP" display name.
+DEFAULT_EXECUTION_ENVIRONMENT_ID = "6a871a01922a6a76e1a23647"
 
 # EE ids are Mongo ObjectIds; anything else in the DEFAULT env var is a name.
 _EXECUTION_ENVIRONMENT_ID_RE = re.compile(r"[0-9a-f]{24}")
@@ -82,8 +88,26 @@ def _resolve_default_execution_environment_id(value: str) -> str:
         # drop the search fallback below for this branch) once the infra dependency
         # floor requires the datarobot-pulumi-utils release that carries the member.
         member = getattr(RuntimeEnvironments, "PYTHON_3_MCP", None)
+        resolved: str | None
         if member is not None:
-            return member.value.id
+            try:
+                return member.value.id
+            except ValueError:
+                # The enum's lookup raises when no EE carries the canonical name.
+                resolved = None
+        else:
+            resolved = _find_execution_environment_id_by_name(value)
+        if resolved is None:
+            pulumi.warn(
+                "No execution environment named "
+                + repr(value)
+                + " found; falling back to the public MCP environment id "
+                + DEFAULT_EXECUTION_ENVIRONMENT_ID
+                + " (installs predating the rename list it as"
+                + " '[DataRobot] Python 3.12 MCP')."
+            )
+            return DEFAULT_EXECUTION_ENVIRONMENT_ID
+        return resolved
     # Any other name (e.g. the legacy GenAI Agents default, or a custom EE) resolves
     # through the same search API the RuntimeEnvironments enum uses.
     resolved = _find_execution_environment_id_by_name(value)

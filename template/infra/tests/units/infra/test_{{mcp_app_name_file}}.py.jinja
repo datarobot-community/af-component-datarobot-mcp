@@ -308,6 +308,64 @@ def test_execution_environment_default_name_without_enum_member(monkeypatch):
     assert kwargs["version_id"] is None
 
 
+def test_execution_environment_default_name_falls_back_to_public_id(monkeypatch):
+    """When the default name resolves nowhere (e.g. the target still lists the EE
+    under its pre-rename name), the install-stable public id is used."""
+    import infra.{{mcp_app_name_file}}_infra.mcp_execution_environment as mcp_ee
+
+    monkeypatch.setenv(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT",
+        "[DataRobot] Python 3 MCP",
+    )
+    _stub_runtime_environments(monkeypatch, with_mcp_member=False)
+    monkeypatch.setattr(
+        "datarobot.ExecutionEnvironment.list", MagicMock(return_value=[])
+    )
+
+    import importlib
+
+    import infra.{{mcp_app_name_file}} as mcp_infra
+
+    importlib.reload(mcp_infra)
+
+    mcp_infra.pulumi.warn.assert_called_once()
+    _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
+    assert kwargs["id"] == mcp_ee.DEFAULT_EXECUTION_ENVIRONMENT_ID
+    assert kwargs["version_id"] is None
+
+
+def test_execution_environment_default_enum_miss_falls_back_to_public_id(
+    monkeypatch,
+):
+    """A RuntimeEnvironments member whose lookup raises (canonical name absent on
+    the target) must not abort the deploy; the public id is used instead."""
+    import infra.{{mcp_app_name_file}}_infra.mcp_execution_environment as mcp_ee
+
+    class _MissingOnTarget:
+        @property
+        def id(self):
+            raise ValueError("Could not find the Execution Environment ID")
+
+    monkeypatch.setenv(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT",
+        "[DataRobot] Python 3 MCP",
+    )
+    monkeypatch.setattr(
+        mcp_ee,
+        "RuntimeEnvironments",
+        SimpleNamespace(PYTHON_3_MCP=SimpleNamespace(value=_MissingOnTarget())),
+    )
+
+    import importlib
+
+    import infra.{{mcp_app_name_file}} as mcp_infra
+
+    importlib.reload(mcp_infra)
+
+    _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
+    assert kwargs["id"] == mcp_ee.DEFAULT_EXECUTION_ENVIRONMENT_ID
+
+
 def test_execution_environment_pinned_set(monkeypatch):
     """Test execution environment when pinned version ID is set."""
     monkeypatch.setenv(

@@ -165,57 +165,46 @@ destroy split out, endpoint probe **added**, serverless-docker on a hash hit).
 
 ## Change log
 
-- **2026-09-14 (moved onto latest main: #68, #69, #71, #72)** — The EE-switch
-  changes now sit directly on `main` (`fa1d852`) instead of the
-  `anatolii/BUZZOK-31992` branch. #69 replaced
+- **2026-09-15 (default EE resolution hardening)** — The default EE name now
+  falls back to the public MCP environment's install-stable id
+  (`DEFAULT_EXECUTION_ENVIRONMENT_ID`) when neither the enum lookup nor the
+  name search finds it — installs whose copy still carries the pre-rename
+  `Python 3.12 MCP` name deploy instead of raising. `start_server.sh` resolves
+  the project from its own directory rather than `CODE_DIR`: the MCP EE sets
+  `CODE_DIR=/opt/code` at image level, which a generated workload image inherits
+  regardless of where the platform copied the bundle.
+- **2026-09-14 (rebased onto latest main: #68, #69, #71, #72)** — #69 replaced
   `MCP_DEPLOYMENT_TYPE` with the `ENABLE_MCP_ON_WORKLOAD_API` boolean and
-  deleted the `workload-preview-*` e2e cases/workflows (our preview-ee edits
-  from 09-10 are gone with them; the four remaining cases carry the MCP EE id
-  pin). #71 bumped genai to `>=0.29.41` and added the "Update uv.lock" PR
-  pipeline that regenerates `uv.lock.jinja` whenever `pyproject.toml.jinja`
-  changes — the EE now pins the same `>=0.29.41,<0.30.0` and its lock was
-  refreshed to match (delta vs upstream is still just genai + psutil). #72
-  bumped the CLI's default `..._VERSION_ID` to a new GenAI Agents version id;
-  kept our empty default (the bump itself is the argument: pinned version ids
-  go stale on every rebuild, and a GenAI Agents id is wrong for the MCP EE).
+  removed the `workload-preview-*` e2e cases/workflows; the four remaining
+  cases pin the MCP EE id. #71 bumped genai to `>=0.29.41` and added the
+  "Update uv.lock" PR pipeline that regenerates `uv.lock.jinja` whenever
+  `pyproject.toml.jinja` changes — the MCP EE pins the same
+  `>=0.29.41,<0.30.0`. #72 pinned a new GenAI Agents version id as the CLI
+  default; this branch keeps the default empty (pinned version ids go stale on
+  every EE rebuild, and a GenAI Agents id is wrong for the MCP EE).
   `.env.template` follows main's trimmed workload block; `_require_env`'s
   error message no longer names the removed `MCP_DEPLOYMENT_TYPE`.
-- **2026-09-10 (merged origin/main; upstream catch-up)** — `origin/main`
-  (#58, #63–#67) merged into the branch: it already carried squash-merged
-  copies of this branch's work, plus the GA `datarobot-workload` deployment
-  type (#66, new `workload-preview-*` e2e cases for the old API), the
-  `OAUTH_CLAIM_VALIDATION` env var (#63), a committed `uv.lock.jinja` with a
-  stale-lock CI check and `task lock` (#67, genai floor `>=0.29.30`), and LF
-  normalization for bundled shell scripts (#64/#65). Reconciled: adopted
-  main's genai floor (EE bumped to the same `>=0.29.30,<0.30.0`) and the 18-min
-  workload-ee budget; applied the `sh start_server.sh` generated-entrypoint
-  default to the GA path too (`WorkloadConfiguration.resolve_workload_entrypoint`
-  still said `python -m app.main`); pointed `workload-ee` **and** the new
-  `workload-preview-ee` at the MCP EE id (main left both on GenAI Agents);
-  fixed the `.env.template` workload comments (header said preview-only,
-  entrypoint default was stale). Upstream elsewhere: user-models #2367 adopted
-  the `[DataRobot] Python 3 MCP` rename and dropped `datarobot[core]` (its
-  `uv.lock` was left stale — relocked here), #2372 switched the Dockerfile to a
-  literal `USER mcp` for SAST; pulumi-utils #42 added `PYTHON_3_MCP`
-  (unreleased, floors' TODO stands); harness-infra #2313/#2314 landed our
-  catalog-info change verbatim.
-- **2026-09-03 (upstream merge, MODEL-24813)** — datarobot-user-models landed
-  PR #2361 in parallel: same `python312_mcp` → `python3_mcp` folder rename,
-  genai bumped to `>=0.29.23,<0.30.0` (range pin, same policy as ours), new EE
-  version `6a9811f6cec15a076d1aa668` released on the v11.13.0 train, and five
-  of our seven `.harness/python3_mcp_*` files adopted byte-identical. Local
-  work rebased onto it: adopted their genai floor (template + EE now pin
-  `>=0.29.23,<0.30.0`), kept our divergences as the local delta — display-name
-  rename to `[DataRobot] Python 3 MCP` (upstream kept `3.12`), no
-  `datarobot[core]` (extra only gates psutil), EE start script deleted (they
-  renamed it to `start_server.sh` and still bake it; the bundle's script must
-  stay authoritative), Dockerfile `VENV_DIR`=baked venv + `/opt` perms +
-  header, README rewrite, `update_deps.sh`, and the trivy/update-env-version
-  input sets they didn't add. Relock delta vs upstream is exactly psutil
-  removed; EE version re-bumped to `6a99f2d79673ef373cbee1aa`. Because
-  v11.13.0 shipped under the old name, e2e `use-cases.yaml` now pins the
-  rename-stable id `6a871a01922a6a76e1a23647` (TODO: flip back to the name
-  once the rename releases).
+- **2026-09-10 (rebased onto main: #58, #63–#67)** — main brought the GA
+  `datarobot-workload` deployment type (#66), the `OAUTH_CLAIM_VALIDATION` env
+  var (#63), a committed `uv.lock.jinja` with a stale-lock CI check and
+  `task lock` (#67), and LF normalization for bundled shell scripts (#64/#65).
+  Reconciled: adopted main's genai floor and the 18-min workload-ee budget;
+  applied the `sh start_server.sh` generated-entrypoint default to the GA path
+  too (`WorkloadConfiguration.resolve_workload_entrypoint` still said
+  `python -m app.main`); pointed every pinned-EE e2e case at the MCP EE id;
+  fixed stale `.env.template` workload comments. On the EE side
+  (datarobot-user-models `public_dropin_environments/python3_mcp`) the
+  `[DataRobot] Python 3 MCP` rename and the `datarobot[core]` removal landed
+  upstream; the EE lock is kept in step with the template's range.
+- **2026-09-03 (EE range pin)** — datarobot-user-models moved `python312_mcp`
+  to `python3_mcp` and range-pinned genai (`>=0.29.23,<0.30.0`); template and
+  EE now pin the same range (patch releases flow through lock refreshes, a
+  minor bump is a deliberate two-repo change). The EE ships no start script of
+  its own — the bundle's `start_server.sh` is authoritative on both pinned-EE
+  surfaces — and its `VENV_DIR` points at the baked venv so the bundle's sync is
+  a delta. Because a target may not yet list the EE under its new name, e2e
+  `use-cases.yaml` pins the install-stable id `6a871a01922a6a76e1a23647`
+  (TODO: flip back to the name once every target has the rename).
 - **2026-08-28 (MCP execution environment)** — Switched the pinned-EE default
   from `[DataRobot] Python 3.11 GenAI Agents` (417-package, multi-GB image full
   of agent frameworks MCP never imports) to the purpose-built

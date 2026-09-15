@@ -283,7 +283,7 @@ Now that the local test passed, you can deploy the server to DataRobot.
 
 After deployment is successful, it creates the following resources:
 
-- **Execution Environment**: Docker-based Python 3.12 environment (or uses an existing environment)
+- **Execution Environment**: the platform's `[DataRobot] Python 3 MCP` environment by default (`DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT`), or a Python 3.12 environment built from the app `Dockerfile` when that variable is empty
 - **Custom Model**: MCP server packaged as an unstructured custom model
 - **Registered Model**: Versioned model registration
 - **Prediction Environment**: DataRobot Serverless platform
