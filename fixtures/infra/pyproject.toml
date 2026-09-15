@@ -7,10 +7,7 @@ This is a fixture for DataRobot MCP Server infra tests.
 requires-python = ">=3.11"
 
 dependencies = [
-    # TODO: raise to the datarobot-pulumi-utils release that adds
-    # RuntimeEnvironments.PYTHON_3_MCP (mcp_execution_environment.py then drops
-    # its search fallback for the default EE name).
-    "datarobot-pulumi-utils>=0.1.2",
+    "datarobot-pulumi-utils>=0.1.8",
     "pulumi>=3.252.0",
     "pulumi-datarobot>=0.11.1",
     "pytz>=2024.1"
