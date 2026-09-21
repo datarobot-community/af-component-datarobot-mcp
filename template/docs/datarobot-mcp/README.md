@@ -54,6 +54,8 @@ See [MCP client setup](mcp_client_setup.md) for step-by-step instructions for Cu
 task deploy
 ```
 
+Deploys as a DataRobot serverless Custom Model by default. To deploy to the Workload API (Preview) instead, see [deployment modes](mcp_server_architecture.md#deployment-modes).
+
 ## MCP endpoint
 
 | Environment | URL |
