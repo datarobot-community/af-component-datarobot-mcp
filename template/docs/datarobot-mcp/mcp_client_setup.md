@@ -412,7 +412,7 @@ If your deployment depends on specific DataRobot features, add feature flag file
 
 ### OAuth resource-server authentication
 
-Use this feature when clients or agents need to discover this server's OAuth metadata, or when tool calls should be restricted by OAuth scope.
+Use this feature to publish OAuth discovery metadata for clients and agents, or to restrict tool calls by OAuth scope.
 
 ```bash
 MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE=true
