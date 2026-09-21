@@ -83,6 +83,7 @@ See [DataRobot API key documentation](https://docs.datarobot.com/en/docs/get-sta
 | [Dynamic tool registration](dynamic_tool_registration.md) | Turn DataRobot deployments into tools automatically |
 | [Custom tools](custom_tools.md) | Author domain-specific tools |
 | [Deployment info tools](deployment_info_tools.md) | Query deployment features and build prediction datasets |
+| [OAuth authentication](oauth_authentication.md) | Configure resource-server OAuth, scopes, and Cross-Application Access |
 
 ## Development
 
