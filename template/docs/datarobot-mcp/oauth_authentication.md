@@ -20,8 +20,8 @@ These variables populate fields in the published document. Lists are comma-separ
 |---|---|
 | `MCP_OAUTH_RESOURCE` | The resource identifier (`resource` field). Defaults to a URL built from the container's own runtime identity; set explicitly when only an internal address is reachable. |
 | `MCP_OAUTH_AUTHORIZATION_SERVERS` | Authorization server URL(s) for clients. |
-| `MCP_OAUTH_AUDIENCE` | Overrides the expected token audience, for issuers that mint an `aud` different from `MCP_OAUTH_RESOURCE`. |
-| `MCP_OAUTH_JWKS_URI` | Overrides the JWKS location, for issuers that don't keep keys at `<issuer>/v1/keys`. |
+
+The DataRobot gateway authenticates the primary request token; this server has no setting to override the expected audience or JWKS location for that token.
 
 `scopes_supported` is published automatically&mdash;it's derived from the declared scope requirements below, so there's nothing to keep in sync by hand.
 
@@ -40,7 +40,7 @@ async def my_custom_tool(...):
     ...
 ```
 
-All listed scopes are required, not any one of them.
+All listed scopes are required, not any one of them. Declaring a scope only publishes it in `scopes_supported`; the server enforces it only when `MCP_ENABLE_OAUTH_CLAIM_VALIDATION` is also `true` (see [Claim validation](#claim-validation)).
 
 **In configuration**, with one environment variable per tool tag&mdash;the suffix is a tag the tool already declares via `tags={...}`, matched case- and dash-insensitively:
 
@@ -72,7 +72,7 @@ Two more variables are optional:
 
 | Variable | Description |
 |---|---|
-| `MCP_XAA_TOKEN_AUDIENCE` | Expected audience on XAA tokens. Can be omitted when the identity provider doesn't check it. |
+| `MCP_XAA_TOKEN_AUDIENCE` | Expected audience on XAA tokens. This server performs the check, not the identity provider; leaving it unset skips audience validation entirely, so a token minted for a different resource is accepted. Set it in production deployments. |
 | `MCP_XAA_TOKEN_ENDPOINT_AUTH_METHOD` | Token endpoint authentication method. `private_key_jwt` is the only method implemented today. |
 
 ## Claim validation
@@ -93,7 +93,7 @@ With it on:
 
 The health check route and everything under `/.well-known/` are always exempt, regardless of this setting.
 
-This check does not verify the token's signature. Trust in the XAA token comes from the token-exchange step that produced it (the `MCP_XAA_*` settings above), not from re-validating it here. If `MCP_XAA_TOKEN_AUDIENCE` is unset, audience validation is skipped.
+This check does not verify the token's signature. The DataRobot gateway authenticates the external token and populates `x-datarobot-external-access-token` with it before the request reaches this server, so only requests that pass through the gateway carry a trustworthy value in that header. Exposing this header to untrusted callers&mdash;bypassing the gateway&mdash;lets a caller forge arbitrary claims and defeat both the audience and scope checks. If `MCP_XAA_TOKEN_AUDIENCE` is unset, audience validation is skipped.
 
 ## Troubleshooting
 
@@ -104,3 +104,4 @@ This check does not verify the token's signature. Trust in the XAA token comes f
 | A tool call is rejected with `insufficient_scope` | Check the scopes declared via `require_scopes(...)` or `MCP_OAUTH_TAG_SCOPES_<TAG>` for that tool's tags, and confirm `MCP_OAUTH_SCOPE_SOURCE` includes that mechanism. |
 | A tool call is rejected with `invalid_token` for an audience mismatch | Compare the token's `aud` claim against `MCP_XAA_TOKEN_AUDIENCE` exactly, including trailing slashes. |
 | A request fails with `401` even though `MCP_ENABLE_OAUTH_CLAIM_VALIDATION` is off | This flag only gates XAA-header validation; a `401` from elsewhere is a DataRobot-gateway authentication failure on `Authorization` instead. See [MCP client setup](mcp_client_setup.md#troubleshooting). |
+| A tool call with a declared scope requirement is never rejected | Set `MCP_ENABLE_OAUTH_CLAIM_VALIDATION=true`. Without it, `require_scopes(...)` and `MCP_OAUTH_TAG_SCOPES_<TAG>` only publish `scopes_supported`&mdash;no scope is enforced on `tools/call`. |

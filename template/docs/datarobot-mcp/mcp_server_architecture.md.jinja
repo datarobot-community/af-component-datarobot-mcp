@@ -108,8 +108,6 @@ This structure keeps runtime code, documentation, and support tooling separate w
 | `MCP_OAUTH_AUTHORIZATION_SERVERS` | Authorization server URL(s), comma-separated | None |
 | `MCP_OAUTH_SCOPE_SOURCE` | Which scope declaration mechanism is enforced: `both`, `code`, or `tags` | `both` |
 | `MCP_OAUTH_TAG_SCOPES_<TAG>` | Required scopes for tools with the tag `<TAG>`, comma-separated | None |
-| `MCP_OAUTH_AUDIENCE` | Overrides the expected token audience | Falls back to `MCP_OAUTH_RESOURCE` |
-| `MCP_OAUTH_JWKS_URI` | Overrides the JWKS location | `<issuer>/v1/keys` |
 
 ### Cross-Application Access settings
 
@@ -119,7 +117,7 @@ This structure keeps runtime code, documentation, and support tooling separate w
 | `MCP_XAA_EXCHANGE_AUDIENCE` | Authorization server URL with the audience ID for token exchange | None |
 | `MCP_XAA_TOKEN_URL` | Authorization server token request URL | None |
 | `MCP_XAA_SCOPES` | Scope to be authorized by the authorization server | None |
-| `MCP_XAA_TOKEN_AUDIENCE` | Expected audience on XAA tokens | None |
+| `MCP_XAA_TOKEN_AUDIENCE` | Expected audience on XAA tokens, validated by this server. Leaving it unset skips audience validation | None |
 | `MCP_XAA_TOKEN_ENDPOINT_AUTH_METHOD` | Token endpoint authentication method (`private_key_jwt` is the only method implemented today) | None |
 | `MCP_ENABLE_OAUTH_CLAIM_VALIDATION` | Validate the XAA token in `x-datarobot-external-access-token` on each request | `false` |
 

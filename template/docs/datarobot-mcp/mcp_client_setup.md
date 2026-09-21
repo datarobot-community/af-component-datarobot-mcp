@@ -417,6 +417,7 @@ Use this feature to publish OAuth discovery metadata for clients and agents, or 
 ```bash
 MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE=true
 MCP_OAUTH_TAG_SCOPES_READONLY=mcp:tools:read
+MCP_ENABLE_OAUTH_CLAIM_VALIDATION=true
 ```
 
 For details, see the [OAuth resource-server authentication guide](./oauth_authentication.md).
