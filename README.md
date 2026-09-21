@@ -110,6 +110,7 @@ After applying this component, MCP guides are available under `docs/datarobot-mc
 | [Dynamic tool registration](template/docs/datarobot-mcp/dynamic_tool_registration.md) | Turn DataRobot deployments into tools automatically |
 | [Custom tools](template/docs/datarobot-mcp/custom_tools.md.jinja) | Author domain-specific tools |
 | [Deployment info tools](template/docs/datarobot-mcp/deployment_info_tools.md) | Query deployment features and build prediction datasets |
+| [OAuth authentication](template/docs/datarobot-mcp/oauth_authentication.md) | Configure resource-server OAuth, scopes, and Cross-Application Access |
 
 ## Updating
 

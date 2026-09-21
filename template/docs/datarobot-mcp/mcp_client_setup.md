@@ -410,6 +410,17 @@ OTEL_ENTITY_ID=your-entity-id
 
 If your deployment depends on specific DataRobot features, add feature flag files under `infra/feature_flags/` so deployment fails early when required capabilities are unavailable.
 
+### OAuth resource-server authentication
+
+Use this feature when clients or agents need to discover this server's OAuth metadata, or when tool calls should be restricted by OAuth scope.
+
+```bash
+MCP_ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE=true
+MCP_OAUTH_TAG_SCOPES_READONLY=mcp:tools:read
+```
+
+For details, see the [OAuth resource-server authentication guide](./oauth_authentication.md).
+
 ## Additional resources
 
 - [FastMCP documentation](https://github.com/jlowin/fastmcp)
