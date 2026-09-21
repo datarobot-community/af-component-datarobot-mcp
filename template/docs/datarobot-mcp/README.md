@@ -61,7 +61,8 @@ Deploys as a DataRobot serverless Custom Model by default. To deploy to the Work
 | Environment | URL |
 |---|---|
 | Local | `http://localhost:8080/mcp/` |
-| DataRobot | `https://<datarobot-endpoint>/deployments/<deployment-id>/directAccess/mcp/` |
+| DataRobot (serverless) | `https://<datarobot-endpoint>/deployments/<deployment-id>/directAccess/mcp/` |
+| DataRobot (Workload API) | `<workload-endpoint>/mcp`&mdash;read the workload's endpoint from the `<app name> MCP Server MCP Endpoint` Pulumi stack output after `task deploy` |
 
 ## API keys
 
