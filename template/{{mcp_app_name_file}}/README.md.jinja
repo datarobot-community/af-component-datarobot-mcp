@@ -354,6 +354,141 @@ When you are finished with the MCP server, you can destroy the deployment:
 task destroy
 ```
 
+## Use cases and Compute Enclave placement
+
+Two arguments govern this, and the platform couples them — **both or neither**:
+
+- `use_case_id`, the use case the workload is linked to
+- `runtime.enclave_selection_policy`, set from
+  `MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY`
+
+Send one without the other and the create is refused, in either direction:
+
+```
+USE_CASE_NOT_APPLICABLE  Only enclave-targeted workloads may specify a
+                         useCaseId; remove the useCaseId or set an enclave
+                         selection policy to target an Enclave.
+
+NO_ELIGIBLE_ENCLAVE      The workload's use case has no Enclaves linked to it,
+                         so no eligible Enclave exists for this workload.
+```
+
+The template sends both or neither for you, from one place — `_placement()` in
+[`workload.py`](infra/infra/dr_mcp_infra/workload.py). You only choose the
+policy, and leaving it unset asks for placement. When
+`DATAROBOT_DEFAULT_USE_CASE` names a use case the workload cannot be linked to,
+the apply says so by name and tells you what to change, rather than dropping it
+in silence.
+
+### The one thing to understand first
+
+`availability` does not mean "put this workload on an Enclave". It means "let
+my use case choose the Enclave" — the platform restricts the workload to the
+Enclaves an administrator has granted to that use case. An empty grant list is
+`NO_ELIGIBLE_ENCLAVE` above.
+
+Sending no policy is not "no Enclave" either. It hands placement back to the
+cluster's default, and a cluster with Enclaves may well place the workload on
+one anyway.
+
+That combination is the trap on an Enclave cluster. A workload with no policy
+gets default-placed on an Enclave, carries no use case because it is not
+allowed to, and is then refused at its next restart:
+
+```
+MISSING_USE_CASE  This workload runs on Enclave '...' but is not linked to any
+                  use case; link one to restart it.
+```
+
+There is no configuration that escapes that loop — linking the use case
+requires the policy, and the policy requires a grant. On a cluster with
+Enclaves, **an administrator granting an Enclave to your use case is the only
+durable answer**; `disabled` deploys today and leaves the restart problem in
+place.
+
+### Which value to use
+
+Placement is the default, so most deployments set nothing. You choose only when
+the answer is "do not place this workload".
+
+| Environment | Use case | Granted Enclaves | Value |
+| --- | --- | --- | --- |
+| Enclave cluster | existing, `DATAROBOT_DEFAULT_USE_CASE` set | one or more | leave it out |
+| Enclave cluster | existing, `DATAROBOT_DEFAULT_USE_CASE` set | none | `disabled` |
+| Enclave cluster | created by Pulumi (no `DATAROBOT_DEFAULT_USE_CASE`) | none, always | `disabled` |
+| Non-Enclave cluster | either | n/a | leave it out |
+
+The rule behind the table: **`disabled` is for the one case the platform cannot
+satisfy — a use case with no Enclave granted to it.** Everything else takes the
+default.
+
+A cluster with no Enclaves needs no setting at all. The entitlement is read, the
+request is downgraded to `disabled` automatically, and the downgrade is logged:
+
+```
+This cluster offers no Compute Enclave (ENABLE_COMPUTE_ENCLAVE is off), so
+Enclave placement was downgraded to 'disabled'. The workload deploys with no
+placement policy and no use case, which is the only thing this cluster accepts.
+```
+
+A use case Pulumi creates during the apply is the case that still needs
+`disabled`. It cannot have a grant, because it did not exist until that moment
+and only an administrator can grant one, so the default is guaranteed to be
+refused on the first apply. Reaching placement takes two applies: deploy with
+`disabled`, have an administrator grant an Enclave to the use case that was just
+created, then remove the setting.
+
+This is also the argument for keeping `DATAROBOT_DEFAULT_USE_CASE` pointed at a
+use case you own. Only a long-lived use case can accumulate an Enclave grant; a
+stack-created one starts empty on every fresh stack, and `pulumi destroy`
+deletes it — taking the link out from under any workload still using it.
+
+### How the setting is read
+
+| How it is written in `.env` | Enclave cluster | Cluster with no Enclaves |
+| --- | --- | --- |
+| absent | placed, use case sent | downgraded, logged |
+| `MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY=` | placed, use case sent | downgraded, logged |
+| `MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY=availability` | placed, use case sent | downgraded, logged |
+| `MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY=disabled` | neither sent | neither sent |
+
+`availability` and absent are the same thing — the value exists so a deployment
+can state the default rather than inherit it. Writing the variable with an empty
+value is also read as absent, so a bare `=` is not a way to switch placement off;
+the word `disabled` has to be there.
+
+Only those two values are accepted; anything else fails before the apply rather
+than as a mid-apply 422. `manual` is rejected too, because it requires naming an
+Enclave through `runtime.enclaves`, which this template does not expose.
+
+The entitlement is consulted for exactly one purpose: to decide whether the
+cluster can honour a placement request at all. It is not a signal of intent.
+`ENABLE_COMPUTE_ENCLAVE` says this *org* may use the use-case-governed path and
+says nothing about whether any Enclave has been granted to the use case in front
+of you — which is why an entitled cluster can still answer `NO_ELIGIBLE_ENCLAVE`.
+
+That one case cannot be caught in advance. No API exposes a use case's grants
+(`/useCases/{id}/enclaves/` is not readable, and `/enclaves` ignores a
+`useCaseId` filter), and the refusal comes from the provider after this program
+has finished registering, so it can be neither pre-empted nor reworded. What the
+apply does instead is say in advance what the refusal would mean:
+
+```
+Requesting Enclave placement for use case <id>. If the apply is refused with
+NO_ELIGIBLE_ENCLAVE, that use case has no Enclave granted to it: ask an
+administrator to grant one, or set
+MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY=disabled to deploy without placement.
+```
+
+### Setting `disabled` on a use case that does have grants
+
+It deploys, and it costs you both halves. Placement falls back to the cluster
+default instead of the use case's granted list, so confinement to
+administrator-granted Enclaves — the entire mechanism — stops being enforced;
+and the use-case link goes with it, because an unplaced workload may not carry
+one. If the Enclave is there for isolation, `disabled` quietly ends it. Use
+`disabled` because the use case has no grant, never to opt out of one it has.
+
 ## Connect to the deployed MCP server
 
 Use the `MCP_SERVER_MCP_ENDPOINT` URL (shown in the **outputs** section in the screenshot above) to connect your MCP clients to the deployed server.

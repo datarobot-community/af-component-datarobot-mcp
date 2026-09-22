@@ -87,8 +87,23 @@ DEFAULT_ENTRYPOINT = ["python", "-m", "app.main"]
 DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
 # Org entitlement for Enclave placement.
 COMPUTE_ENCLAVE_ENTITLEMENT = "ENABLE_COMPUTE_ENCLAVE"
-# Overrides the entitlement lookup when set.
 ENCLAVE_SELECTION_POLICY_ENV_VAR = "MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY"
+# Placement is the default: the governed path is the one worth being on, and
+# opting out of it should be a decision someone wrote down. It also turns a
+# deferred failure into an immediate one -- an unplaced workload deploys fine
+# and is refused at its next restart instead, which is far harder to connect
+# back to a setting.
+ENCLAVE_PLACEMENT_AVAILABILITY = "availability"
+# Asking for placement is not always better than staying quiet: a cluster can
+# place a workload on an Enclave by default, and requesting a policy switches
+# the platform to the use-case-governed path, which refuses with
+# NO_ELIGIBLE_ENCLAVE unless an administrator has granted an Enclave to that
+# use case. This value is how a deployment says "leave placement alone" -- an
+# entitled org is not the same thing as an entitled use case.
+ENCLAVE_PLACEMENT_DISABLED = "disabled"
+# Mirrors the name `infra/__init__.py` reads; kept local because the E2E
+# fixtures substitute their own `__init__.py` and would not carry an import.
+USE_CASE_ENV_VAR = "DATAROBOT_DEFAULT_USE_CASE"
 
 
 def _fail(message: str, *, cause: Exception | None = None) -> NoReturn:
@@ -98,31 +113,50 @@ def _fail(message: str, *, cause: Exception | None = None) -> NoReturn:
 
 @lru_cache(maxsize=1)
 def _enclave_selection_policy() -> str | None:
-    """Placement policy to request, or None to stay off the Enclave path."""
-    override = os.getenv(ENCLAVE_SELECTION_POLICY_ENV_VAR, "").strip()
-    if override:
-        if override != "availability":
-            # "manual" also requires naming an Enclave via `runtime.enclaves`,
-            # which is not supported yet.
-            _fail(
-                f"{ENCLAVE_SELECTION_POLICY_ENV_VAR} must be 'availability'; "
-                f"got {override!r}"
-            )
-        return override
+    """Placement policy to request, or None to stay off the Enclave path.
+
+    Placement is what a deployment gets unless it says otherwise, with one
+    automatic exception: a cluster with no Enclaves cannot honour the request,
+    and sending it anyway is refused outright, so it is downgraded rather than
+    left to fail. The downgrade is announced -- silently deploying something
+    other than what was asked for is how a workload ends up somewhere nobody
+    expected.
+    """
+    requested = (
+        os.getenv(ENCLAVE_SELECTION_POLICY_ENV_VAR, "").strip()
+        or ENCLAVE_PLACEMENT_AVAILABILITY
+    )
+    if requested == ENCLAVE_PLACEMENT_DISABLED:
+        return None
+    if requested != ENCLAVE_PLACEMENT_AVAILABILITY:
+        # "manual" also requires naming an Enclave via `runtime.enclaves`,
+        # which is not supported yet.
+        _fail(
+            f"{ENCLAVE_SELECTION_POLICY_ENV_VAR} must be "
+            f"{ENCLAVE_PLACEMENT_AVAILABILITY!r} or "
+            f"{ENCLAVE_PLACEMENT_DISABLED!r}; got {requested!r}"
+        )
 
     try:
         statuses = fetch_flag_statuses([COMPUTE_ENCLAVE_ENTITLEMENT])
     except Exception as exc:  # noqa: BLE001
         # Blind on purpose, and fails closed: a wrong "not entitled" would
-        # silently place an entitled workload outside any Enclave. A failed
-        # request can be retried; a misplaced workload cannot.
+        # downgrade a workload that belongs on an Enclave to one that is not.
+        # A failed request can be retried; a misplaced workload cannot.
         _fail(f"Could not read {COMPUTE_ENCLAVE_ENTITLEMENT}: {exc}", cause=exc)
 
-    entitled = statuses.get(COMPUTE_ENCLAVE_ENTITLEMENT) is True
-    pulumi.info(
-        "Enclave placement selected." if entitled else "Enclave placement disabled."
-    )
-    return "availability" if entitled else None
+    if statuses.get(COMPUTE_ENCLAVE_ENTITLEMENT) is not True:
+        pulumi.info(
+            f"This cluster offers no Compute Enclave "
+            f"({COMPUTE_ENCLAVE_ENTITLEMENT} is off), so Enclave placement was "
+            f"downgraded to {ENCLAVE_PLACEMENT_DISABLED!r}. The workload "
+            f"deploys with no placement policy and no use case, which is the "
+            f"only thing this cluster accepts."
+        )
+        return None
+
+    pulumi.info("Enclave placement selected.")
+    return ENCLAVE_PLACEMENT_AVAILABILITY
 
 
 def _require_env(name: str) -> str:
@@ -294,20 +328,91 @@ def _workload_environment_vars(mcp_server_asset_name: str) -> list[dict[str, str
     return env_vars
 
 
+def _placement() -> tuple[str | None, pulumi.Input[str] | None]:
+    """The Enclave placement policy, and the use case that must ride with it.
+
+    The platform couples the two and refuses either one alone:
+
+        USE_CASE_NOT_APPLICABLE  Only enclave-targeted workloads may specify a
+                                 useCaseId; remove the useCaseId or set an
+                                 enclave selection policy to target an Enclave.
+
+        NO_ELIGIBLE_ENCLAVE      The workload's use case has no Enclaves linked
+                                 to it, so no eligible Enclave exists.
+
+    The first is what an unplaced workload gets for carrying a use case; the
+    second is what a placed one gets when nobody granted its use case an
+    Enclave. So both go together or neither does, and every caller takes both
+    from here rather than deciding separately.
+    """
+    policy = _enclave_selection_policy()
+    named = os.getenv(USE_CASE_ENV_VAR, "").strip()
+    if policy:
+        # The one failure this module cannot pre-empt. Whether an Enclave has
+        # been granted to a use case is readable through no API -- the grant
+        # endpoint answers 405 to GET and `/enclaves` ignores a useCaseId
+        # filter -- and the refusal arrives from the provider, after this
+        # program has finished registering, so it cannot be caught and reworded
+        # either. Saying up front what the refusal will mean is the most that
+        # can be done from here.
+        pulumi.info(
+            f"Requesting Enclave placement for "
+            f"{f'use case {named}' if named else 'the use case this stack creates'}"
+            f". If the apply is refused with NO_ELIGIBLE_ENCLAVE, that use case "
+            f"has no Enclave granted to it: ask an administrator to grant one, "
+            f"or set {ENCLAVE_SELECTION_POLICY_ENV_VAR}="
+            f"{ENCLAVE_PLACEMENT_DISABLED} to deploy without placement."
+        )
+        return policy, use_case.id
+
+    # This workload is not Enclave-targeted, and the platform accepts a use
+    # case only on one that is -- sending it anyway is refused outright:
+    #
+    #     USE_CASE_NOT_APPLICABLE  Only enclave-targeted workloads may specify
+    #                              a useCaseId.
+    #
+    # So None here is not a preference; it is the only value that deploys.
+    # Nothing else about DATAROBOT_DEFAULT_USE_CASE changes -- the use case is
+    # still adopted by the stack, still exported, and still attached to every
+    # other resource. Only this workload goes unlinked, which is worth saying
+    # out loud when the deployment named a use case, so the gap is found now
+    # rather than the next time someone looks for the workload inside it.
+    if named:
+        opted_out = (
+            os.getenv(ENCLAVE_SELECTION_POLICY_ENV_VAR, "").strip()
+            == ENCLAVE_PLACEMENT_DISABLED
+        )
+        remedy = (
+            f"To link it, have an administrator grant an Enclave to that use "
+            f"case, then set {ENCLAVE_SELECTION_POLICY_ENV_VAR}=availability."
+            if opted_out
+            else "This organization has no Compute Enclave entitlement, so no "
+            "workload here can be linked; nothing to change."
+        )
+        pulumi.warn(
+            f"Workload will not be linked to use case {named}: the platform "
+            f"links only Enclave-targeted workloads, and this one requests no "
+            f"placement. The use case is otherwise unaffected -- the stack's "
+            f"other resources still use it. {remedy}"
+        )
+    return None, None
+
+
 def _create_workload(
     *,
     mcp_server_asset_name: str,
     artifact_id: pulumi.Input[str],
     depends_on: list[Any],
 ) -> pulumi_datarobot.Workload:
+    placement_policy, placement_use_case = _placement()
     return pulumi_datarobot.Workload(
         mcp_server_asset_name + " Workload",
         name=mcp_server_asset_name,
         artifact_id=artifact_id,
-        use_case_id=use_case.id,
+        use_case_id=placement_use_case,
         importance=os.getenv("MCP_WORKLOAD_IMPORTANCE", "high"),
         runtime=pulumi_datarobot.WorkloadRuntimeArgs(
-            enclave_selection_policy=_enclave_selection_policy(),
+            enclave_selection_policy=placement_policy,
             container_groups=[
                 pulumi_datarobot.WorkloadRuntimeContainerGroupArgs(
                     replica_count=int(os.getenv("MCP_WORKLOAD_REPLICA_COUNT", "1")),
@@ -1044,15 +1149,16 @@ class WorkloadBuilder:
         workload_depends_on: list[pulumi_datarobot.Artifact] = [artifact]
         workload_name = self.mcp_server_asset_name + " Workload"
 
+        placement_policy, placement_use_case = _placement()
         workload = pulumi_datarobot.Workload(
             workload_name,
             name=self.mcp_server_asset_name,
             description="Workload serving the DataRobot MCP server artifact",
             importance=self._workload_config.workload_importance,
             artifact_id=artifact.artifact_id,
-            use_case_id=use_case.id,
+            use_case_id=placement_use_case,
             runtime=pulumi_datarobot.WorkloadRuntimeArgs(
-                enclave_selection_policy=_enclave_selection_policy(),
+                enclave_selection_policy=placement_policy,
                 container_groups=[
                     pulumi_datarobot.WorkloadRuntimeContainerGroupArgs(
                         replica_count=self._workload_config.container_group_replica_count,
