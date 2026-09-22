@@ -86,6 +86,7 @@ Run `task workload-deployment-flag-check` (invoked automatically by `task instal
 | `MCP_WORKLOAD_REPLICA_COUNT` | Workload replica count | `1` |
 | `MCP_WORKLOAD_CPU` | Workload CPU allocation | `1` |
 | `MCP_WORKLOAD_MEMORY` | Workload container memory, in bytes | `536870912` (512 MiB) |
+| `MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY` | Compute Enclave placement. Only `availability` is accepted — `manual` placement needs an Enclave named via `runtime.enclaves`, which this template does not expose | unset: decided from the `ENABLE_COMPUTE_ENCLAVE` org entitlement |
 
 ### Dynamic tool registration settings
 
