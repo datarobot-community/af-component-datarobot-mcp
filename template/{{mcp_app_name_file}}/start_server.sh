@@ -7,22 +7,33 @@
 # Released under the terms of DataRobot Tool and Utility Agreement.
 
 # =============================================================================
-# Runtime bootstrap for serverless custom models on pinned platform EEs.
+# Runtime bootstrap for deployments on pinned platform EEs, i.e. whenever
+# DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT is set (e.g. "[DataRobot] Python 3
+# MCP"). Two surfaces run it from the model bundle:
 #
-# Used when DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT is set (e.g. GenAI
-# Agents): the platform runs this script from the model bundle because there is
-# no custom Dockerfile and dependencies must be synced at container start.
+#   - serverless custom models: the platform invokes /opt/code/start_server.sh
+#     (the EE image deliberately ships no start script of its own);
+#   - workloads with a generated Dockerfile: infra sets this script as the
+#     container entrypoint (workload.py DEFAULT_GENERATED_ENTRYPOINT).
+#
+# Both sync THIS bundle's uv.lock into the venv before starting, so the bundle's
+# pinned versions always win over whatever the EE image baked — the bake is only
+# a warm cache that can lag behind (datarobot-genai minor bumps are breaking).
 #
 # Not used for docker-built paths (serverless-docker, workload-docker): those
 # images bake /opt/venv at build time and start via CMD ["python", "-m",
-# "app.main"]. Workload-ee uses the same python entrypoint via infra.
+# "app.main"].
 #
 # POSIX sh on purpose: keep it free of bashisms.
 # =============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-export UV_PROJECT="${CODE_DIR:-/opt/code}"
+# The project is wherever this bundle landed: /opt/code for custom models, the
+# generated image's WORKDIR for workloads. Not CODE_DIR -- the MCP EE sets that to
+# /opt/code at image level, and a workload image inherits it regardless of where
+# the platform copied the bundle.
+export UV_PROJECT="${SCRIPT_DIR}"
 export UV_COMPILE_BYTECODE=0
 
 # Use a cache dir under the code tree; /tmp/uv-cache is often root-owned on
@@ -30,8 +41,10 @@ export UV_COMPILE_BYTECODE=0
 export UV_CACHE_DIR="${UV_CACHE_DIR:-${SCRIPT_DIR}/.uv-cache}"
 mkdir -p "${UV_CACHE_DIR}" 2>/dev/null || true
 
-# Custom docker EE builds bake /opt/venv at image build time. Pinned platform
-# EEs do not — fall back to a project-local venv under the bundle.
+# Reuse an existing venv when the image provides one: docker EE builds bake
+# /opt/venv, and the Python 3 MCP EE points VENV_DIR at its baked venv — the
+# sync below then only applies the delta between the bake and this bundle's
+# lock. Fall back to a project-local venv under the bundle otherwise.
 VENV="${VENV_DIR:-/opt/venv}"
 if [ ! -f "${VENV}/bin/activate" ]; then
   VENV="${SCRIPT_DIR}/.venv"
@@ -54,15 +67,41 @@ if ! activate_venv; then
   fi
 fi
 
-# Sync dependencies when uv and a lock file are available. Never block startup.
-if command -v uv >/dev/null 2>&1 && [ -f "${UV_PROJECT}/pyproject.toml" ]; then
-  if [ -f "${UV_PROJECT_ENVIRONMENT}/bin/activate" ]; then
-    uv sync --frozen --active --no-progress --color never 2>/dev/null || true
-  else
-    uv sync --frozen --no-progress --color never 2>/dev/null || true
-    activate_venv || true
-  fi
+# Sync THIS bundle's lock into the venv — and require it to succeed. The baked
+# environment may lag the bundle, and datarobot-genai minor bumps are breaking,
+# so silently serving the baked versions is worse than failing loudly here where
+# deployment logs (and the component's e2e probe) surface it. Transient failures
+# (registry hiccups) get retries; the platform restarts the container on exit.
+if ! command -v uv >/dev/null 2>&1; then
+  echo "Error: uv not found on PATH; cannot sync the bundle's dependencies." >&2
+  exit 1
 fi
+if [ ! -f "${UV_PROJECT}/pyproject.toml" ]; then
+  echo "Error: no pyproject.toml under ${UV_PROJECT}; the bundle is incomplete." >&2
+  exit 1
+fi
+
+run_uv_sync() {
+  if [ -f "${UV_PROJECT_ENVIRONMENT}/bin/activate" ]; then
+    uv sync --frozen --active --no-progress --color never
+  else
+    uv sync --frozen --no-progress --color never
+  fi
+}
+
+attempt=1
+max_attempts=3
+until run_uv_sync; do
+  if [ "${attempt}" -ge "${max_attempts}" ]; then
+    echo "Error: uv sync failed ${max_attempts} times; refusing to start against" >&2
+    echo "whatever the venv currently holds (it may be a stale baked set)." >&2
+    exit 1
+  fi
+  echo "uv sync failed (attempt ${attempt}/${max_attempts}); retrying in 5s..." >&2
+  attempt=$((attempt + 1))
+  sleep 5
+done
+activate_venv || true
 
 # Optional: Dump environment variables for debugging
 if [ "${ENABLE_CUSTOM_MODEL_RUNTIME_ENV_DUMP}" = "1" ]; then
@@ -75,12 +114,12 @@ fi
 # Requires: app/ directory in the same location
 #
 # No --root_path / ROOT_PATH_ARG is threaded through here, unlike the dragent
-# branch in python311_genai_agents. A deployed server is served under
-# https://<endpoint>/deployments/<id>/directAccess/, and drmcp already applies
-# that prefix itself: DRMCPConfig reads URL_PREFIX straight from the environment
-# as `mount_path` (datarobot_genai/drmcp/core/config.py) and every route is
-# registered through prefix_mount_path(). Passing the prefix again would
-# double-prefix it.
+# start script in the legacy python311_genai_agents environment. A deployed
+# server is served under https://<endpoint>/deployments/<id>/directAccess/, and
+# drmcp already applies that prefix itself: MCPServerConfig reads URL_PREFIX
+# straight from the environment as `mount_path`
+# (datarobot_genai/drmcp/core/config.py) and every route is registered through
+# prefix_mount_path(). Passing the prefix again would double-prefix it.
 # -----------------------------------------------------------------------------
 if [ -d "$SCRIPT_DIR/app" ]; then
     echo "Starting Custom Model environment with MCP server"

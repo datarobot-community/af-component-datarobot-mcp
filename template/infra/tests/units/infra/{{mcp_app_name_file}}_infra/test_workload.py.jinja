@@ -232,7 +232,8 @@ class TestWorkloadEntrypoint:
     def test_resolve_falls_back_to_default(self) -> None:
         with env(MCP_WORKLOAD_ENTRYPOINT=None):
             assert (
-                workload._resolve_workload_entrypoint() == workload.DEFAULT_ENTRYPOINT
+                workload._resolve_workload_entrypoint()
+                == workload.DEFAULT_GENERATED_ENTRYPOINT
             )
 
     def test_resolve_uses_explicit_value(self) -> None:
@@ -395,10 +396,21 @@ class TestDeploymentsApplicationPath:
 
 
 class TestWorkloadConstants:
-    def test_default_entrypoint(self) -> None:
-        expected = ["python", "-m", "app.main"]
-        actual = workload.DEFAULT_ENTRYPOINT
+    def test_default_generated_entrypoint_syncs_bundle_deps(self) -> None:
+        """start_server.sh, not `python -m app.main`: the generated build does not
+        install the bundle's lock, so the entrypoint must sync it at start."""
+        expected = ["sh", "start_server.sh"]
+        actual = workload.DEFAULT_GENERATED_ENTRYPOINT
         assert actual == expected
+
+    def test_workload_configuration_default_entrypoint_matches_generated(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The datarobot-workload generated build shares the preview path's
+        default: both must sync the bundle's lock before starting the server."""
+        monkeypatch.delenv("MCP_WORKLOAD_ENTRYPOINT", raising=False)
+        actual = WorkloadConfiguration.resolve_workload_entrypoint()
+        assert actual == workload.DEFAULT_GENERATED_ENTRYPOINT
 
     def test_container_name(self) -> None:
         expected = "mcp-server"

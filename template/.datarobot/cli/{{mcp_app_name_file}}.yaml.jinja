@@ -14,14 +14,17 @@ root:
       The default value is randomly generated if the secret key is not already configured.
   - env: DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT
     type: string
-    default: "[DataRobot] Python 3.11 GenAI Agents"
+    default: "[DataRobot] Python 3 MCP"
     optional: true
-    help: "Enter the default execution environment for the MCP server."
+    help: "Enter the default execution environment for the MCP server (name or ID)."
   - env: DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID
     type: string
-    default: "6a9fb32921f948ad7a24631b"
+    # Empty on purpose: EE version ids regenerate on every rebuild (CVE refreshes
+    # included), so a pinned default goes stale fast (main had to bump the old
+    # GenAI Agents pin twice) — empty resolves to the EE's latest version.
+    default: ""
     optional: true
-    help: "Enter the default execution environment version ID for the MCP server."
+    help: "Optional execution environment version ID pin (empty = latest version)."
   - key: enabled_tools
     env: MCP_CLI_CONFIGS
     multiple: true
