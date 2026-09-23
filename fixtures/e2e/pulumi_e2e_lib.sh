@@ -44,6 +44,31 @@ resolve_workspace_path() {
   printf '%s' "${path}"
 }
 
+# Install the datarobot provider plugin before any `pulumi` command needs it.
+#
+# Left alone, `pulumi up` downloads the plugin itself from the URL baked into
+# the Python SDK -- github://api.github.com/datarobot-community/pulumi-datarobot
+# -- which fetches a ~44MB release asset through the GitHub *API* endpoint.
+# Unauthenticated that path is rate limited per runner IP and has answered 500
+# often enough to exhaust all five of pulumi's retries mid-apply:
+#
+#   error: Could not automatically download and install resource plugin
+#   'pulumi-resource-datarobot' at version v0.12.3 ... failed all 5 attempts
+#
+# The releases/download/ URL used here is the plain CDN-backed one and needs no
+# token. Idempotent: an already-installed plugin is a no-op.
+#
+# The version is read from the SDK that `uv sync` just resolved rather than
+# pinned here, so this can never disagree with the version the provider will
+# actually ask for. Call it from the rendered infra directory, after `uv sync`.
+install_datarobot_plugin() {
+  local version
+  version="v$(uv run python -c 'import importlib.metadata as m; print(m.version("pulumi-datarobot"))')"
+  echo "Installing datarobot provider plugin ${version}"
+  uv run pulumi plugin install resource datarobot "${version}" \
+    --server "https://github.com/datarobot-community/pulumi-datarobot/releases/download/${version}/"
+}
+
 destroy_pulumi_stack() {
   local stack_name="${1:?STACK_NAME is required}"
   local case_name="${2:?CASE_NAME is required}"
