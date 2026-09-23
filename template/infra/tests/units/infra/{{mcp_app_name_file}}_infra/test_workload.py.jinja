@@ -526,16 +526,14 @@ class TestCreateWorkload:
 
 
 class TestEnclavePlacement:
-    """A workload on an Enclave is refused at launch, not at apply, when it is
-    not linked to a use case — the 422 lands in the workload's event log and
-    Pulumi reports only a replacement that never came up. Both arguments have
-    to be on the call itself, so that is what these assert.
+    """Linking and placement are independent. A workload is linked to a use
+    case on every cluster -- the link is organisational and costs nothing where
+    Enclaves do not exist -- while placement is requested only where the org
+    entitlement says the cluster can honour it.
     """
 
     @pytest.mark.parametrize("path", WORKLOAD_PATHS)
-    def test_placed_workload_carries_the_use_case(self, path: str) -> None:
-        """A placed workload must name a use case: its eligible Enclaves are
-        exactly the ones granted to that use case."""
+    def test_placement_requested_when_entitled(self, path: str) -> None:
         workload.fetch_flag_statuses.return_value = {
             workload.COMPUTE_ENCLAVE_ENTITLEMENT: True
         }
@@ -546,19 +544,15 @@ class TestEnclavePlacement:
         assert kwargs["use_case_id"] == "use-case-id"
 
     @pytest.mark.parametrize("path", WORKLOAD_PATHS)
-    def test_unplaced_workload_carries_no_use_case(self, path: str) -> None:
-        """And the platform refuses the other half on its own:
-
-            USE_CASE_NOT_APPLICABLE  Only enclave-targeted workloads may
-                                     specify a useCaseId.
-
-        so a workload with no policy must not carry one either. This is the
-        assertion that keeps every non-Enclave deployment working.
+    def test_use_case_is_linked_where_there_are_no_enclaves(self, path: str) -> None:
+        """The regression that matters. Multi-tenant clusters have no Enclaves
+        at all, so a link made conditional on placement is a link those
+        deployments never get -- and the link is the whole point.
         """
         kwargs = workload_kwargs(path)
 
+        assert kwargs["use_case_id"] == "use-case-id"
         assert kwargs["runtime"].enclave_selection_policy is None
-        assert kwargs["use_case_id"] is None
         workload.fetch_flag_statuses.assert_called_once_with(
             [workload.COMPUTE_ENCLAVE_ENTITLEMENT]
         )
@@ -573,127 +567,17 @@ class TestEnclavePlacement:
         kwargs = workload_kwargs("module")
 
         assert kwargs["runtime"].enclave_selection_policy is None
-        assert kwargs["use_case_id"] is None
+        assert kwargs["use_case_id"] == "use-case-id"
 
-    def test_disabled_override_sends_neither_half(self) -> None:
-        """An entitled org is not an entitled use case. Where the cluster
-        already places the workload on its own, asking for a policy moves the
-        platform onto the use-case-granted path and it refuses with
-        NO_ELIGIBLE_ENCLAVE; this is how a deployment opts back out -- and
-        opting out drops the use case with it, or the create is refused with
-        USE_CASE_NOT_APPLICABLE instead.
-        """
-        with env(MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY="disabled"):
-            kwargs = workload_kwargs("module")
-
-        assert kwargs["runtime"].enclave_selection_policy is None
-        assert kwargs["use_case_id"] is None
-        workload.fetch_flag_statuses.assert_not_called()
-
-    def test_named_use_case_that_cannot_be_linked_is_reported(self) -> None:
-        """Dropping a use case the deployment named must never be silent."""
-        with (
-            env(
-                MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY="disabled",
-                DATAROBOT_DEFAULT_USE_CASE="6ab123462feddaeff2b0d78b",
-            ),
-            patch.object(workload.pulumi, "warn") as warn,
-        ):
-            kwargs = workload_kwargs("module")
-
-        assert kwargs["use_case_id"] is None
-        message = warn.call_args.args[0]
-        assert "6ab123462feddaeff2b0d78b" in message
-        assert "MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY=availability" in message
-
-    def test_unentitled_org_is_told_there_is_nothing_to_change(self) -> None:
-        """A cluster without Enclaves cannot link any workload, so the advice
-        is 'nothing to change', not 'go ask for a grant'."""
-        with (
-            env(DATAROBOT_DEFAULT_USE_CASE="6ab123462feddaeff2b0d78b"),
-            patch.object(workload.pulumi, "warn") as warn,
-        ):
-            workload_kwargs("module")
-
-        assert "nothing to change" in warn.call_args.args[0]
-
-    def test_no_warning_when_no_use_case_was_named(self) -> None:
-        """Pulumi creates a use case when none is named; nobody asked for the
-        workload to be in it, so there is nothing to report."""
-        with (
-            env(
-                MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY="disabled",
-                DATAROBOT_DEFAULT_USE_CASE=None,
-            ),
-            patch.object(workload.pulumi, "warn") as warn,
-        ):
-            workload_kwargs("module")
-
-        warn.assert_not_called()
-
-    def test_placement_is_the_default(self) -> None:
-        """Unset asks for placement. Opting out is the decision that has to be
-        written down, not opting in."""
-        workload.fetch_flag_statuses.return_value = {
-            workload.COMPUTE_ENCLAVE_ENTITLEMENT: True
-        }
-
-        with env(MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY=None):
+    def test_explicit_override_skips_entitlement_check(self) -> None:
+        with env(MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY="availability"):
             kwargs = workload_kwargs("module")
 
         assert kwargs["runtime"].enclave_selection_policy == "availability"
         assert kwargs["use_case_id"] == "use-case-id"
-
-    @pytest.mark.parametrize("requested", [None, "availability"])
-    def test_downgraded_on_a_cluster_with_no_enclaves(self, requested) -> None:
-        """Asked for or defaulted to, placement a cluster cannot honour is
-        downgraded rather than sent to be refused -- and it is announced, since
-        deploying something other than what was asked for must never be silent.
-        """
-        with (
-            env(MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY=requested),
-            patch.object(workload.pulumi, "info") as info,
-        ):
-            actual = workload._placement()
-
-        assert actual == (None, None)
-        assert any("downgraded" in call.args[0] for call in info.call_args_list), (
-            info.call_args_list
-        )
-
-    def test_disabled_needs_no_entitlement_lookup(self) -> None:
-        """`disabled` is an answer on its own; nothing about the cluster can
-        change it, so it costs no API call."""
-        with env(MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY="disabled"):
-            workload_kwargs("module")
-
         workload.fetch_flag_statuses.assert_not_called()
 
-    def test_placement_request_says_what_a_refusal_would_mean(self) -> None:
-        """Whether an Enclave is granted to a use case is readable through no
-        API, and the refusal comes from the provider after this program has
-        finished, so it can be neither pre-empted nor reworded. Naming the
-        remedy in advance is what is left.
-        """
-        workload.fetch_flag_statuses.return_value = {
-            workload.COMPUTE_ENCLAVE_ENTITLEMENT: True
-        }
-
-        with (
-            env(
-                MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY=None,
-                DATAROBOT_DEFAULT_USE_CASE="6ab123462feddaeff2b0d78b",
-            ),
-            patch.object(workload.pulumi, "info") as info,
-        ):
-            workload._placement()
-
-        said = " ".join(call.args[0] for call in info.call_args_list)
-        assert "6ab123462feddaeff2b0d78b" in said
-        assert "NO_ELIGIBLE_ENCLAVE" in said
-        assert "MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY=disabled" in said
-
-    @pytest.mark.parametrize("override", ["manual", "Availability", "true"])
+    @pytest.mark.parametrize("override", ["manual", "disabled", "Availability", "true"])
     def test_invalid_override_rejected(self, override: str) -> None:
         """`manual` requires naming an Enclave via `runtime.enclaves`, which
         this template does not expose; anything else is a typo. Both must be

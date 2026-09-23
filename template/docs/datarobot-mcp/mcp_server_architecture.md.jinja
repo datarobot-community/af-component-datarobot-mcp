@@ -86,7 +86,7 @@ Run `task workload-deployment-flag-check` (invoked automatically by `task instal
 | `MCP_WORKLOAD_REPLICA_COUNT` | Workload replica count | `1` |
 | `MCP_WORKLOAD_CPU` | Workload CPU allocation | `1` |
 | `MCP_WORKLOAD_MEMORY` | Workload container memory, in bytes | `536870912` (512 MiB) |
-| `MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY` | Compute Enclave placement, and with it whether the workload is linked to a use case — the platform couples the two and refuses either alone. Placement is the default, downgraded automatically (and logged) on a cluster with no Enclaves; `disabled` sends neither and is needed when the use case has no Enclave granted to it. `manual` is unsupported — it needs an Enclave named via `runtime.enclaves` | unset: placement requested |
+| `MCP_WORKLOAD_ENCLAVE_SELECTION_POLICY` | Forces Compute Enclave placement, skipping the `ENABLE_COMPUTE_ENCLAVE` entitlement lookup that normally decides it. The workload is linked to a use case on every cluster regardless. `availability` is the only accepted value — `manual` needs an Enclave named via `runtime.enclaves` | unset: decided from the entitlement |
 
 ### Dynamic tool registration settings
 
