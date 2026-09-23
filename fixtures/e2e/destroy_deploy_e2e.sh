@@ -62,5 +62,6 @@ cp "${WORKSPACE}/fixtures/e2e/infra/infra/__init__.py" "${RENDERED_DIR}/infra/in
 
 cd "${RENDERED_DIR}/infra"
 uv sync --quiet
+install_datarobot_plugin
 
 destroy_pulumi_stack "${STACK_NAME}" "${CASE_NAME}" "${RENDERED_DIR}"

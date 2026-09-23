@@ -212,6 +212,7 @@ fi
 
 cd "${RENDERED_DIR}/infra"
 uv sync
+install_datarobot_plugin
 
 pulumi_login_e2e_backend "${WORKSPACE}"
 
