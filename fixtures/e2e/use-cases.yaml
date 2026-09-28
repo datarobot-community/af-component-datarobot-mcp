@@ -3,7 +3,8 @@
 # Execution environment env vars (also documented in mcp_execution_environment.py):
 #
 # DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT
-#   Selects an existing EE to reuse. Skips the Docker build (e.g. GenAI Agents).
+#   Selects an existing EE to reuse (24-hex id or platform name, e.g.
+#   "[DataRobot] Python 3 MCP"). Skips the Docker build.
 #
 # DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME
 #   Only when DEFAULT is empty: names a new EE built from scratch. CI uses a
@@ -34,12 +35,17 @@ use_cases:
 
   serverless-ee:
     # DEFAULT set → reuse platform EE; NAME is ignored on this path.
-    description: Custom model (serverless) deploy with pinned GenAI Agents EE
+    # The MCP EE (datarobot-user-models/public_dropin_environments/python3_mcp)
+    # is renamed to "[DataRobot] Python 3 MCP" on master (PR #2367) but the
+    # release installed on the target may still carry the old "3.12" name, so
+    # pin the rename-stable id here (works under either name).
+    # TODO: flip to "[DataRobot] Python 3 MCP" once the rename is released.
+    description: Custom model (serverless) deploy with pinned platform MCP EE
     workflow: afcomponentmcp-deploy-e2e-serverless-ee.yaml
     env:
       ENABLE_MCP_ON_WORKLOAD_API: "false"
       MCP_WORKLOAD_DOCKERFILE_PATH: ""
-      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "[DataRobot] Python 3.11 GenAI Agents"
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "6a871a01922a6a76e1a23647"
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
 
   workload-docker:
@@ -52,10 +58,11 @@ use_cases:
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""
 
   workload-ee:
-    description: Workload deploy with generated Dockerfile and pinned GenAI Agents EE
+    # Same EE availability note as serverless-ee above.
+    description: Workload deploy with generated Dockerfile and pinned platform MCP EE
     workflow: afcomponentmcp-deploy-e2e-workload-ee.yaml
     env:
       ENABLE_MCP_ON_WORKLOAD_API: "true"
       MCP_WORKLOAD_DOCKERFILE_PATH: none
-      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "[DataRobot] Python 3.11 GenAI Agents"
+      DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT: "6a871a01922a6a76e1a23647"
       DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID: ""

@@ -53,7 +53,9 @@ jobs:
     secrets: inherit
     with:
       use-case-id: workload-ee
-      # Generated-Dockerfile builds start FROM the multi-GB GenAI Agents EE
-      # image, so they run ~1.5x longer than the workload-docker case.
+      # Generated-Dockerfile builds start FROM the pinned platform EE image.
+      # The slim "[DataRobot] Python 3 MCP" base should pull far faster than the
+      # multi-GB GenAI Agents EE this case used before — keep main's 18 until the
+      # first runs confirm, then tighten toward the workload-docker budget.
       deploy-timeout-minutes: 18
       skip-destroy: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_destroy == 'true' && 'true' || 'false' }}
