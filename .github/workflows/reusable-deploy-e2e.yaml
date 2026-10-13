@@ -39,7 +39,7 @@ jobs:
     # cannot cancel the post-run cache save / state upload after it succeeded.
     timeout-minutes: 20
     container:
-      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+      image: ghcr.io/astral-sh/uv:python3.11-trixie
     defaults:
       run:
         shell: bash
@@ -83,9 +83,9 @@ jobs:
           echo "/github/home/.pulumi/bin" >> "${GITHUB_PATH}"
 
       - name: Render template
-        uses: ./.github/actions/render-copier-instance
+        uses: datarobot-oss/copier-template-validator@main
         with:
-          copier-args: "--defaults --trust --vcs-ref=HEAD"
+          copier-args: "--trust --vcs-ref=HEAD"
 
       - name: Run deployment E2E
         id: deploy
@@ -145,7 +145,7 @@ jobs:
     runs-on: "ubuntu-latest"
     timeout-minutes: 15
     container:
-      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+      image: ghcr.io/astral-sh/uv:python3.11-trixie
     defaults:
       run:
         shell: bash

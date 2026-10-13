@@ -33,7 +33,7 @@ jobs:
       head_sha: ${{ steps.record_head.outputs.sha }}
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+      image: ghcr.io/astral-sh/uv:python3.11-trixie
     defaults:
       run:
         shell: bash
@@ -54,9 +54,9 @@ jobs:
             template/{{mcp_app_name_file}}/uv.lock.jinja
 
       - name: Render template
-        uses: ./.github/actions/render-copier-instance
+        uses: datarobot-oss/copier-template-validator@main
         with:
-          copier-args: "--defaults --trust --vcs-ref=HEAD"
+          copier-args: "--trust --vcs-ref=HEAD"
 
       - name: Check uv.lock is up to date
         id: lock_check
