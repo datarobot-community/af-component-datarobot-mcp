@@ -1,0 +1,90 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Automerge policy for dr-auto-merge, run by .github/workflows/automerge.yaml.
+#
+# This file is an EXTRA gate on top of the rulesets on `main`, not a substitute
+# for them, so nothing here can make a failing PR merge. It is always read from
+# the default branch, so a PR cannot ship a policy that lets itself merge.
+#
+# Full picture: docs/AUTOMERGE.md in datarobot-oss/github-actions, and the
+# enroll-automerge skill in datarobot-oss/cve-sync.
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: 1
+
+# Spelled with the `[bot]` suffix, exactly. A mismatch is silent: the PR is
+# never a candidate and nobody is told. Do not add `github-actions[bot]` to
+# get a stuck PR moving; that would trust every workflow in the repo.
+allowed_authors:
+  - dependabot[bot]
+  - cve-sync[bot]
+
+label: automerge
+
+# Each must be PRESENT and green, so each has to report on every PR either bot
+# can open. Ruleset-required contexts are added automatically; the repeats here
+# are deliberate, so editing the ruleset cannot quietly lower this bar.
+expected_checks:
+  # Unconditional: no path filter.
+  - "Test License"
+  - "Check for Windows-incompatible file paths"
+  - "gate / cve-sync gate"
+  # Required by the `main` ruleset. Path-filtered, and listable only because its
+  # filter in afcomponentmcp-server-test.yaml covers every path in
+  # `allowed_paths` below. On a resync that edits pyproject.toml.jinja this
+  # standalone run reports `skipped` (a pass), and the real server test runs as
+  # "Server test (post-lock)" inside afcomponentmcp-update-uv-lock.yaml.
+  - "Test MCP Server Startup & Tools"
+# Deliberately absent: the post-lock server test and the four E2E deploys fire
+# only on a resync that edits pyproject.toml.jinja, never on a Dependabot PR,
+# and the E2E suites need DATAROBOT_API_TOKEN, which a Dependabot event cannot
+# read. When they do run, `block_on_any_failure` and the bot's refusal to merge
+# while anything is in progress cover them. `Test Infra` is path-filtered to
+# fixtures/ and template/infra/, which neither bot touches. The release workflow
+# runs only on push.
+
+# Refuse when ANY check is failing, listed or not. `skipped` and `neutral`
+# count as a pass.
+block_on_any_failure: true
+
+# Cursor Bugbot reviews PRs here and reports through review threads, not checks.
+# Without this an open finding would not stop a bot PR from merging.
+block_on_cursor_comments: true
+
+# Quiet time after the last check completes. Its real job is catching a
+# workflow that has not registered yet, such as the post-lock server test and
+# E2E jobs, which start only after the lock job finishes.
+settle_seconds: 300
+
+# Sized for Dependabot's grouped github-actions bump: one file per workflow or
+# composite action that pins an action, 13 today. A cve-sync resync touches at
+# most 5.
+max_changed_files: 20
+
+# The union of what both bots write; there are no per-author path rules.
+#
+# cve-sync's half is the first five: residue spliced into both roots, the
+# template lock rebuilt by `regenerate-task: lock`, and the vendored command
+# file the resync refreshes. Template entries are spelled file by file on
+# purpose: a resync has no business editing template source, and the narrow
+# globs hand that PR to a person.
+#
+# Dependabot's half is the .github/ entries.
+allowed_paths:
+  - "pyproject.toml"
+  - "uv.lock"
+  - ".taskfiles/cve-sync.yml"
+  - "template/**/pyproject.toml.jinja"
+  - "template/**/uv.lock.jinja"
+  - ".github/workflows/**"
+  - ".github/actions/**"
+  - ".github/dependabot.yml"
+
+# Must be one the `main review` ruleset allows (merge, squash, rebase).
+merge_method: squash
+
+# On a terminal refusal (red check, path outside the list, open Bugbot thread)
+# the bot drops `automerge`, applies this label and comments why. This label
+# also routes the PR into pr-notify-slack.yaml's review ping. cve-sync applies
+# the same label itself, before anything runs, when it decides a change needs a
+# person: the reason is then in the PR body rather than a comment.
+escalate_label: "00 - Ready for Review"

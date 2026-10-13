@@ -33,6 +33,18 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
 
+# Identifies this template to the af-component CLI and to cve-sync, which pairs
+# it with its policy/copier.yaml entry on `type`. cve-sync reads it before
+# rendering, so keep it outside any jinja conditional.
+[tool.af-component]
+type = "mcp"
+
+[tool.uv]
+# Managed by cve-sync. Do not hand-edit between the markers: `cve-sync sync`
+# rewrites everything inside them from policy. Keep notes above the begin marker.
+# cve-sync:begin
+# cve-sync:end
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [

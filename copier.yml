@@ -39,3 +39,8 @@ _answers_file: ".datarobot/answers/drmcp-{{ mcp_app_name }}.yml"
 # Files to be excluded
 _exclude:
   - "*.j2"
+  # cve-sync's overrides for this template, if one is ever added. A rendered
+  # project already carries them in its pyproject.toml and lock, and never runs
+  # cve-sync, so the file is never copied out. cve-sync refuses the file unless
+  # this line covers it.
+  - ".cve-sync-overrides.toml"
