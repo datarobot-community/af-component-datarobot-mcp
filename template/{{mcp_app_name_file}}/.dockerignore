@@ -3,7 +3,8 @@
 # application code separately via custom model files — the EE image only needs
 # dependency manifests and runtime helpers, not app/.
 #
-# Workload-docker image builds use the Files catalog bundle (explicit file list),
+# Workload image builds stage their own copy of this directory under
+# .build/workload (filtered by the ignore patterns in infra/.../workload.py),
 # not this .dockerignore, so excluding app/ here does not affect workload images.
 
 app/

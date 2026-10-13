@@ -19,7 +19,6 @@ from __future__ import annotations
 import os
 import shutil
 import string
-from collections.abc import Callable
 from pathlib import Path
 
 import pulumi
@@ -55,67 +54,6 @@ def ensure_docker_build_context_files(deployments_path: Path) -> None:
         message = f"Docker build requires {', '.join(missing)} under {deployments_path}"
         pulumi.error(message)
         raise RuntimeError(message)
-
-
-def get_docker_bundle_files(
-    deployments_path: Path,
-    dockerfile_relative_path: str = DOCKERFILE_RELATIVE_PATH,
-) -> list[tuple[str, str]]:
-    """
-    Files required for DockerfileProvided workload builds.
-
-    ``dockerfile_relative_path`` is the catalog-relative path the artifact spec
-    points the build at (``MCP_WORKLOAD_DOCKERFILE_PATH``). The same path locates
-    the Dockerfile on disk and places it in the bundle, so a custom location is
-    uploaded where the build looks for it.
-
-    The Dockerfile installs uv and runs ``uv sync --frozen`` against
-    ``pyproject.toml``/``uv.lock`` at the bundle root -- already included via
-    ``get_deployments_app_files`` -- and expects ``start_server.sh`` at the
-    bundle root.
-    """
-    dockerfile_path = deployments_path / dockerfile_relative_path
-
-    for required_path, relative_path in (
-        (dockerfile_path, dockerfile_relative_path),
-        (deployments_path / PYPROJECT_RELATIVE_PATH, PYPROJECT_RELATIVE_PATH),
-        (deployments_path / UV_LOCK_RELATIVE_PATH, UV_LOCK_RELATIVE_PATH),
-        (deployments_path / START_SERVER_RELATIVE_PATH, START_SERVER_RELATIVE_PATH),
-    ):
-        if not required_path.is_file():
-            message = (
-                f"Workload DockerfileProvided build requires {relative_path} "
-                f"under {deployments_path}"
-            )
-            pulumi.error(message)
-            raise RuntimeError(message)
-
-    return [(str(dockerfile_path), dockerfile_relative_path)]
-
-
-def merge_source_files(
-    *file_groups: list[tuple[str, str]],
-) -> list[tuple[str, str]]:
-    """Merge bundle entries, keeping the last occurrence for duplicate relative paths."""
-    merged: dict[str, str] = {}
-    for group in file_groups:
-        for abs_path, rel_path in group:
-            merged[rel_path] = abs_path
-    return [(abs_path, rel_path) for rel_path, abs_path in sorted(merged.items())]
-
-
-def get_workload_source_files(
-    *,
-    deployments_path: Path,
-    dockerfile_relative_path: str | None,
-    get_core_app_files: Callable[[], list[tuple[str, str]]],
-) -> list[tuple[str, str]]:
-    """Collect the Files catalog bundle for workload provisioning."""
-    core_files = get_core_app_files()
-    if dockerfile_relative_path is None:
-        return core_files
-    docker_files = get_docker_bundle_files(deployments_path, dockerfile_relative_path)
-    return merge_source_files(core_files, docker_files)
 
 
 def normalize_shell_scripts(

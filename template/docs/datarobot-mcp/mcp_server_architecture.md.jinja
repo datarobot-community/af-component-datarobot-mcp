@@ -50,7 +50,7 @@ This structure keeps runtime code, documentation, and support tooling separate w
 `task deploy` supports two ways to host the MCP server on DataRobot, selected by `ENABLE_MCP_ON_WORKLOAD_API`:
 
 - **Serverless (default)**&mdash;Deploys as a DataRobot Custom Model and Deployment. Used when `ENABLE_MCP_ON_WORKLOAD_API` is `false` or unset.
-- **Workload (Preview)**&mdash;Deploys as a DataRobot Workload API artifact and workload, built from the Files catalog. Used when `ENABLE_MCP_ON_WORKLOAD_API` is `true`.
+- **Workload (Preview)**&mdash;Deploys as a DataRobot Workload API artifact and workload, built from the app directory staged under `.build/workload`. Used when `ENABLE_MCP_ON_WORKLOAD_API` is `true`.
 
 Run `task workload-deployment-flag-check` (invoked automatically by `task install` and `task deploy`) to confirm which mode a given `.env` resolves to before deploying.
 
