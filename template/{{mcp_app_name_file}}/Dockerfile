@@ -54,8 +54,9 @@ RUN uv sync --frozen --no-install-project --no-progress --color never && \
 # never invalidate the uv sync cache. What lands here depends on the context:
 #   - EE builds (context = app root): .dockerignore strips app/ etc., leaving a
 #     deps-only image — the platform injects model files at runtime.
-#   - Workload DockerfileProvided builds (context = Files catalog bundle, which
-#     has no .dockerignore): this copies app/ + start_server.sh, which CMD needs.
+#   - Workload DockerfileProvided builds (context = the staged .build/workload
+#     directory, which has no .dockerignore): this copies app/ + start_server.sh,
+#     which CMD needs.
 #     Without it the container crash-loops on `python -m app.main` (workload
 #     status ERRORED).
 COPY . .
