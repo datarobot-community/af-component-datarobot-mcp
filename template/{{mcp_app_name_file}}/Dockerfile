@@ -70,5 +70,6 @@ EXPOSE 8080
 
 ENTRYPOINT []
 
-# Same entrypoint as workload DEFAULT_ENTRYPOINT — deps are baked at build time.
+# Deps are baked above, so no start_server.sh sync is needed here — unlike the
+# generated-Dockerfile workload path (DEFAULT_GENERATED_ENTRYPOINT).
 CMD ["python", "-m", "app.main"]

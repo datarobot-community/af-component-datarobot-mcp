@@ -12,7 +12,7 @@ run 33109580288 and its re-run):
 |-------------------------------|-------------|------------------------------------------------|
 | serverless-ee                 | ~2:40       | pulumi up against a pinned platform EE         |
 | workload-docker               | ~2:45       | remote image build from the slim root image    |
-| workload-ee                   | ~4:00       | remote build FROM the multi-GB GenAI Agents EE |
+| workload-ee                   | ~4:00       | remote build FROM the pinned platform EE image |
 | serverless-docker (hash miss) | ~8 min      | EE version build 239 s + Deployment create 116 s |
 | serverless-docker (hash hit)  | ~2:42       | get-path — no EE build at all                  |
 
@@ -101,13 +101,18 @@ endpoint probe together add only seconds.
 
 ## 4. Container start time
 
-- **`start_server.sh` reuses the baked `/opt/venv`** when present
-  (docker-built images): `uv sync --frozen --active` is a near no-op. Only
-  pinned platform EEs (no custom Dockerfile) pay for a real sync into a
-  project-local venv.
+- **`start_server.sh` reuses an existing venv** when the image provides one:
+  docker-built images bake `/opt/venv`, and the "[DataRobot] Python 3 MCP" EE
+  points `VENV_DIR` at its own baked venv — either way
+  `uv sync --frozen --active` is a delta-sync (near no-op when the bundle's
+  lock matches the bake). Only legacy pinned EEs without a usable venv pay for
+  a full sync into a project-local venv.
 - **Docker-built paths never run `start_server.sh`** —
-  `CMD ["python", "-m", "app.main"]` with deps baked at build time (matches
-  the workload `DEFAULT_ENTRYPOINT`), so no bootstrap work at container start.
+  `CMD ["python", "-m", "app.main"]` with deps baked at build time, so no
+  bootstrap work at container start. (Generated-Dockerfile workloads DO run it
+  — `DEFAULT_GENERATED_ENTRYPOINT` — because the platform's generated build
+  does not install the bundle's lock; the sync there is what keeps the
+  bundle's pinned versions authoritative over the EE bake.)
 
 ## 5. Failing fast (time not wasted is time saved)
 
@@ -151,13 +156,76 @@ destroy split out, endpoint probe **added**, serverless-docker on a hash hit).
 
 ## Known immovable costs
 
-- The remote builder's pull of the multi-GB GenAI Agents base image
-  (workload-ee) — platform-side.
+- The remote builder's pull of the pinned platform EE base image
+  (workload-ee) — platform-side. Shrunk substantially by switching from the
+  multi-GB GenAI Agents EE to the slim "[DataRobot] Python 3 MCP" EE
+  (132-package lock vs 417); re-measure once the new EE is live.
 - The EE version build itself when docker inputs genuinely change
   (serverless-docker cache miss) — that build is exactly what the case tests.
 
 ## Change log
 
+- **2026-09-15 (default EE resolution hardening)** — The default EE name now
+  falls back to the public MCP environment's install-stable id
+  (`DEFAULT_EXECUTION_ENVIRONMENT_ID`) when neither the enum lookup nor the
+  name search finds it — installs whose copy still carries the pre-rename
+  `Python 3.12 MCP` name deploy instead of raising. `start_server.sh` resolves
+  the project from its own directory rather than `CODE_DIR`: the MCP EE sets
+  `CODE_DIR=/opt/code` at image level, which a generated workload image inherits
+  regardless of where the platform copied the bundle.
+- **2026-09-14 (rebased onto latest main: #68, #69, #71, #72)** — #69 replaced
+  `MCP_DEPLOYMENT_TYPE` with the `ENABLE_MCP_ON_WORKLOAD_API` boolean and
+  removed the `workload-preview-*` e2e cases/workflows; the four remaining
+  cases pin the MCP EE id. #71 bumped genai to `>=0.29.41` and added the
+  "Update uv.lock" PR pipeline that regenerates `uv.lock.jinja` whenever
+  `pyproject.toml.jinja` changes — the MCP EE pins the same
+  `>=0.29.41,<0.30.0`. #72 pinned a new GenAI Agents version id as the CLI
+  default; this branch keeps the default empty (pinned version ids go stale on
+  every EE rebuild, and a GenAI Agents id is wrong for the MCP EE).
+  `.env.template` follows main's trimmed workload block; `_require_env`'s
+  error message no longer names the removed `MCP_DEPLOYMENT_TYPE`.
+- **2026-09-10 (rebased onto main: #58, #63–#67)** — main brought the GA
+  `datarobot-workload` deployment type (#66), the `OAUTH_CLAIM_VALIDATION` env
+  var (#63), a committed `uv.lock.jinja` with a stale-lock CI check and
+  `task lock` (#67), and LF normalization for bundled shell scripts (#64/#65).
+  Reconciled: adopted main's genai floor and the 18-min workload-ee budget;
+  applied the `sh start_server.sh` generated-entrypoint default to the GA path
+  too (`WorkloadConfiguration.resolve_workload_entrypoint` still said
+  `python -m app.main`); pointed every pinned-EE e2e case at the MCP EE id;
+  fixed stale `.env.template` workload comments. On the EE side
+  (datarobot-user-models `public_dropin_environments/python3_mcp`) the
+  `[DataRobot] Python 3 MCP` rename and the `datarobot[core]` removal landed
+  upstream; the EE lock is kept in step with the template's range.
+- **2026-09-03 (EE range pin)** — datarobot-user-models moved `python312_mcp`
+  to `python3_mcp` and range-pinned genai (`>=0.29.23,<0.30.0`); template and
+  EE now pin the same range (patch releases flow through lock refreshes, a
+  minor bump is a deliberate two-repo change). The EE ships no start script of
+  its own — the bundle's `start_server.sh` is authoritative on both pinned-EE
+  surfaces — and its `VENV_DIR` points at the baked venv so the bundle's sync is
+  a delta. Because a target may not yet list the EE under its new name, e2e
+  `use-cases.yaml` pins the install-stable id `6a871a01922a6a76e1a23647`
+  (TODO: flip back to the name once every target has the rename).
+- **2026-08-28 (MCP execution environment)** — Switched the pinned-EE default
+  from `[DataRobot] Python 3.11 GenAI Agents` (417-package, multi-GB image full
+  of agent frameworks MCP never imports) to the purpose-built
+  `[DataRobot] Python 3 MCP` (132-package lock; datarobot-user-models
+  `public_dropin_environments/python3_mcp`, renamed from `python312_mcp` — the
+  version-less name lets the interpreter move within Python 3 without renames).
+  Expected wins: much smaller base-image pull on workload-ee, and near-no-op
+  cold-start syncs on serverless-ee because the EE bakes the same
+  `datarobot-genai[drmcp]` range the template ships and `VENV_DIR` now points
+  at the baked venv (delta-sync instead of fresh-venv install). Also:
+  generated-Dockerfile workloads now start via the bundle's `start_server.sh`
+  (`DEFAULT_GENERATED_ENTRYPOINT`) because the platform's generated build
+  installs nothing — the runtime sync keeps the bundle's lock authoritative
+  when the EE bake lags; `start_server.sh` now fails loudly (3 retries) instead
+  of silently serving a stale baked set; EE names in
+  `DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT` resolve via the search API
+  (any name, not just a hardcoded sentinel), version-id default is empty
+  (latest); template genai range bumped to `>=0.29.9,<0.30.0` in lockstep with
+  the EE. e2e passes only once the renamed EE is installed on the target —
+  its rename-stable id `6a871a01922a6a76e1a23647` is the interim fallback.
+  Re-measure workload-ee/serverless-ee deploy times after release.
 - **2026-08-27 (upload retry)** — A workload-ee deploy died in 3 s on a
   transient 502 from the Files catalog staged-upload endpoint. The shared HTTP
   session retries only idempotent methods (POST deliberately excluded —

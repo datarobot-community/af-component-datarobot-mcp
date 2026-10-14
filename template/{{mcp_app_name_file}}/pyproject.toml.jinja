@@ -6,6 +6,10 @@ name = "{{ mcp_app_name }}"
 version = "0.0.0"
 description = "DataRobot MCP Server"
 requires-python = ">=3.11, <3.14"
+# The minor ceiling is deliberate: datarobot-genai minor (y) bumps are breaking.
+# Keep this range in lockstep with the "[DataRobot] Python 3 MCP" execution
+# environment (datarobot-user-models/public_dropin_environments/python3_mcp), which
+# bakes the same range so pinned-EE deploys delta-sync instead of reinstalling.
 dependencies = [
     "datarobot-genai[drmcp]>=0.29.50,<0.30.0",
 ]
