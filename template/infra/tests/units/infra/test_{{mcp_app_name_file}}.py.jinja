@@ -94,14 +94,14 @@ def pulumi_mocks(monkeypatch, tmp_path):
     )
     monkeypatch.setattr("pulumi_datarobot.CustomModelTagArgs", MagicMock())
 
-    # Patch the id property of the RuntimeEnvironment instance for PYTHON_311_GENAI_AGENTS
-    from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironments
+    # Patch the id property shared by every RuntimeEnvironment instance
+    from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironment
 
     patcher = patch.object(
-        RuntimeEnvironments.PYTHON_311_GENAI_AGENTS.value.__class__,
+        RuntimeEnvironment,
         "id",
         new_callable=PropertyMock,
-        return_value="python-311-genai-agents-id",
+        return_value="python-3-mcp-id",
     )
     patcher.start()
 
@@ -237,7 +237,7 @@ def test_execution_environment_default_set(monkeypatch):
     """Test execution environment when DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT is set to default value."""
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT",
-        "[DataRobot] Python 3.11 GenAI Agents",
+        "[DataRobot] Python 3 MCP",
     )
 
     import importlib
@@ -247,14 +247,14 @@ def test_execution_environment_default_set(monkeypatch):
     importlib.reload(mcp_infra)
 
     mcp_infra.pulumi.info.assert_any_call(
-        "Using default GenAI Agentic Execution Environment."
+        "Using DataRobot execution environment: [DataRobot] Python 3 MCP."
     )
 
     # Check that ExecutionEnvironment.get was called with the correct parameters
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.assert_called_once()
     _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
 
-    assert kwargs["id"] == "python-311-genai-agents-id"
+    assert kwargs["id"] == "python-3-mcp-id"
     assert kwargs["version_id"] is None
 
     # ExecutionEnvironment constructor should not be called when using default env
@@ -265,7 +265,7 @@ def test_execution_environment_pinned_set(monkeypatch):
     """Test execution environment when pinned version ID is set."""
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT",
-        "[DataRobot] Python 3.11 GenAI Agents",
+        "[DataRobot] Python 3 MCP",
     )
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
@@ -279,17 +279,17 @@ def test_execution_environment_pinned_set(monkeypatch):
     importlib.reload(mcp_infra)
 
     mcp_infra.pulumi.info.assert_any_call(
-        "Using default GenAI Agentic Execution Environment."
+        "Using DataRobot execution environment: [DataRobot] Python 3 MCP."
     )
     mcp_infra.pulumi.info.assert_any_call(
-        "Using existing execution environment: python-311-genai-agents-id"
+        "Using existing execution environment: python-3-mcp-id"
         " Version ID: 690cd2f698419673f938f7c4"
     )
 
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.assert_called_once()
     _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
 
-    assert kwargs["id"] == "python-311-genai-agents-id"
+    assert kwargs["id"] == "python-3-mcp-id"
     assert kwargs["version_id"] == "690cd2f698419673f938f7c4"
 
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.assert_not_called()
@@ -515,3 +515,59 @@ class TestInitialConfiguration:
         actual = mock_exit.call_args.args[0]
         expected = 1
         assert actual == expected
+
+
+def test_execution_environment_falls_back_to_python311(monkeypatch):
+    """The default falls back to the 3.11 environment when Python 3 MCP is missing,
+    and the version pin, which belongs to Python 3 MCP, is not looked up."""
+    monkeypatch.setenv(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "[DataRobot] Python 3 MCP"
+    )
+    monkeypatch.setenv(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
+        "690cd2f698419673f938f7c4",
+    )
+
+    import importlib
+
+    from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironment
+
+    import infra.{{mcp_app_name_file}} as mcp_infra
+
+    with patch.object(
+        RuntimeEnvironment,
+        "id",
+        new_callable=PropertyMock,
+        side_effect=[ValueError("missing"), "python-311-id"],
+    ):
+        importlib.reload(mcp_infra)
+
+    mcp_infra.pulumi.info.assert_any_call(
+        "Using DataRobot execution environment: [DataRobot] Python 3.11 GenAI Agents."
+    )
+    _args, kwargs = mcp_infra.pulumi_datarobot.ExecutionEnvironment.get.call_args
+    assert kwargs["id"] == "python-311-id"
+    assert kwargs["version_id"] is None
+
+
+def test_execution_environment_missing_everywhere(monkeypatch):
+    monkeypatch.setenv(
+        "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "[DataRobot] Python 3 MCP"
+    )
+
+    import importlib
+
+    from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironment
+
+    import infra.{{mcp_app_name_file}} as mcp_infra
+
+    with (
+        patch.object(
+            RuntimeEnvironment,
+            "id",
+            new_callable=PropertyMock,
+            side_effect=ValueError("missing"),
+        ),
+        pytest.raises(ValueError, match="No execution environment for Python 3 MCP"),
+    ):
+        importlib.reload(mcp_infra)

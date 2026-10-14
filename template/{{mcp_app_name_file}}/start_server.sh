@@ -75,7 +75,7 @@ fi
 # Requires: app/ directory in the same location
 #
 # No --root_path / ROOT_PATH_ARG is threaded through here, unlike the dragent
-# branch in python311_genai_agents. A deployed server is served under
+# branch in the agent environments. A deployed server is served under
 # https://<endpoint>/deployments/<id>/directAccess/, and drmcp already applies
 # that prefix itself: DRMCPConfig reads URL_PREFIX straight from the environment
 # as `mount_path` (datarobot_genai/drmcp/core/config.py) and every route is

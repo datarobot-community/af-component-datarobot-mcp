@@ -13,12 +13,14 @@ jobs:
     name: "Test License"
     runs-on: "ubuntu-latest"
     container:
-      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+      image: ghcr.io/astral-sh/uv:python3.11-trixie
     steps:
       - name: Checkout
         uses: "actions/checkout@v5"
       - name: Render copier instance
-        uses: ./.github/actions/render-copier-instance
+        uses: datarobot-oss/copier-template-validator@a0b111f850dbefd5ff2cb854ea229e70c24a8fb8 # main as of 2026-10-13
+        with:
+          copier-args: "--trust --vcs-ref=HEAD"
       - name: License Header Check
         uses: apache/skywalking-eyes/header@main
         with:
