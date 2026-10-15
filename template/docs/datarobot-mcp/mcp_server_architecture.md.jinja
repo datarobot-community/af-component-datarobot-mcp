@@ -41,7 +41,7 @@ The application is organized by responsibility:
 - `app/prompts/` and `app/resources/` are loaded automatically for custom prompts and resources.
 - `app/tests/` contains integration and unit tests for the application code.
 - `dev_tools/` contains auxiliary developer utilities.
-- `Dockerfile` and `.dockerignore` define container builds. The app root is the Docker context for custom execution-environment builds; `.dockerignore` keeps EE images deps-only while workload-docker bundles `app/` via the Files catalog.
+- `Dockerfile` and `.dockerignore` define container builds. The app root is the Docker context for custom execution-environment builds; `.dockerignore` keeps EE images deps-only, while workload-docker builds use a copy of the app directory staged under `.build/workload`.
 
 This structure keeps runtime code, documentation, and support tooling separate while still making them easy to navigate.
 
@@ -50,7 +50,7 @@ This structure keeps runtime code, documentation, and support tooling separate w
 `task deploy` supports two ways to host the MCP server on DataRobot, selected by `ENABLE_MCP_ON_WORKLOAD_API`:
 
 - **Serverless (default)**&mdash;Deploys as a DataRobot Custom Model and Deployment. Used when `ENABLE_MCP_ON_WORKLOAD_API` is `false` or unset.
-- **Workload (Preview)**&mdash;Deploys as a DataRobot Workload API artifact and workload, built from the app directory staged under `.build/workload`. Used when `ENABLE_MCP_ON_WORKLOAD_API` is `true`.
+- **Workload**&mdash;Deploys as a DataRobot Workload API artifact and workload, built from the app directory staged under `.build/workload`. Used when `ENABLE_MCP_ON_WORKLOAD_API` is `true`.
 
 Run `task workload-deployment-flag-check` (invoked automatically by `task install` and `task deploy`) to confirm which mode a given `.env` resolves to before deploying.
 
@@ -81,7 +81,7 @@ Run `task workload-deployment-flag-check` (invoked automatically by `task instal
 | `DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT` | Reuse an existing execution environment instead of building one. Applies to serverless deployments and to Workload deployments using a generated Dockerfile; has no effect on the default Workload path, which uses a provided Dockerfile | None&mdash;builds a new execution environment |
 | `DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID` | Version of the reused execution environment; only applies when `DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT` is set | None |
 | `DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME` | Name for a newly built execution environment; only applies when `DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT` is empty | `[{pulumi stack}] [{app name}]` |
-| `MCP_WORKLOAD_DOCKERFILE_PATH` | Catalog-relative Dockerfile path for a Workload provided-Dockerfile build; set to `none` to use a generated Dockerfile instead | `Dockerfile` |
+| `MCP_WORKLOAD_DOCKERFILE_PATH` | Dockerfile path, relative to the app directory (staged under `.build/workload`), for a Workload provided-Dockerfile build; set to `none` to use a generated Dockerfile instead | `Dockerfile` |
 | `MCP_WORKLOAD_CONTAINER_PORT` | Workload container port | `8080` |
 | `MCP_WORKLOAD_REPLICA_COUNT` | Workload replica count | `1` |
 | `MCP_WORKLOAD_CPU` | Workload CPU allocation | `1` |
