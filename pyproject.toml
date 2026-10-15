@@ -16,4 +16,7 @@ package = false
 # Managed by cve-sync. Do not hand-edit between the markers: `cve-sync sync`
 # rewrites everything inside them from policy. Keep notes above the begin marker.
 # cve-sync:begin
+constraint-dependencies = [
+    "pygments>=2.20.0",
+]
 # cve-sync:end
