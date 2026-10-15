@@ -9,7 +9,9 @@ from pathlib import Path
 
 # Default copier answers use mcp_app_name=mcp_server → hyphenated root package in the lock.
 DEFAULT_RENDERED_PACKAGE_NAME = "mcp-server"
-JINJA_NAME_LINE = 'name = "{{ mcp_app_name | replace("_", "-") }}"'
+# Single quotes inside the jinja expression keep this line valid TOML, so tools
+# that read the lock as TOML (cve-sync's gate) can parse it unrendered.
+JINJA_NAME_LINE = "name = \"{{ mcp_app_name | replace('_', '-') }}\""
 
 
 def apply_jinja_package_name(content: str, rendered_package_name: str) -> str:

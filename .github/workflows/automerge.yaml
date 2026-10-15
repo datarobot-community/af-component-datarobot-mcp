@@ -1,0 +1,32 @@
+---
+name: Automerge
+
+# Approves and merges bot PRs (cve-sync resyncs, Dependabot's github-actions
+# bump) once everything in .github/automerge.yaml is satisfied. It merges as
+# the dr-auto-merge App, which holds the bypass on the `main review` ruleset;
+# native `gh pr merge --auto` merges as github-actions[bot], which cannot.
+#
+# MODE: `report` comments a verdict, `approve` also approves, `merge` also
+# merges. It defaults to `report`, which is inert. Dropping back to `report` is
+# a one-word revert. Approval and merge land on different polls, so there is
+# always about one poll interval to intervene.
+#
+# A cron rather than `pull_request`: a Dependabot `pull_request` event cannot
+# read this repo's Actions secrets, so the App key would arrive empty.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  automerge:
+    uses: datarobot-oss/github-actions/.github/workflows/automerge.yaml@0.0.32
+    with:
+      # Public metadata, not a secret: `dr-auto-merge`.
+      app_id: '4912188'
+      mode: 'merge'
+    secrets:
+      app_private_key: ${{ secrets.DR_AUTO_MERGE_PRIVATE_KEY }}
+    permissions:
+      contents: read

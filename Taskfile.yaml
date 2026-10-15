@@ -6,6 +6,13 @@ env:
   SRCDIR: ./template/{{"{{"}}mcp_app_name{{"}}"}}/app
   TESTDIR: ./template/{{"{{"}}mcp_app_name{{"}}"}}/tests
 
+includes:
+  # Generated from datarobot-oss/cve-sync and rewritten by every resync, so do
+  # not hand-edit it. `task cve-sync:check-templates` covers what ships: the
+  # template's pyproject.toml.jinja and uv.lock.jinja.
+  cve-sync:
+    taskfile: .taskfiles/cve-sync.yml
+
 tasks:
   copy:
     desc: 🔧 Render the template

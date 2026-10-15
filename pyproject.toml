@@ -1,0 +1,19 @@
+[project]
+name = "af-component-datarobot-mcp"
+version = "0.1.0"
+description = "Build tooling for the DataRobot MCP component template"
+requires-python = ">=3.11"
+# Build tooling only. What reaches a rendered MCP server is
+# template/{{mcp_app_name_file}}/pyproject.toml.jinja and the uv.lock.jinja beside it.
+# This root exists so `uv run copier` works and so cve-sync has a resolution root
+# to anchor on; it is not shipped.
+dependencies = [
+    "copier>=9",
+]
+
+[tool.uv]
+package = false
+# Managed by cve-sync. Do not hand-edit between the markers: `cve-sync sync`
+# rewrites everything inside them from policy. Keep notes above the begin marker.
+# cve-sync:begin
+# cve-sync:end

@@ -1,0 +1,36 @@
+---
+# Only the github-actions ecosystem. Python dependencies are deliberately not
+# managed here: cve-sync owns them through its floors and overrides, and
+# Dependabot cannot see that policy, so its Python PRs would fight the resync.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    # "/" covers .github/workflows. The glob adds the composite actions under
+    # .github/actions/*, which Dependabot skips otherwise (setup-caching pins
+    # actions/cache).
+    directories:
+      - "/"
+      - "/.github/actions/*"
+    schedule:
+      interval: "weekly"
+    # One PR for everything, majors included. Without a group Dependabot opens
+    # a PR per action per directory.
+    groups:
+      github-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+          - "major"
+    open-pull-requests-limit: 1
+    # `automerge` opts these PRs into .github/automerge.yaml. Every label here
+    # must already exist in the repo: Dependabot silently drops one it cannot
+    # find, and without `automerge` the merge bot never sees the PR.
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automerge"
+    commit-message:
+      prefix: "ci"
