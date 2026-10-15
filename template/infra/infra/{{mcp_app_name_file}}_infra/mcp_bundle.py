@@ -91,7 +91,7 @@ class FileBundler:
         cls, deployment_app_abs_path: Path
     ) -> str | None:
         """
-        Return a catalog-relative Dockerfile path when using DockerfileProvided.
+        Return a Dockerfile path relative to the app directory when using DockerfileProvided.
 
         ``MCP_WORKLOAD_DOCKERFILE_PATH`` overrides the default ``Dockerfile``
         check. Set ``MCP_WORKLOAD_DOCKERFILE_PATH=none`` (or ``false``/``0``) to force

@@ -41,8 +41,8 @@ endpoint probe together add only seconds.
   invalidate the dependency install.
 - **`COPY . .` is load-bearing — do not remove it.** For EE builds the
   `.dockerignore` reduces it to the manifests, but for workload
-  DockerfileProvided builds the context is the Files catalog bundle (which has
-  no `.dockerignore`), and this line is what puts `app/` into the image.
+  DockerfileProvided builds the context is the staged `.build/workload`
+  directory (which has no `.dockerignore`), and this line is what puts `app/` into the image.
   Removing it made `CMD ["python", "-m", "app.main"]` crash-loop and the
   workload report status `ERRORED` (caught by the E2E endpoint probe).
 - **uv pinned by digest** (`COPY --from=ghcr.io/astral-sh/uv@sha256:…`) — no
