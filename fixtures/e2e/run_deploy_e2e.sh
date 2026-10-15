@@ -199,6 +199,9 @@ if [[ -n "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME:-}" && -z "${DATAROBOT_DEFA
     append_env_var DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT "${reuse_id}"
   else
     echo "No reusable execution environment for context-hash ${EE_CONTEXT_HASH}; building via Pulumi"
+    # A build adds a version; DataRobot caps non-failed versions per EE at 30.
+    python3 "${WORKSPACE}/fixtures/e2e/prune_ee_versions.py" \
+      --name "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME}" --keep 10
     EE_MARK_NAME="${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME}"
     EE_MARK_HASH="${EE_CONTEXT_HASH}"
   fi
