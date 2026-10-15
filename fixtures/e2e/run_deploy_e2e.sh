@@ -187,6 +187,17 @@ uv sync
 EE_MARK_NAME=""
 EE_MARK_HASH=""
 if [[ -n "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME:-}" && -z "${DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT:-}" ]]; then
+  # DataRobot caps non-failed versions per EE at 30 and the CI token cannot delete
+  # them. Pick the first EE name with room (<name>, <name>-2, ...) and warn when
+  # the base name is full. Prints only the name to use.
+  active_ee_name="$(
+    python3 "${WORKSPACE}/fixtures/e2e/pick_ee_name.py" \
+      --name "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME}"
+  )"
+  if [[ -n "${active_ee_name}" && "${active_ee_name}" != "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME}" ]]; then
+    export DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME="${active_ee_name}"
+    append_env_var DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME "${active_ee_name}"
+  fi
   EE_CONTEXT_HASH="$(cat Dockerfile pyproject.toml uv.lock .dockerignore | sha256sum | cut -c1-16)"
   reuse_id="$(
     python3 "${WORKSPACE}/fixtures/e2e/resolve_ee_reuse.py" resolve \
@@ -199,9 +210,6 @@ if [[ -n "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME:-}" && -z "${DATAROBOT_DEFA
     append_env_var DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT "${reuse_id}"
   else
     echo "No reusable execution environment for context-hash ${EE_CONTEXT_HASH}; building via Pulumi"
-    # A build adds a version; DataRobot caps non-failed versions per EE at 30.
-    python3 "${WORKSPACE}/fixtures/e2e/prune_ee_versions.py" \
-      --name "${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME}" --keep 10
     EE_MARK_NAME="${DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME}"
     EE_MARK_HASH="${EE_CONTEXT_HASH}"
   fi
