@@ -18,11 +18,9 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from functools import lru_cache
-from pathlib import Path
 from typing import Any, NoReturn, cast
 
 import pulumi
@@ -34,19 +32,11 @@ from datarobot_pulumi_utils.pulumi.stack import PROJECT_NAME
 # the package prefix grows with the user's app name. A magic trailing comma keeps
 # ruff from collapsing these onto one line for a short name and then re-wrapping
 # them for a long one, which made `ruff format --check` fail per app name.
-from {{mcp_app_name_file}}_clients.files_catalog_pulumi import (
-    FilesCatalogBundle,
-    source_bundle_hash,
-)
 from {{mcp_app_name_file}}_clients.workload_api_client import (
     build_artifact_from_image_uri,
 )
-from {{mcp_app_name_file}}_clients.workload_artifact_pulumi import (
-    WorkloadGeneratedImageArtifact,
-    WorkloadImageArtifact,
-)
 
-from .. import project_dir, use_case
+from .. import use_case
 from ..{{mcp_app_name_file}}_user_params import (
     MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS,
     MCP_USER_RUNTIME_PARAMETERS,
@@ -57,14 +47,9 @@ from .mcp_api_keys import (
     dr_credential_env_var,
     workload_credential_env_vars,
 )
-from .mcp_bundle import (
-    FileBundler,
-    get_workload_source_files,
-)
+from .mcp_bundle import FileBundler
 from .mcp_cli_configs import tool_flag_env_vars
-from .mcp_execution_environment import provision_mcp_execution_environment
 from .mcp_oauth_configs import (
-    WorkloadArtifactContainerRoute,
     get_workload_mcp_oauth_routes,
     mcp_oauth_metadata_env_vars,
     mcp_tag_scope_env_vars,
@@ -81,8 +66,6 @@ from .mcp_utils import (
 
 WORKLOAD_CONTAINER_NAME = "mcp-server"
 DEFAULT_WORKLOAD_CONTAINER_PORT = 8080
-DEFAULT_DOCKERFILE_RELATIVE_PATH = "Dockerfile"
-DEFAULT_BUILD_TIMEOUT_S = 6000
 DEFAULT_ENTRYPOINT = ["python", "-m", "app.main"]
 DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
 # Org entitlement for Enclave placement.
@@ -127,34 +110,10 @@ def _enclave_selection_policy() -> str | None:
 def _require_env(name: str) -> str:
     value = os.getenv(name, "").strip()
     if not value:
-        message = f"{name} is required for MCP_DEPLOYMENT_TYPE 'datarobot-workload' or 'datarobot-workload-preview'"
+        message = f"{name} is required for MCP_DEPLOYMENT_TYPE 'datarobot-workload'"
         pulumi.error(message)
         raise RuntimeError(message)
     return value
-
-
-def _deployments_application_path() -> Path:
-    return project_dir.parent / "{{mcp_app_name_file}}"
-
-
-def _resolve_dockerfile_relative_path() -> str | None:
-    """
-    Return a catalog-relative Dockerfile path when using DockerfileProvided.
-
-    ``MCP_WORKLOAD_DOCKERFILE_PATH`` overrides the default ``Dockerfile``
-    check. Set ``MCP_WORKLOAD_DOCKERFILE_PATH=none`` (or ``false``/``0``) to force
-    generated mode.
-    """
-    explicit = os.getenv("MCP_WORKLOAD_DOCKERFILE_PATH", "").strip()
-    if explicit.lower() in {"none", "false", "0"}:
-        return None
-    if explicit:
-        return explicit
-
-    default_path = _deployments_application_path() / DEFAULT_DOCKERFILE_RELATIVE_PATH
-    if default_path.is_file():
-        return DEFAULT_DOCKERFILE_RELATIVE_PATH
-    return None
 
 
 def _explicit_workload_entrypoint() -> list[str] | None:
@@ -175,10 +134,6 @@ def _explicit_workload_entrypoint() -> list[str] | None:
             raise RuntimeError(message)
         return parsed
     return [part.strip() for part in raw.split(",") if part.strip()]
-
-
-def _resolve_workload_entrypoint() -> list[str]:
-    return _explicit_workload_entrypoint() or list(DEFAULT_ENTRYPOINT)
 
 
 def _resolve_container_port() -> int:
@@ -235,7 +190,7 @@ def _workload_environment_vars(mcp_server_asset_name: str) -> list[dict[str, str
 
     Every setting ``provision_deployment_mcp_server`` injects as a runtime
     parameter must ride along here too, with the same defaults — otherwise
-    flipping MCP_DEPLOYMENT_TYPE to the workload preview silently drops
+    flipping MCP_DEPLOYMENT_TYPE to the workload silently drops
     configured logging, registration and OTEL behavior.
     """
     env_vars: list[dict[str, str]] = [
@@ -362,162 +317,13 @@ def _export_workload_endpoints(
     )
 
 
-def _create_workload_image_artifact(
-    *,
-    mcp_server_asset_name: str,
-    workload_api_endpoint: str,
-    catalog: FilesCatalogBundle,
-    bundle_hash: str,
-    environment_vars: list[dict[str, str]],
-    routes: list[WorkloadArtifactContainerRoute] | None,
-    build_timeout_s: int,
-    dockerfile_relative_path: str | None,
-    execution_environment: pulumi_datarobot.ExecutionEnvironment | None,
-) -> WorkloadImageArtifact | WorkloadGeneratedImageArtifact:
-    routes_val = [r.to_dict() for r in routes] if routes else None
-    if dockerfile_relative_path:
-        pulumi.info(
-            f"Workload image build: DockerfileProvided (path={dockerfile_relative_path})"
-        )
-        return WorkloadImageArtifact(
-            mcp_server_asset_name + " Workload Artifact [Provided Dockerfile]",
-            workload_api_endpoint=workload_api_endpoint,
-            artifact_name=mcp_server_asset_name,
-            catalog_id=catalog.catalog_id,
-            catalog_version_id=catalog.catalog_version_id,
-            dockerfile_relative_path=dockerfile_relative_path,
-            container_name=WORKLOAD_CONTAINER_NAME,
-            container_port=_resolve_container_port(),
-            environment_vars=environment_vars,
-            routes=routes_val,
-            source_hash=bundle_hash,
-            build_timeout_s=build_timeout_s,
-            opts=pulumi.ResourceOptions(depends_on=[catalog]),
-        )
-
-    if execution_environment is None:
-        message = (
-            "Internal error: execution environment is required for "
-            "DockerfileGenerated builds"
-        )
-        pulumi.error(message)
-        raise RuntimeError(message)
-
-    pulumi.info(
-        "Workload image build: DockerfileGenerated "
-        "(execution environment aligned with datarobot-serverless)"
-    )
-    return WorkloadGeneratedImageArtifact(
-        mcp_server_asset_name + " Workload Artifact [Generated Dockerfile]",
-        workload_api_endpoint=workload_api_endpoint,
-        artifact_name=mcp_server_asset_name,
-        catalog_id=catalog.catalog_id,
-        catalog_version_id=catalog.catalog_version_id,
-        execution_environment_id=execution_environment.id,
-        execution_environment_version_id=execution_environment.version_id,
-        entrypoint=_resolve_workload_entrypoint(),
-        container_name=WORKLOAD_CONTAINER_NAME,
-        container_port=_resolve_container_port(),
-        environment_vars=environment_vars,
-        routes=routes_val,
-        source_hash=bundle_hash,
-        build_timeout_s=build_timeout_s,
-        opts=pulumi.ResourceOptions(depends_on=[catalog, execution_environment]),
-    )
-
-
-def provision_workload_mcp_server(
-    *,
-    mcp_server_asset_name: str,
-    get_deployments_app_files: Callable[[], list[tuple[str, str]]],
-) -> dict[str, Any]:
-    pulumi.info(
-        "MCP_DEPLOYMENT_TYPE='datarobot-workload-preview' -> provisioning via Workload API "
-        "(Files catalog + image-build artifact + Workload)."
-    )
-
-    datarobot_endpoint = _require_env("DATAROBOT_ENDPOINT")
-    # Fail fast; dynamic providers read the token from the environment so it is
-    # never stored in Pulumi state.
-    _require_env("DATAROBOT_API_TOKEN")
-
-    dockerfile_relative_path = _resolve_dockerfile_relative_path()
-    source_files = get_workload_source_files(
-        deployments_path=_deployments_application_path(),
-        dockerfile_relative_path=dockerfile_relative_path,
-        get_core_app_files=get_deployments_app_files,
-    )
-    bundle_hash = source_bundle_hash(source_files)
-
-    catalog = FilesCatalogBundle(
-        mcp_server_asset_name + " Files Catalog Bundle",
-        files_api_endpoint=datarobot_endpoint,
-        source_files=source_files,
-        source_hash=bundle_hash,
-    )
-
-    execution_environment: pulumi_datarobot.ExecutionEnvironment | None = None
-    if dockerfile_relative_path is None:
-        execution_environment = provision_mcp_execution_environment(
-            mcp_server_asset_name,
-            resource_name_suffix=" [Workload Generated Dockerfile]",
-        )
-
-    artifact = _create_workload_image_artifact(
-        mcp_server_asset_name=mcp_server_asset_name,
-        workload_api_endpoint=datarobot_endpoint,
-        catalog=catalog,
-        bundle_hash=bundle_hash,
-        environment_vars=_workload_environment_vars(mcp_server_asset_name),
-        routes=get_workload_mcp_oauth_routes(),
-        build_timeout_s=int(
-            os.getenv("MCP_WORKLOAD_BUILD_TIMEOUT_S", str(DEFAULT_BUILD_TIMEOUT_S))
-        ),
-        dockerfile_relative_path=dockerfile_relative_path,
-        execution_environment=execution_environment,
-    )
-
-    workload_depends_on: list[Any] = [artifact]
-    if execution_environment is not None:
-        workload_depends_on.append(execution_environment)
-
-    workload = _create_workload(
-        mcp_server_asset_name=mcp_server_asset_name,
-        artifact_id=artifact.artifact_id,
-        depends_on=workload_depends_on,
-    )
-
-    pulumi.export(mcp_server_asset_name + " Files Catalog Id", catalog.catalog_id)
-    pulumi.export(
-        mcp_server_asset_name + " Files Catalog Version Id", catalog.catalog_version_id
-    )
-    if execution_environment is not None:
-        pulumi.export(
-            mcp_server_asset_name + " Workload Execution Environment Id",
-            execution_environment.id,
-        )
-        pulumi.export(
-            mcp_server_asset_name + " Workload Execution Environment Version Id",
-            execution_environment.version_id,
-        )
-    mcp_workload_endpoints = _export_workload_endpoints(mcp_server_asset_name, workload)
-
-    return {
-        "execution_environment": execution_environment,
-        "deployment": None,
-        "mcp_server_mcp_endpoint": mcp_workload_endpoints.mcp_endpoint,
-        "mcp_server_base_endpoint": mcp_workload_endpoints.base_endpoint,
-        "mcp_custom_model_runtime_parameters": [],
-    }
-
-
 def provision_workload_mcp_server_from_image_uri(
     *,
     mcp_server_asset_name: str,
     workload_image_uri: str,
 ) -> dict[str, Any]:
     pulumi.info(
-        "MCP_DEPLOYMENT_TYPE='datarobot-workload-preview' -> provisioning via Workload API "
+        "MCP_DEPLOYMENT_TYPE='datarobot-workload' -> provisioning via Workload API "
         "(Workload image URI)."
     )
 
@@ -990,8 +796,7 @@ class WorkloadConfiguration:
 
     @classmethod
     def resolve_workload_entrypoint(cls) -> list[str]:
-        default_entrypoint = ["python", "-m", "app.main"]
-        return cls._explicit_workload_entrypoint() or list(default_entrypoint)
+        return cls._explicit_workload_entrypoint() or list(DEFAULT_ENTRYPOINT)
 
 
 class WorkloadBuilder:
