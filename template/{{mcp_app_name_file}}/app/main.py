@@ -45,6 +45,12 @@ def _get_server_port() -> int:
 def _is_port_in_use(port: int, host: str = "0.0.0.0") -> bool:
     """Return True if the given host:port is already in use (EADDRINUSE only)."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # Match uvicorn, which sets SO_REUSEADDR: without it, a restart right after
+        # a crash sees the old connections in TIME_WAIT (~60 s) as "in use" and exits.
+        # A live listener on the port still fails the bind on POSIX. Not on Windows,
+        # where SO_REUSEADDR binds over a live listener and TIME_WAIT never blocks.
+        if sys.platform != "win32":
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             s.bind((host, port))
             return False
