@@ -1,12 +1,16 @@
 ---
-# True when this PR changes pyproject.toml.jinja (dependency bump). Standalone server/E2E
-# workflows skip so Update uv.lock owns lock + tests without duplicate deploys.
+# True when this PR triggers Update uv.lock (a pyproject.toml.jinja dependency bump, or a
+# change to that pipeline itself). Standalone server/E2E workflows then skip so Update
+# uv.lock owns lock + tests without duplicate deploys. Two serverless-docker deploys at
+# once race on the shared CI execution environment: each adds a version and one
+# registers its model before its version has built ("Base environment is not
+# successfully built"). Keep the filter below in step with Update uv.lock's `paths`.
 name: Dep PR path filter
 on:
   workflow_call:
     outputs:
       pyproject:
-        description: "true if template pyproject.toml.jinja changed in the PR"
+        description: "true if the PR triggers Update uv.lock (it runs the server/E2E tests)"
         value: ${{ jobs.filter.outputs.pyproject }}
 jobs:
   filter:
@@ -16,12 +20,15 @@ jobs:
       pyproject: ${{ steps.filter.outputs.pyproject }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Detect pyproject.toml.jinja in PR diff
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             pyproject:
               - 'template/{{mcp_app_name_file}}/pyproject.toml.jinja'
+              - '.github/workflows/afcomponentmcp-update-uv-lock.yaml'
+              - '.github/actions/regenerate-uv-lock-template/**'
+              - '.github/scripts/write_uv_lock_jinja.py'
