@@ -60,13 +60,13 @@ jobs:
     steps:
       - name: Checkout (reusable / workflow_call)
         if: github.event_name == 'workflow_call'
-        uses: "actions/checkout@v6"
+        uses: "actions/checkout@v7"
         with:
           ref: ${{ inputs.git-ref != '' && inputs.git-ref || github.ref }}
 
       - name: Checkout
         if: github.event_name != 'workflow_call'
-        uses: "actions/checkout@v6"
+        uses: "actions/checkout@v7"
         with:
           ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
 
