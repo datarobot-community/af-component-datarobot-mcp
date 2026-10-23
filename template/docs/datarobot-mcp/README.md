@@ -74,6 +74,16 @@ Authorization: Bearer <your-datarobot-api-token>
 
 See [DataRobot API key documentation](https://docs.datarobot.com/en/docs/get-started/acct-mgmt/acct-settings/api-key-mgmt.html) for how to create or retrieve your token.
 
+## Use with an agent in the same project
+
+When this server is part of a project that also has an agent built from [af-component-agent](https://github.com/datarobot-community/af-component-agent), such as the Agentic Starter:
+
+- Under the default app name `mcp_server`, `dr run deploy` connects the deployed agent to this server automatically, in both deployment modes: serverless (the default), and the Workload API (`ENABLE_MCP_ON_WORKLOAD_API=true`). Under any other app name, set `MCP_DEPLOYMENT_ID` in `.env` to connect it, or `MCP_WORKLOAD_ID` for a server on the Workload API.
+- Locally, the server listens on `MCP_SERVER_PORT`, and the agent connects to the same port. Choose a port no other app in the project uses. The Agentic Starter web app uses `8080`, so use `9000` there.
+- In the Agentic Starter, list the server in `.taskfile-data.yaml` (`- name: mcp_server` with `port: 9000`) so that `dr run dev` starts it.
+
+The agent's side of the connection is described in `docs/agent/mcp.md`.
+
 ## Documentation
 
 | Document | Description |

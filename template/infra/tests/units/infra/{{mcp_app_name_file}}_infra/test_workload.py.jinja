@@ -605,6 +605,23 @@ class TestProvisionWorkloadMcpServerFromImageUri:
         expected = ("srv Workload Image URI", "img:tag")
         assert actual == expected
 
+    def test_passes_the_workload_id_to_the_agent(self) -> None:
+        spec = MagicMock(to_pulumi_args=MagicMock(return_value={"type": "service"}))
+        artifact = MagicMock(artifact_id="art-id")
+        wl = MagicMock(endpoint=MockOutput("https://host/"), id="wid123")
+        with (
+            patch.object(workload, "build_artifact_from_image_uri", return_value=spec),
+            patch.object(workload.pulumi_datarobot, "Artifact", return_value=artifact),
+            patch.object(workload, "_create_workload", return_value=wl),
+            pulumi_stubs(),
+        ):
+            params = workload.provision_workload_mcp_server_from_image_uri(
+                mcp_server_asset_name="srv", workload_image_uri="img:tag"
+            )["mcp_custom_model_runtime_parameters"]
+        actual = [(param.key, param.type, param.value) for param in params]
+        expected = [("MCP_WORKLOAD_ID", "string", "wid123")]
+        assert actual == expected
+
 
 class TestWorkloadProvider:
     @pytest.fixture
@@ -684,8 +701,27 @@ class TestWorkloadProvidedDockerfileManager:
             deployment=None,
             mcp_server_mcp_endpoint=ANY,
             mcp_server_base_endpoint=ANY,
-            mcp_custom_model_runtime_parameters=[],
+            mcp_custom_model_runtime_parameters=ANY,
         )
+        assert actual == expected
+
+    def test_passes_the_workload_id_to_the_agent(
+        self, mock_file_bundler, mock_workload_builder
+    ):
+        workload_manager = WorkloadProvidedDockerfileManager(
+            "mcp_name", Path("Dockerfile"), mock_file_bundler, mock_workload_builder
+        )
+
+        output = workload_manager.provision_mcp_server()
+
+        built = (
+            mock_workload_builder.build_from_artifact_image_build_config.return_value
+        )
+        actual = [
+            (param.key, param.type, param.value)
+            for param in output.mcp_custom_model_runtime_parameters
+        ]
+        expected = [("MCP_WORKLOAD_ID", "string", built.id)]
         assert actual == expected
 
 
@@ -756,8 +792,24 @@ class TestWorkloadGeneratedDockerfileManager:
             deployment=None,
             mcp_server_mcp_endpoint=ANY,
             mcp_server_base_endpoint=ANY,
-            mcp_custom_model_runtime_parameters=[],
+            mcp_custom_model_runtime_parameters=ANY,
         )
+        assert actual == expected
+
+    def test_passes_the_workload_id_to_the_agent(
+        self, mock_file_bundler, mock_execution_env, mock_workload_builder
+    ):
+        workload_manager = WorkloadGeneratedDockerfileManager(
+            "mcp_name", mock_execution_env, mock_file_bundler, mock_workload_builder
+        )
+
+        output = workload_manager.provision_mcp_server()
+
+        actual = [
+            (param.key, param.type, param.value)
+            for param in output.mcp_custom_model_runtime_parameters
+        ]
+        expected = [("MCP_WORKLOAD_ID", "string", "wid123")]
         assert actual == expected
 
 

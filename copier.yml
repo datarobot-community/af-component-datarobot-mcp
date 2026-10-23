@@ -44,3 +44,12 @@ _exclude:
   # cve-sync, so the file is never copied out. cve-sync refuses the file unless
   # this line covers it.
   - ".cve-sync-overrides.toml"
+
+# Shown before every update. Older Agentic Starter projects bundle this server and only
+# lose it when they pull a template version without it.
+_message_before_update: |
+  Newer versions of the Agentic Starter template (datarobot-agent-application) no longer
+  bundle this MCP server. An MCP server inside an Agentic Starter project keeps working,
+  and this update keeps it current. To move it to its own project, or to keep it when you
+  pull the newer template, see docs/mcp-migration.md in
+  https://github.com/datarobot-community/datarobot-agent-application
