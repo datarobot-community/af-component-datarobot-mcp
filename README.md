@@ -37,6 +37,7 @@ The component ships a ready-to-deploy MCP server that includes a comprehensive s
 - [Quick start](#quick-start)
 - [Component dependencies](#component-dependencies)
 - [Documentation](#documentation)
+- [Use with an agent application](#use-with-an-agent-application)
 - [Available tools](#available-tools)
 - [Troubleshooting](#troubleshooting)
 - [Next steps and cross-links](#next-steps-and-cross-links)
@@ -128,6 +129,28 @@ you can run this to have more control over the process:
 ```bash
 uvx copier update -a .datarobot/answers/drmcp-<mcp_app_name>.yml -A
 ```
+
+# Use with an agent application
+
+An agent built from [af-component-agent](https://github.com/datarobot-community/af-component-agent), such as the [Agentic Starter](https://github.com/datarobot-community/datarobot-agent-application), can use the tools of this server in two ways. (For DataRobot's built-in tools, an agent can also use the DataRobot Global MCP, which DataRobot runs on every instance, with no server to deploy: see `docs/mcp-migration.md` in the Agentic Starter.)
+
+- **Run the server as its own project.** This is the recommended way, and the one the Agentic Starter documents now that it no longer bundles an MCP server. Create the project from the [DataRobot MCP template](https://github.com/datarobot-community/datarobot-mcp-template), deploy it, and set `MCP_DEPLOYMENT_ID` in the agent project's `.env` (`MCP_WORKLOAD_ID` for a server on the Workload API). The agent's MCP settings are described in `docs/agent/mcp.md` in the agent project.
+- **Add this component to the agent project**, so that the server is developed and deployed together with the agent:
+
+  ```bash
+  dr component add https://github.com/datarobot-community/af-component-datarobot-mcp .
+  ```
+
+  - Keep the default `mcp_app_name`, `mcp_server`. Under that name, `dr run deploy` connects the deployed agent to this server automatically, in both deployment modes: serverless (the default), and the Workload API (`ENABLE_MCP_ON_WORKLOAD_API=true`). Under any other name, point the agent at it with `MCP_DEPLOYMENT_ID`, or `MCP_WORKLOAD_ID` for a server on the Workload API.
+  - Answer `mcp_development_port` with a free port, for example `9000`, because the Agentic Starter web app uses `8080`. `dr dotenv setup` then writes `MCP_SERVER_PORT=9000`, which the local server listens on and the local agent connects to.
+  - In the Agentic Starter, add the server to `.taskfile-data.yaml` so that `dr run dev` starts it:
+
+    ```yaml
+      - name: mcp_server
+        port: 9000
+    ```
+
+Older Agentic Starter projects bundle this server and keep it until they pull a template version without it. After that pull, a deployed project's next deploy stops until they move their tools to a standalone server, or confirm that they don't need them. `docs/mcp-migration.md` in the [Agentic Starter](https://github.com/datarobot-community/datarobot-agent-application) explains how to move the server to its own project, or keep it.
 
 # Available tools
 

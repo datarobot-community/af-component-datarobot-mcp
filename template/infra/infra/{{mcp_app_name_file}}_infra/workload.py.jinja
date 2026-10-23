@@ -317,6 +317,25 @@ def _export_workload_endpoints(
     )
 
 
+def _agent_runtime_parameters(
+    workload: pulumi_datarobot.Workload,
+) -> list[pulumi_datarobot.CustomModelRuntimeParameterValueArgs]:
+    """What an agent deployed in the same project gets from this server.
+
+    The agent (af-component-agent) reads ``mcp_custom_model_runtime_parameters``
+    from this module and connects to the workload with ``MCP_WORKLOAD_ID``, as the
+    deployment path passes ``MCP_DEPLOYMENT_ID``. Without it, the agent would need
+    ``MCP_WORKLOAD_ID`` in its project's ``.env``.
+    """
+    return [
+        pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+            key="MCP_WORKLOAD_ID",
+            type="string",
+            value=workload.id,
+        )
+    ]
+
+
 def provision_workload_mcp_server_from_image_uri(
     *,
     mcp_server_asset_name: str,
@@ -359,7 +378,7 @@ def provision_workload_mcp_server_from_image_uri(
         "deployment": None,
         "mcp_server_mcp_endpoint": mcp_workload_endpoints.mcp_endpoint,
         "mcp_server_base_endpoint": mcp_workload_endpoints.base_endpoint,
-        "mcp_custom_model_runtime_parameters": [],
+        "mcp_custom_model_runtime_parameters": _agent_runtime_parameters(workload),
     }
 
 
@@ -965,7 +984,7 @@ class WorkloadGeneratedDockerfileManager:
             deployment=None,
             mcp_server_mcp_endpoint=mcp_workload_endpoints.mcp_endpoint,
             mcp_server_base_endpoint=mcp_workload_endpoints.base_endpoint,
-            mcp_custom_model_runtime_parameters=[],
+            mcp_custom_model_runtime_parameters=_agent_runtime_parameters(workload),
         )
 
 
@@ -1031,7 +1050,7 @@ class WorkloadProvidedDockerfileManager:
             deployment=None,
             mcp_server_mcp_endpoint=mcp_workload_endpoints.mcp_endpoint,
             mcp_server_base_endpoint=mcp_workload_endpoints.base_endpoint,
-            mcp_custom_model_runtime_parameters=[],
+            mcp_custom_model_runtime_parameters=_agent_runtime_parameters(workload),
         )
 
 
