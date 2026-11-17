@@ -68,6 +68,8 @@ MCP_XAA_TOKEN_URL=https://auth_server_token_request_url
 MCP_XAA_SCOPES=scope_to_be_authorized_by_authorization_server
 ```
 
+An agent reads this metadata before it holds a token. For a server deployed as a custom model, the default serverless mode, the agent can read it on DataRobot 11.14 and newer. On 11.13 and older it cannot, so set the same values in the agent's own `cross_application_access` block. For an agent built from the [agent component](https://github.com/datarobot-community/af-component-agent), see "MCP servers that require Okta XAA" in its `docs/agent/mcp.md`.
+
 Two more variables are optional:
 
 | Variable | Description |
