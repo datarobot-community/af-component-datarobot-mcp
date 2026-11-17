@@ -308,17 +308,13 @@ Port 8080 already in use?
 
 Missing dependencies?
   Yes -> run `task install`
-  No  -> review the startup logs
-
-Invalid API token?
-  Yes -> generate a new token in DataRobot
-  No  -> check your `.env` file
+  No  -> review the startup logs and your `.env` file
 ```
 
 If the server starts but returns errors:
 
 - review the server logs for the exact error
-- confirm that `DATAROBOT_API_TOKEN` is valid
+- confirm that `DATAROBOT_API_TOKEN` is valid. If the startup log says `DataRobot returned HTTP 401` or `HTTP 403`, DataRobot rejected the token, and the server started without its dynamic tools and prompts. Generate a new token in DataRobot, update `DATAROBOT_API_TOKEN` and restart the server.
 - confirm that `DATAROBOT_ENDPOINT` is correct
 - make sure the required environment variables are set
 
