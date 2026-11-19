@@ -605,6 +605,25 @@ class TestProvisionWorkloadMcpServerFromImageUri:
         expected = ("srv Workload Image URI", "img:tag")
         assert actual == expected
 
+    def test_artifact_probes_the_health_route(self) -> None:
+        build = MagicMock()
+        with (
+            patch.object(workload, "build_artifact_from_image_uri", build),
+            patch.object(workload.pulumi_datarobot, "Artifact"),
+            patch.object(
+                workload,
+                "_create_workload",
+                return_value=MagicMock(endpoint=MockOutput("https://host/")),
+            ),
+            pulumi_stubs(),
+        ):
+            workload.provision_workload_mcp_server_from_image_uri(
+                mcp_server_asset_name="srv", workload_image_uri="img:tag"
+            )
+        actual = build.call_args.kwargs["readiness_probe_path"]
+        expected = "/"
+        assert actual == expected
+
     def test_passes_the_workload_id_to_the_agent(self) -> None:
         spec = MagicMock(to_pulumi_args=MagicMock(return_value={"type": "service"}))
         artifact = MagicMock(artifact_id="art-id")
@@ -876,3 +895,20 @@ class TestWorkloadBuilder:
         actual = spec.container_groups[0].containers[0].image_build_config.dockerfile
 
         assert actual is generated_dockerfile_image_build_config
+
+    def test_container_probes_the_health_route(self, mock_artifact_cls):
+        builder = WorkloadBuilder("mcp_name", WorkloadConfiguration())
+
+        builder.build_from_artifact_image_build_config(
+            "artifact-name", "/tmp/src", Mock()
+        )
+        probe = (
+            mock_artifact_cls.call_args.kwargs["spec"]
+            .container_groups[0]
+            .containers[0]
+            .readiness_probe
+        )
+
+        actual = (probe.path, probe.port)
+        expected = ("/", 8080)
+        assert actual == expected

@@ -42,6 +42,7 @@ def test_image_uri_pulumi_args_use_the_provider_shape():
                 path="/.well-known/oauth-protected-resource", auth="disabled"
             ).to_dict()
         ],
+        readiness_probe_path="/",
     )
 
     args = spec.to_pulumi_args()
@@ -53,6 +54,7 @@ def test_image_uri_pulumi_args_use_the_provider_shape():
     assert container["routes"] == [
         {"path": "/.well-known/oauth-protected-resource", "auth": "disabled"}
     ]
+    assert container["readiness_probe"] == {"path": "/", "port": 8080}
     assert container["environment_vars"] == [
         {"name": "MCP_SERVER_NAME", "value": "demo"},
         {
@@ -75,6 +77,7 @@ def test_image_uri_pulumi_args_omit_entrypoints_unless_set():
     container = args["spec"]["container_groups"][0]["containers"][0]
     assert "entrypoints" not in container
     assert "routes" not in container
+    assert "readiness_probe" not in container
 
     spec_with = build_artifact_from_image_uri(
         artifact_name="mcp-server",
