@@ -66,6 +66,9 @@ from .mcp_utils import (
 
 WORKLOAD_CONTAINER_NAME = "mcp-server"
 DEFAULT_WORKLOAD_CONTAINER_PORT = 8080
+# drmcp's health route, open without auth. Without a readiness probe a new pod counts as ready before the
+# server listens, and the Workload API readiness gate skips it, so a replacement drops its first requests.
+MCP_HEALTH_PATH = "/"
 DEFAULT_ENTRYPOINT = ["python", "-m", "app.main"]
 DEFAULT_WORKLOAD_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MiB in bytes
 # Org entitlement for Enclave placement.
@@ -357,6 +360,7 @@ def provision_workload_mcp_server_from_image_uri(
         # Only override the image's own entrypoint when explicitly configured.
         entrypoints=_explicit_workload_entrypoint(),
         routes=routes,
+        readiness_probe_path=MCP_HEALTH_PATH,
     )
 
     artifact = pulumi_datarobot.Artifact(
@@ -851,6 +855,10 @@ class WorkloadBuilder:
                                     dockerfile=image_build_config
                                 ),
                                 routes=self._workload_config.container_routes,
+                                readiness_probe=pulumi_datarobot.ArtifactSpecContainerGroupContainerReadinessProbeArgs(
+                                    path=MCP_HEALTH_PATH,
+                                    port=self._workload_config.container_port,
+                                ),
                             ),
                         ],
                     ),
