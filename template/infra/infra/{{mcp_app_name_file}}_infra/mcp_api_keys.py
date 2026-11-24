@@ -20,7 +20,7 @@ import pulumi
 import pulumi_datarobot
 from datarobot_pulumi_utils.pulumi.stack import PROJECT_NAME
 
-from infra.{{mcp_app_name_file}}_infra.mcp_utils import DR_CREDENTIAL_API_TOKEN_KEY
+from .mcp_utils import DR_CREDENTIAL_API_TOKEN_KEY
 
 SESSION_SECRET_KEY: Final[str] = "SESSION_SECRET_KEY"
 PERPLEXITY_API_KEY: Final[str] = "PERPLEXITY_API_KEY"

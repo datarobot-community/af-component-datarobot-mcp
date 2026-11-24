@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from {{mcp_app_name_file}}_clients.workload_api_client import (
-    WORKLOAD_ARTIFACT_TYPE,
-    build_artifact_from_image_uri,
-)
 
-from infra.{{mcp_app_name_file}}_infra.mcp_oauth_configs import WorkloadArtifactContainerRoute  # isort: skip
-from infra.{{mcp_app_name_file}}_infra.mcp_utils import DR_CREDENTIAL_API_TOKEN_KEY  # isort:skip
+from . import app_module
+
+_workload_api_client = app_module("workload_api_client")
+WORKLOAD_ARTIFACT_TYPE = _workload_api_client.WORKLOAD_ARTIFACT_TYPE
+build_artifact_from_image_uri = _workload_api_client.build_artifact_from_image_uri
+_mcp_oauth_configs = app_module("mcp_oauth_configs")
+WorkloadArtifactContainerRoute = _mcp_oauth_configs.WorkloadArtifactContainerRoute
+_mcp_utils = app_module("mcp_utils")
+DR_CREDENTIAL_API_TOKEN_KEY = _mcp_utils.DR_CREDENTIAL_API_TOKEN_KEY
 
 
 def test_image_uri_pulumi_args_use_the_provider_shape():

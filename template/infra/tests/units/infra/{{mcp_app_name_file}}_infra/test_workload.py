@@ -22,26 +22,23 @@ from unittest.mock import ANY, MagicMock, Mock, patch
 import pulumi_datarobot
 import pytest
 
-from infra.{{mcp_app_name_file}}_infra import workload
-from infra.{{mcp_app_name_file}}_infra.mcp_utils import (
-    DR_CREDENTIAL_API_TOKEN_KEY,
-    InfraProviderOutput,
-    MCPRuntimeParameter,
-    MCPRuntimeParameterAPITokenCredential,
-    PulumiOutputEndpoints,
-)
-from infra.{{mcp_app_name_file}}_infra.workload import (
-    WorkloadBuilder,
-    WorkloadConfiguration,
-    WorkloadGeneratedDockerfileManager,
-    WorkloadProvidedDockerfileManager,
-    WorkloadProvider,
-)
+from . import APP_NAME, app_module
 
-# Bound to a name so call sites stay a fixed width: this file is a copier
-# template and the app name inside the label varies in length, which otherwise
-# makes `ruff format --check` pass or fail depending on the rendered name.
-ASSET_NAME = "[unittest] [{{mcp_app_name}}]"
+workload = app_module("workload")
+_mcp_utils = app_module("mcp_utils")
+DR_CREDENTIAL_API_TOKEN_KEY = _mcp_utils.DR_CREDENTIAL_API_TOKEN_KEY
+InfraProviderOutput = _mcp_utils.InfraProviderOutput
+MCPRuntimeParameter = _mcp_utils.MCPRuntimeParameter
+MCPRuntimeParameterAPITokenCredential = _mcp_utils.MCPRuntimeParameterAPITokenCredential
+PulumiOutputEndpoints = _mcp_utils.PulumiOutputEndpoints
+WorkloadBuilder = workload.WorkloadBuilder
+WorkloadConfiguration = workload.WorkloadConfiguration
+WorkloadGeneratedDockerfileManager = workload.WorkloadGeneratedDockerfileManager
+WorkloadProvidedDockerfileManager = workload.WorkloadProvidedDockerfileManager
+WorkloadProvider = workload.WorkloadProvider
+
+
+ASSET_NAME = f"[unittest] [{APP_NAME}]"
 
 
 class MockOutput(MagicMock):

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import importlib
 import os
 import sys
 from collections import namedtuple
@@ -24,6 +25,10 @@ from dev_tools.lineage.pulumi_managers import (
     MCPResourceMetadataPulumiManager,
     MCPToolMetadataPulumiManager,
 )
+
+# The app this file tests: test_<app>.py tests infra/infra/<app>.py.
+APP_NAME = Path(__file__).stem.removeprefix("test_")
+STACK = f"infra.{APP_NAME}_infra.stack"
 
 # Ensure the units test directory is in sys.path for proper imports
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -53,10 +58,10 @@ def pulumi_mocks(monkeypatch, tmp_path):
     # submodule's global too — otherwise the docker-context check (and the tests'
     # stub files) would run against the real rendered app directory.
     monkeypatch.setattr(
-        "infra.{{mcp_app_name_file}}_infra.mcp_execution_environment.project_dir",
+        f"infra.{APP_NAME}_infra.mcp_execution_environment.project_dir",
         mock_project_dir,
     )
-    mcp_app_dir = tmp_path.parent / "{{mcp_app_name_file}}"
+    mcp_app_dir = tmp_path.parent / APP_NAME
     mcp_app_dir.mkdir(exist_ok=True)
     docker_build_files = {
         "Dockerfile": "FROM scratch\n",
@@ -72,7 +77,7 @@ def pulumi_mocks(monkeypatch, tmp_path):
     mock_user_params_module.MCP_USER_RUNTIME_PARAMETERS = []
     monkeypatch.setitem(
         sys.modules,
-        "infra.{{mcp_app_name_file}}_user_params",
+        f"infra.{APP_NAME}_infra.user_params",
         mock_user_params_module,
     )
 
@@ -174,9 +179,7 @@ def test_execution_environment_not_set_uses_app_root(monkeypatch):
     """Test execution environment creation when DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT is not set."""
     monkeypatch.delenv("DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", raising=False)
 
-    import importlib
-
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.reset_mock()
     mcp_infra.pulumi.info.reset_mock()
@@ -215,9 +218,7 @@ def test_execution_environment_name_override_imports_existing(monkeypatch):
         MagicMock(return_value=[existing]),
     )
 
-    import importlib
-
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     mcp_infra.pulumi_datarobot.ExecutionEnvironment.reset_mock()
     mcp_infra.pulumi.info.reset_mock()
@@ -240,9 +241,7 @@ def test_execution_environment_default_set(monkeypatch):
         "[DataRobot] Python 3 MCP",
     )
 
-    import importlib
-
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     importlib.reload(mcp_infra)
 
@@ -272,9 +271,7 @@ def test_execution_environment_pinned_set(monkeypatch):
         "690cd2f698419673f938f7c4",
     )
 
-    import importlib
-
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     importlib.reload(mcp_infra)
 
@@ -301,9 +298,7 @@ def test_execution_environment_custom_set(monkeypatch):
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT", "Custom Execution Environment"
     )
 
-    import importlib
-
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     importlib.reload(mcp_infra)
 
@@ -325,7 +320,7 @@ def test_resolve_execution_environment_version_not_found_returns_none(monkeypatc
     """When pinned EE version is not found in DataRobot, warn and return None (use latest)."""
     from datarobot.errors import ClientError
 
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
@@ -352,7 +347,7 @@ def test_resolve_execution_environment_version_found(monkeypatch):
     """When pinned version exists and build_status is SUCCESS, return its id."""
     from datarobot.enums import EXECUTION_ENVIRONMENT_VERSION_BUILD_STATUS
 
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
@@ -377,7 +372,7 @@ def test_resolve_execution_environment_version_found(monkeypatch):
 
 def test_resolve_execution_environment_version_not_success_returns_none(monkeypatch):
     """When get() succeeds but build_status is not SUCCESS, return None with a warning."""
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     monkeypatch.setenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID",
@@ -405,7 +400,7 @@ def test_resolve_execution_environment_version_not_success_returns_none(monkeypa
 
 def test_resolve_execution_environment_version_unset_returns_none(monkeypatch):
     """When env var is unset or invalid, return None without calling DR API."""
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     monkeypatch.delenv(
         "DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT_VERSION_ID", raising=False
@@ -427,9 +422,7 @@ def test_reset_environment_between_tests():
     """Test to ensure that environment variables don't leak between tests."""
     assert os.environ.get("DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT") is None
 
-    import importlib
-
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     importlib.reload(mcp_infra)
 
@@ -442,9 +435,9 @@ class TestGetDeploymentsAppFiles:
     def test_get_deployments_app_files_collects_app_python_files(
         self, tmp_path
     ) -> None:
-        import infra.{{mcp_app_name_file}} as mcp_infra
+        mcp_infra = importlib.import_module(STACK)
 
-        app_root = tmp_path.parent / "{{mcp_app_name_file}}"
+        app_root = tmp_path.parent / APP_NAME
         app_dir = app_root / "app"
         app_dir.mkdir(parents=True)
         (app_dir / "main.py").write_text("print('hi')\n", encoding="utf-8")
@@ -455,9 +448,9 @@ class TestGetDeploymentsAppFiles:
         assert actual == expected
 
     def test_get_deployments_app_files_excludes_test_paths(self, tmp_path) -> None:
-        import infra.{{mcp_app_name_file}} as mcp_infra
+        mcp_infra = importlib.import_module(STACK)
 
-        app_root = tmp_path.parent / "{{mcp_app_name_file}}"
+        app_root = tmp_path.parent / APP_NAME
         tests_dir = app_root / "tests"
         tests_dir.mkdir(parents=True)
         (tests_dir / "test_x.py").write_text("pass\n", encoding="utf-8")
@@ -468,7 +461,7 @@ class TestGetDeploymentsAppFiles:
 
 class TestInitialConfiguration:
     def test_resolve_mcp_deployment_type__default(self) -> None:
-        import infra.{{mcp_app_name_file}} as mcp_infra
+        mcp_infra = importlib.import_module(STACK)
 
         configuration = mcp_infra.InitialConfiguration("")
 
@@ -481,7 +474,7 @@ class TestInitialConfiguration:
     def test_resolve_mcp_deployment_type_truthy_values_enable_workload(
         self, value: str
     ) -> None:
-        import infra.{{mcp_app_name_file}} as mcp_infra
+        mcp_infra = importlib.import_module(STACK)
 
         configuration = mcp_infra.InitialConfiguration(value)
 
@@ -494,7 +487,7 @@ class TestInitialConfiguration:
     def test_resolve_mcp_deployment_type_falsy_values_enable_serverless(
         self, value: str
     ) -> None:
-        import infra.{{mcp_app_name_file}} as mcp_infra
+        mcp_infra = importlib.import_module(STACK)
 
         configuration = mcp_infra.InitialConfiguration(value)
 
@@ -504,7 +497,7 @@ class TestInitialConfiguration:
         )
 
     def test_resolve_mcp_deployment_type_exits_when_value_is_invalid(self) -> None:
-        import infra.{{mcp_app_name_file}} as mcp_infra
+        mcp_infra = importlib.import_module(STACK)
 
         configuration = mcp_infra.InitialConfiguration("invalid-type")
         with (
@@ -515,6 +508,16 @@ class TestInitialConfiguration:
         actual = mock_exit.call_args.args[0]
         expected = 1
         assert actual == expected
+
+
+def test_loader_reexports_the_stack() -> None:
+    """infra/infra/<app>.py loads <app>_infra/stack.py and re-exports its names."""
+    stack = importlib.import_module(STACK)
+    loader = importlib.import_module(f"infra.{APP_NAME}")
+
+    assert stack.APP_NAME == APP_NAME
+    assert loader.mcp_server_asset_name == stack.mcp_server_asset_name
+    assert loader.deployments_application_path == stack.deployments_application_path
 
 
 def test_execution_environment_falls_back_to_python311(monkeypatch):
@@ -532,7 +535,7 @@ def test_execution_environment_falls_back_to_python311(monkeypatch):
 
     from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironment
 
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     with patch.object(
         RuntimeEnvironment,
@@ -559,7 +562,7 @@ def test_execution_environment_missing_everywhere(monkeypatch):
 
     from datarobot_pulumi_utils.schema.exec_envs import RuntimeEnvironment
 
-    import infra.{{mcp_app_name_file}} as mcp_infra
+    mcp_infra = importlib.import_module(STACK)
 
     with (
         patch.object(

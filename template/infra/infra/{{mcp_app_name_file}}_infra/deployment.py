@@ -26,17 +26,8 @@ import pulumi
 import pulumi_datarobot
 from datarobot_pulumi_utils.pulumi.stack import PROJECT_NAME
 
-from dev_tools.lineage.pulumi_managers import (
-    MCPPromptMetadataPulumiManager,
-    MCPResourceMetadataPulumiManager,
-    MCPToolMetadataPulumiManager,
-)
-
 from .. import use_case
-from ..{{mcp_app_name_file}}_user_params import (
-    MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS,
-    MCP_USER_RUNTIME_PARAMETERS,
-)
+from ._app import APP_NAME
 from .mcp_api_keys import (
     SESSION_SECRET_KEY,
     auth_resolution_strategy,
@@ -58,6 +49,10 @@ from .mcp_oauth_configs import (
     mcp_tag_scope_env_vars,
 )
 from .mcp_utils import MCPRuntimeParameter, MCPRuntimeParameterAPITokenCredential
+from .user_params import (
+    MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS,
+    MCP_USER_RUNTIME_PARAMETERS,
+)
 
 
 @dataclass
@@ -221,7 +216,7 @@ def provision_deployment_mcp_server(
     # Session secret key credential.
     if session_secret_key := os.getenv(SESSION_SECRET_KEY):
         session_secret_cred = pulumi_datarobot.ApiTokenCredential(
-            "MCP Server [{{mcp_app_name}}] Session Secret Key",
+            f"MCP Server [{APP_NAME}] Session Secret Key",
             args=pulumi_datarobot.ApiTokenCredentialArgs(
                 api_token=str(session_secret_key),
             ),
@@ -385,49 +380,7 @@ def provision_deployment_mcp_server(
         )
     ]
 
-    mcp_tool_metadata_pulumi_manager = MCPToolMetadataPulumiManager()
-    mcp_tool_metadata_entities = mcp_tool_metadata_pulumi_manager.load_metadata()
-    mcp_tool_metadata_pulumi_resources = (
-        mcp_tool_metadata_pulumi_manager.create_pulumi_resources(
-            mcp_tool_metadata_entities,
-            mcp_server_asset_name,
-            custom_model.version_id,
-        )
-    )
-    mcp_tool_metadata_pulumi_manager.export_summary_to_pulumi_stack(
-        mcp_server_asset_name,
-        mcp_tool_metadata_pulumi_resources,
-    )
-
-    mcp_prompt_metadata_pulumi_manager = MCPPromptMetadataPulumiManager()
-    mcp_prompt_metadata_entities = mcp_prompt_metadata_pulumi_manager.load_metadata()
-    mcp_prompt_metadata_pulumi_resources = (
-        mcp_prompt_metadata_pulumi_manager.create_pulumi_resources(
-            mcp_prompt_metadata_entities,
-            mcp_server_asset_name,
-            custom_model.version_id,
-        )
-    )
-    mcp_prompt_metadata_pulumi_manager.export_summary_to_pulumi_stack(
-        mcp_server_asset_name,
-        mcp_prompt_metadata_pulumi_resources,
-    )
-
-    mcp_resource_metadata_pulumi_manager = MCPResourceMetadataPulumiManager()
-    mcp_resource_metadata_entities = (
-        mcp_resource_metadata_pulumi_manager.load_metadata()
-    )
-    mcp_resource_metadata_pulumi_resources = (
-        mcp_resource_metadata_pulumi_manager.create_pulumi_resources(
-            mcp_resource_metadata_entities,
-            mcp_server_asset_name,
-            custom_model.version_id,
-        )
-    )
-    mcp_resource_metadata_pulumi_manager.export_summary_to_pulumi_stack(
-        mcp_server_asset_name,
-        mcp_resource_metadata_pulumi_resources,
-    )
+    register_mcp_item_lineage(mcp_server_asset_name, custom_model.version_id)
 
     return {
         "execution_environment": execution_environment,
@@ -436,3 +389,50 @@ def provision_deployment_mcp_server(
         "mcp_server_base_endpoint": mcp_server_base_endpoint,
         "mcp_custom_model_runtime_parameters": mcp_custom_model_runtime_parameters,
     }
+
+
+def register_mcp_item_lineage(
+    mcp_server_asset_name: str, custom_model_version_id: Any
+) -> None:
+    """Register tool, prompt and resource metadata for lineage.
+
+    Lineage is optional. Any failure here, including the lineage package failing to
+    import, is logged as a warning and the deploy carries on without it.
+
+    ``MCP_LINEAGE_ENABLED=false`` skips it entirely. Use that when DataRobot itself
+    rejects the metadata resources: those errors surface in the Pulumi engine after
+    this function returns, where they cannot be caught.
+    """
+    if not lineage_enabled():
+        pulumi.info("MCP lineage disabled (MCP_LINEAGE_ENABLED=false); skipping.")
+        return
+    try:
+        from dev_tools.lineage.pulumi_managers import (
+            MCPPromptMetadataPulumiManager,
+            MCPResourceMetadataPulumiManager,
+            MCPToolMetadataPulumiManager,
+        )
+    except Exception as exc:  # noqa: BLE001 — lineage must never stop a deploy
+        pulumi.warn(f"MCP lineage skipped: could not load lineage tooling: {exc!r}")
+        return
+
+    managers: list[Any] = [
+        MCPToolMetadataPulumiManager,
+        MCPPromptMetadataPulumiManager,
+        MCPResourceMetadataPulumiManager,
+    ]
+    for manager_cls in managers:
+        try:
+            manager = manager_cls(APP_NAME)
+            entities = manager.load_metadata()
+            resources = manager.create_pulumi_resources(
+                entities, mcp_server_asset_name, custom_model_version_id
+            )
+            manager.export_summary_to_pulumi_stack(mcp_server_asset_name, resources)
+        except Exception as exc:  # noqa: BLE001 — lineage must never stop a deploy
+            pulumi.warn(f"MCP lineage skipped for {manager_cls.__name__}: {exc!r}")
+
+
+def lineage_enabled() -> bool:
+    """Lineage is on unless ``MCP_LINEAGE_ENABLED`` is ``false``."""
+    return os.getenv("MCP_LINEAGE_ENABLED", "").strip().lower() != "false"

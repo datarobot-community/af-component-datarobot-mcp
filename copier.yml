@@ -53,3 +53,17 @@ _message_before_update: |
   and this update keeps it current. To move it to its own project, or to keep it when you
   pull the newer template, see docs/mcp-migration.md in
   https://github.com/datarobot-community/datarobot-agent-application
+
+# Runs on every `copier update` / `dr component update`; each step is a no-op once
+# applied, so none is pinned to a version. Migrations need --trust (`dr` passes it).
+_migrations:
+  # infra/infra/<app>_user_params.py moved to infra/infra/<app>_infra/user_params.py.
+  # copier would delete the old file with the user's edits; carry them across.
+  - command:
+      - "{{ _copier_python }}"
+      - "{{ _copier_conf.src_path }}/migrations/move_user_params.py"
+      # Answers are not loaded yet in the "before" stage, so the script reads the app
+      # name from this instance's answers file.
+      - "{{ _copier_conf.answers_file }}"
+      - "{{ _stage }}"
+    when: "true"

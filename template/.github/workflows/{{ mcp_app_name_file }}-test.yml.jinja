@@ -16,6 +16,10 @@ jobs:
   tests:
     name: "DataRobot MCP: {{ mcp_app_name }} {% raw %}${{ matrix.python-version }}{% endraw %}"
     runs-on: "ubuntu-latest"
+    # orgoro/coverage@v3.3+ requires these for PR comments (see action README / v3.3 release notes).
+    permissions:
+      contents: read
+      pull-requests: write
     defaults:
       run:
         working-directory: {{ mcp_app_name }}
@@ -25,7 +29,7 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
 
     steps:
-      - uses: "actions/checkout@v6"
+      - uses: "actions/checkout@v7"
 
       # Ref: https://docs.astral.sh/uv/guides/integration/github/#installation
       - name: Setup uv
@@ -37,7 +41,7 @@ jobs:
           python-version: {% raw %}${{ matrix.python-version }}{% endraw %}
 
       - name: Install Taskfile
-        uses: arduino/setup-task@v2
+        uses: arduino/setup-task@v3
         with:
           version: 3.x
           repo-token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
@@ -55,7 +59,7 @@ jobs:
         run: task unit
 
       - name: Get Cover
-        uses: orgoro/coverage@v3.2
+        uses: orgoro/coverage@v3.3
         with:
           coverageFile: {{ mcp_app_name }}/coverage.xml
           token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}

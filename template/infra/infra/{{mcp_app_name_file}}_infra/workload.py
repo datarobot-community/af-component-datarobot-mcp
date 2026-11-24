@@ -28,19 +28,7 @@ import pulumi_datarobot
 from datarobot_pulumi_utils.common.feature_flags import fetch_flag_statuses
 from datarobot_pulumi_utils.pulumi.stack import PROJECT_NAME
 
-# The trailing commas below are load-bearing: this file is a copier template and
-# the package prefix grows with the user's app name. A magic trailing comma keeps
-# ruff from collapsing these onto one line for a short name and then re-wrapping
-# them for a long one, which made `ruff format --check` fail per app name.
-from {{mcp_app_name_file}}_clients.workload_api_client import (
-    build_artifact_from_image_uri,
-)
-
 from .. import use_case
-from ..{{mcp_app_name_file}}_user_params import (
-    MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS,
-    MCP_USER_RUNTIME_PARAMETERS,
-)
 from .mcp_api_keys import (
     SESSION_SECRET_KEY,
     auth_resolution_strategy,
@@ -63,6 +51,11 @@ from .mcp_utils import (
     MCPRuntimeParameterAPITokenCredential,
     PulumiOutputEndpoints,
 )
+from .user_params import (
+    MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS,
+    MCP_USER_RUNTIME_PARAMETERS,
+)
+from .workload_api_client import build_artifact_from_image_uri
 
 WORKLOAD_CONTAINER_NAME = "mcp-server"
 DEFAULT_WORKLOAD_CONTAINER_PORT = 8080
@@ -146,7 +139,7 @@ def _resolve_container_port() -> int:
 
 
 def user_param_env_vars() -> list[dict[str, str]]:
-    """Map MCP_USER_RUNTIME_PARAMETERS (see {{mcp_app_name_file}}_user_params.py) onto container env vars.
+    """Map MCP_USER_RUNTIME_PARAMETERS (see user_params.py) onto container env vars.
 
     This mirrors the datarobot-serverless path, where the same list is injected
     as custom model runtime parameters. Credential-type parameters (whose value

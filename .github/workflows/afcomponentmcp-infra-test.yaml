@@ -18,8 +18,14 @@ concurrency:
   cancel-in-progress: true
 jobs:
   test-infra:
-    name: "Test Infra"
+    name: "Test Infra (${{ matrix.app_name }})"
     runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
+      matrix:
+        # The default name, and one that is not the recipe's: infra derives the app
+        # name from its own package directory, so both must pass unchanged.
+        app_name: ["mcp_server", "billing_mcp"]
     container:
       image: ghcr.io/astral-sh/uv:python3.11-trixie
     steps:
@@ -34,7 +40,7 @@ jobs:
         with:
           working-directory: .
           rendered-dir: ./rendered
-          copier-args: "--trust --vcs-ref=HEAD"
+          copier-args: "--trust --vcs-ref=HEAD --data mcp_app_name=${{ matrix.app_name }}"
       - name: Copy fixture files
         shell: sh
         run: |

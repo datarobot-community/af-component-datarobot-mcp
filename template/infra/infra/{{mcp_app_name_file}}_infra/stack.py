@@ -22,21 +22,16 @@ import pulumi_datarobot  # noqa: F401 — re-exported for unit tests
 from datarobot_pulumi_utils.pulumi import resolve_execution_environment_version
 from datarobot_pulumi_utils.pulumi.stack import PROJECT_NAME
 
-from dev_tools.lineage.pulumi_managers import (
-    MCPPromptMetadataPulumiManager,
-    MCPResourceMetadataPulumiManager,
-    MCPToolMetadataPulumiManager,
-)
-
-from . import project_dir, use_case
-from .{{mcp_app_name_file}}_infra.deployment import (
+from .. import project_dir, use_case
+from ._app import APP_NAME, assert_no_legacy_user_params
+from .deployment import (
     provision_deployment_mcp_server,
 )
-from .{{mcp_app_name_file}}_infra.mcp_bundle import FileBundler, normalize_shell_scripts
-from .{{mcp_app_name_file}}_infra.mcp_execution_environment import (
+from .mcp_bundle import FileBundler, normalize_shell_scripts
+from .mcp_execution_environment import (
     provision_mcp_execution_environment,
 )
-from .{{mcp_app_name_file}}_infra.workload import (
+from .workload import (
     WorkloadBuilder,
     WorkloadConfiguration,
     WorkloadGeneratedDockerfileManager,
@@ -46,9 +41,6 @@ from .{{mcp_app_name_file}}_infra.workload import (
 )
 
 __all__ = [
-    "MCPPromptMetadataPulumiManager",
-    "MCPResourceMetadataPulumiManager",
-    "MCPToolMetadataPulumiManager",
     "deployment",
     "execution_environment",
     "mcp_custom_model_runtime_parameters",
@@ -58,9 +50,11 @@ __all__ = [
     "use_case",
 ]
 
-mcp_server_asset_name: str = f"[{PROJECT_NAME}] [{{mcp_app_name}}]"
+assert_no_legacy_user_params()
 
-deployments_application_path = project_dir.parent / "{{mcp_app_name_file}}"
+mcp_server_asset_name: str = f"[{PROJECT_NAME}] [{APP_NAME}]"
+
+deployments_application_path = project_dir.parent / APP_NAME
 
 EXCLUDE_PATTERNS = [
     re.compile(pattern)

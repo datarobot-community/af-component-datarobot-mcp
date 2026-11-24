@@ -22,11 +22,13 @@ from dev_tools.lineage.pulumi_managers import (
     MCPResourceMetadataPulumiManager,
     MCPToolMetadataPulumiManager,
 )
-from infra.{{mcp_app_name_file}}_infra import deployment
-from infra.{{mcp_app_name_file}}_infra.mcp_cli_configs import (
-    DYNAMIC_FLAGS,
-    TOOL_FLAGS,
-)
+
+from . import app_module
+
+deployment = app_module("deployment")
+_mcp_cli_configs = app_module("mcp_cli_configs")
+DYNAMIC_FLAGS = _mcp_cli_configs.DYNAMIC_FLAGS
+TOOL_FLAGS = _mcp_cli_configs.TOOL_FLAGS
 
 
 @contextmanager
@@ -231,3 +233,80 @@ class TestProvisionDeploymentMcpServer:
             actual = mocks["load_metadata"].called
             expected = True
             assert actual == expected
+
+
+class TestLineageNeverBreaksTheDeploy:
+    def test_failing_lineage_is_logged_and_the_deploy_continues(self) -> None:
+        with (
+            stub_deployment(prediction_environment_id=None) as mocks,
+            patch.object(
+                MCPToolMetadataPulumiManager,
+                "load_metadata",
+                side_effect=FileNotFoundError("mcp_tools.yaml"),
+            ),
+            patch.object(deployment.pulumi, "warn") as warn,
+        ):
+            result = deployment.provision_deployment_mcp_server(
+                mcp_server_asset_name="srv",
+                get_deployments_app_files=list,
+            )
+
+        assert result["deployment"] is not None
+        assert mocks["custom_model_cls"].called
+        warned = " ".join(str(c.args[0]) for c in warn.call_args_list)
+        assert "MCPToolMetadataPulumiManager" in warned
+        assert "mcp_tools.yaml" in warned
+
+    def test_one_failing_manager_does_not_skip_the_others(self) -> None:
+        with (
+            patch.object(
+                MCPToolMetadataPulumiManager, "load_metadata", side_effect=ValueError
+            ),
+            patch.object(MCPPromptMetadataPulumiManager, "load_metadata") as prompts,
+            patch.object(MCPPromptMetadataPulumiManager, "create_pulumi_resources"),
+            patch.object(
+                MCPPromptMetadataPulumiManager, "export_summary_to_pulumi_stack"
+            ),
+            patch.object(
+                MCPResourceMetadataPulumiManager, "load_metadata"
+            ) as resources,
+            patch.object(MCPResourceMetadataPulumiManager, "create_pulumi_resources"),
+            patch.object(
+                MCPResourceMetadataPulumiManager, "export_summary_to_pulumi_stack"
+            ),
+            patch.object(deployment.pulumi, "warn"),
+        ):
+            deployment.register_mcp_item_lineage("srv", "version-id")
+
+        assert prompts.called
+        assert resources.called
+
+    def test_lineage_that_cannot_be_imported_is_skipped(self) -> None:
+        import sys
+
+        with (
+            patch.dict(sys.modules, {"dev_tools.lineage.pulumi_managers": None}),
+            patch.object(deployment.pulumi, "warn") as warn,
+        ):
+            deployment.register_mcp_item_lineage("srv", "version-id")
+
+        assert "could not load lineage tooling" in warn.call_args.args[0]
+
+    def test_lineage_can_be_switched_off(self, monkeypatch) -> None:
+        monkeypatch.setenv("MCP_LINEAGE_ENABLED", "false")
+        with (
+            patch.object(MCPToolMetadataPulumiManager, "load_metadata") as tools,
+            patch.object(deployment.pulumi, "info") as info,
+        ):
+            deployment.register_mcp_item_lineage("srv", "version-id")
+
+        assert not tools.called
+        assert "MCP_LINEAGE_ENABLED=false" in info.call_args.args[0]
+
+    def test_lineage_is_on_by_default(self, monkeypatch) -> None:
+        monkeypatch.delenv("MCP_LINEAGE_ENABLED", raising=False)
+        assert deployment.lineage_enabled()
+        monkeypatch.setenv("MCP_LINEAGE_ENABLED", "true")
+        assert deployment.lineage_enabled()
+        monkeypatch.setenv("MCP_LINEAGE_ENABLED", " FALSE ")
+        assert not deployment.lineage_enabled()

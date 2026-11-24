@@ -13,7 +13,7 @@
 # limitations under the License.
 import os  # noqa # pylint: disable=unused-import
 
-from infra.{{mcp_app_name_file}}_infra.mcp_utils import (
+from .mcp_utils import (
     MCPRuntimeParameter,
     MCPRuntimeParameterAPITokenCredential,
 )

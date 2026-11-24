@@ -84,7 +84,9 @@ tasks:
         case "{{.EFFECTIVE_ENABLE_MCP_ON_WORKLOAD_API}}" in
           false)
             echo "🔧 Loading and saving MCP item metadata.."
-            {{.UV_CMD}} run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata
+            # Lineage is optional: a failure is reported and install carries on.
+            {{.UV_CMD}} run dev_tools/lineage/cli.py load-and-save-mcp-item-metadata \
+              || echo "⚠️  MCP item metadata (lineage) failed; continuing without it."
             ;;
         esac
     silent: true
@@ -272,7 +274,9 @@ tasks:
   release_files:
     desc: "🔨 Make sure to move these files to the root of the repository before a release"
     cmds:
+      # Runs from the MCP app directory; its name is whatever the component was applied as.
       - >-
-        echo "mkdir -p ./docs ./img && mv ./dr_mcp/docs/* ./docs/ && mv ./dr_mcp/img/* ./img/ && mv ./dr_mcp/.env.template
-        ./.env.template && mv ./dr_mcp/README.md ./README.md"
+        APP=$(basename "$PWD");
+        echo "mkdir -p ./docs ./img && mv ./$APP/docs/* ./docs/ && mv ./$APP/img/* ./img/ && mv ./$APP/.env.template
+        ./.env.template && mv ./$APP/README.md ./README.md"
     silent: true

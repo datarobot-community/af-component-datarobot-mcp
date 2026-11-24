@@ -1,0 +1,40 @@
+---
+# Plain template files are copied into projects byte for byte. This renders the
+# component under a name other than the recipe's and fails if any file still says
+# `dr_mcp`, or still carries a copier blank that was never filled in.
+name: af-component-datarobot-mcp Render names
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "template/**"
+      - "copier.yml"
+      - ".github/scripts/check_rendered_names.py"
+      - ".github/workflows/afcomponentmcp-render-names.yaml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "template/**"
+      - "copier.yml"
+      - ".github/scripts/check_rendered_names.py"
+      - ".github/workflows/afcomponentmcp-render-names.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render-names:
+    name: "Render as billing_mcp"
+    runs-on: "ubuntu-latest"
+    container:
+      image: ghcr.io/astral-sh/uv:python3.11-bookworm
+    steps:
+      - name: Checkout
+        uses: "actions/checkout@v5"
+      - name: Render template
+        uses: ./.github/actions/render-copier-instance
+        with:
+          copier-args: "--defaults --trust --vcs-ref=HEAD --data mcp_app_name=billing_mcp"
+      - name: Check rendered names
+        run: python3 .github/scripts/check_rendered_names.py ./rendered

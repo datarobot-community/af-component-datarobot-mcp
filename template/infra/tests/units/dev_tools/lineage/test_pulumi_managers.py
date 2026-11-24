@@ -68,8 +68,13 @@ class TestMCPMetadataPaths:
             mock_func.return_value = mock_mcp_item_metadata_dir_path
             yield mock_func
 
-    def test_get_mcp_tool_metadata_config_path(self) -> None:
-        assert get_mcp_item_metadata_dir_path().exists()
+    def test_get_mcp_item_metadata_dir_path_is_under_the_app(self) -> None:
+        actual = get_mcp_item_metadata_dir_path("some_app")
+        project_root = Path(__file__).resolve().parents[5]
+        expected = (
+            project_root / "some_app" / "dev_tools" / "lineage" / "mcp_item_metadata"
+        )
+        assert actual.resolve() == expected
 
     @pytest.mark.usefixtures("mock_get_mcp_item_metadata_dir_path")
     def test_get_mcp_tool_metadata_file_path(
@@ -77,7 +82,7 @@ class TestMCPMetadataPaths:
         mock_mcp_item_metadata_dir_path: Path,
     ) -> None:
         assert (
-            get_mcp_tool_metadata_file_path()
+            get_mcp_tool_metadata_file_path("some_app")
             == mock_mcp_item_metadata_dir_path / "mcp_tools.yaml"
         )
 
@@ -87,7 +92,7 @@ class TestMCPMetadataPaths:
         mock_mcp_item_metadata_dir_path: Path,
     ) -> None:
         assert (
-            get_mcp_prompt_metadata_file_path()
+            get_mcp_prompt_metadata_file_path("some_app")
             == mock_mcp_item_metadata_dir_path / "mcp_prompts.yaml"
         )
 
@@ -97,7 +102,7 @@ class TestMCPMetadataPaths:
         mock_mcp_item_metadata_dir_path: Path,
     ) -> None:
         assert (
-            get_mcp_resource_metadata_file_path()
+            get_mcp_resource_metadata_file_path("some_app")
             == mock_mcp_item_metadata_dir_path / "mcp_resources.yaml"
         )
 
@@ -164,9 +169,9 @@ class TestMCPToolMetadataPulumiManager:
             yield mock_cls
 
     def test_init(self, mock_get_mcp_tool_metadata_file_path: Mock) -> None:
-        pulumi_manager = MCPToolMetadataPulumiManager()
+        pulumi_manager = MCPToolMetadataPulumiManager("some_app")
 
-        mock_get_mcp_tool_metadata_file_path.assert_called_once_with()
+        mock_get_mcp_tool_metadata_file_path.assert_called_once_with("some_app")
         assert (
             pulumi_manager.metadata_file_path
             == mock_get_mcp_tool_metadata_file_path.return_value
@@ -180,7 +185,7 @@ class TestMCPToolMetadataPulumiManager:
         loaded_metadata = Mock()
         mock_load_from_yaml.return_value = [loaded_metadata]
 
-        pulumi_manager = MCPToolMetadataPulumiManager()
+        pulumi_manager = MCPToolMetadataPulumiManager("some_app")
         outputs = pulumi_manager.load_metadata()
 
         mock_load_from_yaml.assert_called_once_with(pulumi_manager.metadata_file_path)
@@ -193,7 +198,7 @@ class TestMCPToolMetadataPulumiManager:
         mock_pulumi_resource_cls: Mock,
         mock_pulumi_resource_creation_output_cls: Mock,
     ) -> None:
-        pulumi_manager = MCPToolMetadataPulumiManager()
+        pulumi_manager = MCPToolMetadataPulumiManager("some_app")
         metadata_entity = Mock()
         resource_name_prefix = Mock()
         mcp_server_version_id = Mock()
@@ -274,9 +279,9 @@ class TestMCPPromptMetadataPulumiManager:
             yield mock_cls
 
     def test_init(self, mock_get_mcp_prompt_metadata_file_path: Mock) -> None:
-        pulumi_manager = MCPPromptMetadataPulumiManager()
+        pulumi_manager = MCPPromptMetadataPulumiManager("some_app")
 
-        mock_get_mcp_prompt_metadata_file_path.assert_called_once_with()
+        mock_get_mcp_prompt_metadata_file_path.assert_called_once_with("some_app")
         assert (
             pulumi_manager.metadata_file_path
             == mock_get_mcp_prompt_metadata_file_path.return_value
@@ -290,7 +295,7 @@ class TestMCPPromptMetadataPulumiManager:
         loaded_metadata = Mock()
         mock_load_from_yaml.return_value = [loaded_metadata]
 
-        pulumi_manager = MCPPromptMetadataPulumiManager()
+        pulumi_manager = MCPPromptMetadataPulumiManager("some_app")
         outputs = pulumi_manager.load_metadata()
 
         mock_load_from_yaml.assert_called_once_with(pulumi_manager.metadata_file_path)
@@ -303,7 +308,7 @@ class TestMCPPromptMetadataPulumiManager:
         mock_pulumi_resource_cls: Mock,
         mock_pulumi_resource_creation_output_cls: Mock,
     ) -> None:
-        pulumi_manager = MCPPromptMetadataPulumiManager()
+        pulumi_manager = MCPPromptMetadataPulumiManager("some_app")
         metadata_entity = Mock()
         resource_name_prefix = Mock()
         mcp_server_version_id = Mock()
@@ -384,9 +389,9 @@ class TestMCPResourceMetadataPulumiManager:
             yield mock_cls
 
     def test_init(self, mock_get_mcp_resource_metadata_file_path: Mock) -> None:
-        pulumi_manager = MCPResourceMetadataPulumiManager()
+        pulumi_manager = MCPResourceMetadataPulumiManager("some_app")
 
-        mock_get_mcp_resource_metadata_file_path.assert_called_once_with()
+        mock_get_mcp_resource_metadata_file_path.assert_called_once_with("some_app")
         assert (
             pulumi_manager.metadata_file_path
             == mock_get_mcp_resource_metadata_file_path.return_value
@@ -400,7 +405,7 @@ class TestMCPResourceMetadataPulumiManager:
         loaded_metadata = Mock()
         mock_load_from_yaml.return_value = [loaded_metadata]
 
-        pulumi_manager = MCPResourceMetadataPulumiManager()
+        pulumi_manager = MCPResourceMetadataPulumiManager("some_app")
         outputs = pulumi_manager.load_metadata()
 
         mock_load_from_yaml.assert_called_once_with(pulumi_manager.metadata_file_path)
@@ -413,7 +418,7 @@ class TestMCPResourceMetadataPulumiManager:
         mock_pulumi_resource_cls: Mock,
         mock_pulumi_resource_creation_output_cls: Mock,
     ) -> None:
-        pulumi_manager = MCPResourceMetadataPulumiManager()
+        pulumi_manager = MCPResourceMetadataPulumiManager("some_app")
         metadata_entity = Mock()
         resource_name_prefix = Mock()
         mcp_server_version_id = Mock()

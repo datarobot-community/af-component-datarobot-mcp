@@ -148,10 +148,10 @@ task install
 
 ## Configure environment variables
 
-Create a `.env` file in the `{{mcp_app_name_file}}/` directory:
+Create a `.env` file in the MCP app directory (the folder that holds this app's `pyproject.toml`):
 
 ```bash
-cd {{mcp_app_name_file}}
+cd <mcp-app>  # the MCP app directory
 vim .env # or your preferred editor
 ```
 
@@ -215,7 +215,7 @@ Open the DataRobot UI to locate and copy your DataRobot API key and endpoint to 
 
 ## Run locally
 
-From `/{{mcp_app_name_file}}/`, start the server locally using the `task dev` command:
+From the MCP app directory, start the server locally using the `task dev` command:
 
 ```bash
 task dev
@@ -234,7 +234,7 @@ From here, you can perform some optional interactive testing on the local server
 
 Once the server is running, you can immediately test your tools with an AI agent using the interactive testing mode:
 
-From `/{{mcp_app_name_file}}/`, run:
+From the MCP app directory, run:
 
 ```bash
 task test-interactive
@@ -305,11 +305,12 @@ more details. For production CI/CD information see our comprehensive
 
 ## Deploy to DataRobot
 
-1. Copy the `.env` file from the `{{mcp_app_name_file}}` directory to the root directory:
+1. Copy the `.env` file from the MCP app directory to the project root:
 
 ```bash
-cd .. # Previous steps left off in the {{mcp_app_name_file}} directory
-cp {{mcp_app_name_file}}/.env .env
+# Previous steps left off in the MCP app directory
+cp .env ../.env
+cd ..
 ```
 
 2. Deploy to DataRobot using Pulumi:
@@ -459,22 +460,30 @@ USE_MCP_TARGET_TYPE=false task deploy
 
 Customize deployment parameters by modifying the following files:
 
-### infra/infra/{{mcp_app_name_file}}_user_params.py
+### infra/infra/<mcp-app>_infra/user_params.py
 
-Add your custom runtime parameters in the infrastructure:
+Add your custom runtime parameters in the infrastructure. `<mcp-app>` is the name of the MCP app directory:
 
 ```python
-MCP_RECIPE_RUNTIME_PARAMETERS = [
-    pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
-        key="recipe_name",
+MCP_USER_RUNTIME_PARAMETERS: list[MCPRuntimeParameter] = [
+    MCPRuntimeParameter(
+        name="user_name",
+        value=os.getenv("USER_NAME", "default-user"),
         type="string",
-        value=os.getenv("RECIPE_NAME", "default-recipe"),
     ),
-    # Add your custom runtime parameters here
+]
+
+MCP_USER_CREDENTIAL_RUNTIME_PARAMETERS: list[MCPRuntimeParameterAPITokenCredential] = [
+    MCPRuntimeParameterAPITokenCredential(
+        name="dummy-api-token",
+        value=os.getenv("DUMMY_API_TOKEN", "123abcd"),
+    ),
 ]
 ```
 
-### {{mcp_app_name_file}}/app/core/user_config.py
+Projects created before this file moved kept their parameters in `infra/infra/<mcp-app>_user_params.py`. Deploys stop with an error while that old file exists. Move its contents into `user_params.py`, then delete it.
+
+### app/core/user_config.py (in the MCP app directory)
 
 Add matching fields to read runtime parameters at runtime. `DataRobotAppFrameworkBaseSettings` loads values automatically from deployment runtime parameters (`MLOPS_RUNTIME_PARAM_*`), `.env`, and `pulumi_config.json`:
 
@@ -526,7 +535,7 @@ Access configuration in your app via `get_user_config()` (for example, `get_user
 Another process is using port 8080. Either kill that process or change the port:
 
 ```bash
-cd {{mcp_app_name_file}}
+cd <mcp-app>  # the MCP app directory
 export MCP_SERVER_PORT=8081
 task dev
 ```
@@ -571,8 +580,8 @@ DataRobot welcomes contributions. Please see [CONTRIBUTING.md](./CONTRIBUTING.md
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes following our code standards
-4. Run tests: `cd {{mcp_app_name_file}} && task test`
-5. Run linters: `cd {{mcp_app_name_file}} && task lint`
+4. Run tests: `task test` from the MCP app directory
+5. Run linters: `task lint` from the MCP app directory
 6. Commit with proper license headers
 7. Push and create a pull request
 

@@ -5,7 +5,7 @@
 The generated project includes the MCP server application, supporting development tools, tests, and documentation.
 
 ```text
-├── {{ mcp_app_name }}/
+├── <mcp-app>/          # the MCP app directory, named when the component is applied
 │   ├── app/
 │   │   ├── core/
 │   │   │   ├── server_lifecycle.py
@@ -149,7 +149,7 @@ The four `MCP_XAA_*` variables above `MCP_XAA_TOKEN_AUDIENCE` are all-or-nothing
 
 ## Custom configuration
 
-Add application-specific settings in `{{ mcp_app_name }}/app/core/user_config.py`. The generated project already defines `UserAppConfig`, so extend that class instead of replacing it.
+Add application-specific settings in `app/core/user_config.py` in the MCP app directory. The generated project already defines `UserAppConfig`, so extend that class instead of replacing it.
 
 Example:
 

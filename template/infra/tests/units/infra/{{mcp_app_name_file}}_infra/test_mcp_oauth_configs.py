@@ -13,31 +13,47 @@
 # limitations under the License.
 import pytest
 
-from infra.{{mcp_app_name_file}}_infra.mcp_oauth_configs import (
-    AUTHORIZATION_SERVERS_ENV_VAR,
-    ENABLE_OAUTH_CLAIM_VALIDATION_ENV_VAR,
-    ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_ENV_VAR,
-    OAUTH_METADATA_ENV_VARS,
-    OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH,
-    RESOURCE_ENV_VAR,
-    SCOPE_SOURCE_ENV_VAR,
-    TAG_SCOPES_ENV_VAR_PREFIX,
-    XAA_EXCHANGE_AUDIENCE_ENV_VAR,
-    XAA_REQUIRED_ENV_VARS,
-    XAA_SCOPES_ENV_VAR,
-    XAA_TOKEN_AUDIENCE_ENV_VAR,
-    XAA_TOKEN_ENDPOINT_AUTH_METHOD_ENV_VAR,
-    XAA_TOKEN_URL_ENV_VAR,
-    XAA_TRUSTED_ISSUER_ENV_VAR,
-    WorkloadArtifactContainerRoute,
-    get_workload_mcp_oauth_routes,
-    mcp_enable_oauth_claim_validation_value,
-    mcp_enable_unauthenticated_well_known_route_value,
-    mcp_oauth_metadata_env_vars,
-    mcp_tag_scope_env_vars,
-    oauth_and_well_known_env_vars,
-    validate_cross_application_access_env,
+from . import app_module
+
+_mcp_oauth_configs = app_module("mcp_oauth_configs")
+AUTHORIZATION_SERVERS_ENV_VAR = _mcp_oauth_configs.AUTHORIZATION_SERVERS_ENV_VAR
+ENABLE_OAUTH_CLAIM_VALIDATION_ENV_VAR = (
+    _mcp_oauth_configs.ENABLE_OAUTH_CLAIM_VALIDATION_ENV_VAR
 )
+ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_ENV_VAR = (
+    _mcp_oauth_configs.ENABLE_UNAUTHENTICATED_WELL_KNOWN_ROUTE_ENV_VAR
+)
+OAUTH_METADATA_ENV_VARS = _mcp_oauth_configs.OAUTH_METADATA_ENV_VARS
+OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH = (
+    _mcp_oauth_configs.OAUTH_PROTECTED_RESOURCE_WELL_KNOWN_PATH
+)
+RESOURCE_ENV_VAR = _mcp_oauth_configs.RESOURCE_ENV_VAR
+SCOPE_SOURCE_ENV_VAR = _mcp_oauth_configs.SCOPE_SOURCE_ENV_VAR
+TAG_SCOPES_ENV_VAR_PREFIX = _mcp_oauth_configs.TAG_SCOPES_ENV_VAR_PREFIX
+XAA_EXCHANGE_AUDIENCE_ENV_VAR = _mcp_oauth_configs.XAA_EXCHANGE_AUDIENCE_ENV_VAR
+XAA_REQUIRED_ENV_VARS = _mcp_oauth_configs.XAA_REQUIRED_ENV_VARS
+XAA_SCOPES_ENV_VAR = _mcp_oauth_configs.XAA_SCOPES_ENV_VAR
+XAA_TOKEN_AUDIENCE_ENV_VAR = _mcp_oauth_configs.XAA_TOKEN_AUDIENCE_ENV_VAR
+XAA_TOKEN_ENDPOINT_AUTH_METHOD_ENV_VAR = (
+    _mcp_oauth_configs.XAA_TOKEN_ENDPOINT_AUTH_METHOD_ENV_VAR
+)
+XAA_TOKEN_URL_ENV_VAR = _mcp_oauth_configs.XAA_TOKEN_URL_ENV_VAR
+XAA_TRUSTED_ISSUER_ENV_VAR = _mcp_oauth_configs.XAA_TRUSTED_ISSUER_ENV_VAR
+WorkloadArtifactContainerRoute = _mcp_oauth_configs.WorkloadArtifactContainerRoute
+get_workload_mcp_oauth_routes = _mcp_oauth_configs.get_workload_mcp_oauth_routes
+mcp_enable_oauth_claim_validation_value = (
+    _mcp_oauth_configs.mcp_enable_oauth_claim_validation_value
+)
+mcp_enable_unauthenticated_well_known_route_value = (
+    _mcp_oauth_configs.mcp_enable_unauthenticated_well_known_route_value
+)
+mcp_oauth_metadata_env_vars = _mcp_oauth_configs.mcp_oauth_metadata_env_vars
+mcp_tag_scope_env_vars = _mcp_oauth_configs.mcp_tag_scope_env_vars
+oauth_and_well_known_env_vars = _mcp_oauth_configs.oauth_and_well_known_env_vars
+validate_cross_application_access_env = (
+    _mcp_oauth_configs.validate_cross_application_access_env
+)
+
 
 TRUSTED_ISSUER = "https://foo/bar/issuer"
 EXCHANGE_AUDIENCE = "https://foo/bar/token_exchange_audience"

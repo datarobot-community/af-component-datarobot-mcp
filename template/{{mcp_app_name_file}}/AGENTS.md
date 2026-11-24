@@ -1,28 +1,27 @@
 # MCP Server Development Instructions
 
-The MCP server MUST be implemented in the `{{ mcp_app_name_file }}/` directory.
+The MCP server MUST be implemented in this directory (the MCP app directory that holds this file). Paths below are relative to it.
 By default it provides tools for DataRobot operations, but can be extended with custom tools for any domain.
 
 ## MCP Server Development Guidelines
 
-IMPORTANT: Do NOT import code from outside of the `{{ mcp_app_name_file }}/` directory. The MCP server has independent dependencies to avoid conflicts. 
+IMPORTANT: Do NOT import code from outside of this directory. The MCP server has independent dependencies to avoid conflicts. 
            The MCP server runs as an independent service. Agents connect to it via MCP protocol (HTTP), not direct Python imports.
 
-- You may modify files ONLY inside `{{ mcp_app_name_file }}/` directory.
+- You may modify files ONLY inside this directory.
 - The MCP server is a standard FastMCP application:
-  * Tools live in `{{ mcp_app_name_file }}/app/tools/`
-  * Prompts live in `{{ mcp_app_name_file }}/app/prompts/`
-  * Resources live in `{{ mcp_app_name_file }}/app/resources/`
-  * Configuration is in `{{ mcp_app_name_file }}/app/core/`
-  * Tests are in `{{ mcp_app_name_file }}/app/tests/`
-- Read `{{ mcp_app_name_file }}/docs` to further understand the existing structure.
+  * Tools live in `app/tools/`
+  * Prompts live in `app/prompts/`
+  * Resources live in `app/resources/`
+  * Configuration is in `app/core/`
+  * Tests are in `app/tests/`
 
 ## Tool Development Architecture
 
 The MCP server uses auto-discovery for tools:
 
-1. **Tool Definition** (`{{ mcp_app_name_file }}/app/tools/{domain}_tools.py`): Define tools with `@dr_mcp_tool` decorator
-2. **Auto-Discovery**: Server automatically loads all tools from `{{ mcp_app_name_file }}/app/tools/` on startup
+1. **Tool Definition** (`app/tools/{domain}_tools.py`): Define tools with `@dr_mcp_tool` decorator
+2. **Auto-Discovery**: Server automatically loads all tools from `app/tools/` on startup
 3. **MCP Protocol**: Agents discover and call tools via HTTP (no imports needed)
 
 **When adding new tools:**
@@ -63,19 +62,21 @@ async def tool_name(
 
 ## Installing MCP Server packages
 
-Before making any changes to the {{ mcp_app_name_file }} code, install dependencies by running shell command:
+Before making any changes to the MCP server code, install dependencies by running this shell command from this directory:
 
 ```shell
-dr task run {{ mcp_app_name_file }}:install
+task install
 ```
 
 ## MCP Server Testing
 
+Run from this directory:
+
 ```shell
-dr task run {{ mcp_app_name_file }}:lint
+task lint
 ```
 
 ```shell
-dr task run {{ mcp_app_name_file }}:test
+task test
 ```
 

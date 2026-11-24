@@ -2,12 +2,12 @@
 
 ### Create a tool
 
-Add custom tools under `{{ mcp_app_name }}/app/tools/`.
+Add custom tools under `app/tools/` in the MCP app directory.
 
 Example:
 
 ```python
-# {{ mcp_app_name }}/app/tools/my_custom_tool.py
+# app/tools/my_custom_tool.py
 from typing import Annotated
 
 import datarobot as dr
@@ -67,14 +67,14 @@ All listed scopes are required, not any one of them. Enforcement only runs when 
 
 The server also loads modules from:
 
-- `{{ mcp_app_name }}/app/prompts/`
-- `{{ mcp_app_name }}/app/resources/`
+- `app/prompts/`
+- `app/resources/`
 
 These directories are already wired into the server in `app/main.py`. Add new modules there if you want to define custom prompts or resources alongside your tools.
 
 ### Update the server lifecycle
 
-To add startup or shutdown behavior, edit the existing `ServerLifecycle` class in `{{ mcp_app_name }}/app/core/server_lifecycle.py`.
+To add startup or shutdown behavior, edit the existing `ServerLifecycle` class in `app/core/server_lifecycle.py`.
 
 Common uses include:
 

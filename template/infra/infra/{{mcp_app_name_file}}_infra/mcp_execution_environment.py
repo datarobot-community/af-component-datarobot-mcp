@@ -27,6 +27,7 @@ from datarobot_pulumi_utils.schema.exec_envs import (
 )
 
 from .. import project_dir
+from ._app import APP_NAME
 from .mcp_bundle import ensure_docker_build_context_files
 
 DEFAULT_EXECUTION_ENVIRONMENT = "Python 3 MCP"
@@ -125,7 +126,7 @@ def provision_mcp_execution_environment(
 
     - ``DATAROBOT_DEFAULT_MCP_EXECUTION_ENVIRONMENT`` set → reference an existing EE
       by ID or platform name (skip Docker build entirely).
-    - unset → build a new EE from the ``{{mcp_app_name_file}}`` app root via Pulumi.
+    - unset → build a new EE from the MCP app directory via Pulumi.
       ``DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME`` optionally sets the *name* of that
       new EE (not the same as DEFAULT, which selects an existing EE instead of building).
     """
@@ -166,11 +167,9 @@ def provision_mcp_execution_environment(
             resource_name=resource_label,
         )
 
-    deployments_path = project_dir.parent / "{{mcp_app_name_file}}"
+    deployments_path = project_dir.parent / APP_NAME
     ensure_docker_build_context_files(deployments_path)
     pulumi.info("Using app directory as Docker build context for execution environment")
-    # Bound to a local so the line length does not depend on the app name this
-    # template was rendered with (see the note in workload.py).
     docker_context_path = deployments_path
     ee_name_override = os.environ.get(
         "DATAROBOT_MCP_EXECUTION_ENVIRONMENT_NAME", ""

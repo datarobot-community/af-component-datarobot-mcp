@@ -34,27 +34,27 @@ from dev_tools.lineage.entities import (
 )
 
 
-def get_mcp_item_metadata_dir_path() -> Path:
+def get_mcp_item_metadata_dir_path(app_name: str) -> Path:
     current_path = Path(os.path.dirname(__file__))
     return (
         current_path.parent.parent.parent
-        / "{{mcp_app_name_file}}"
+        / app_name
         / "dev_tools"
         / "lineage"
         / "mcp_item_metadata"
     )
 
 
-def get_mcp_tool_metadata_file_path() -> Path:
-    return get_mcp_item_metadata_dir_path() / "mcp_tools.yaml"
+def get_mcp_tool_metadata_file_path(app_name: str) -> Path:
+    return get_mcp_item_metadata_dir_path(app_name) / "mcp_tools.yaml"
 
 
-def get_mcp_prompt_metadata_file_path() -> Path:
-    return get_mcp_item_metadata_dir_path() / "mcp_prompts.yaml"
+def get_mcp_prompt_metadata_file_path(app_name: str) -> Path:
+    return get_mcp_item_metadata_dir_path(app_name) / "mcp_prompts.yaml"
 
 
-def get_mcp_resource_metadata_file_path() -> Path:
-    return get_mcp_item_metadata_dir_path() / "mcp_resources.yaml"
+def get_mcp_resource_metadata_file_path(app_name: str) -> Path:
+    return get_mcp_item_metadata_dir_path(app_name) / "mcp_resources.yaml"
 
 
 def load_from_yaml(yaml_path: Path) -> list[dict[str, str]]:
@@ -63,8 +63,8 @@ def load_from_yaml(yaml_path: Path) -> list[dict[str, str]]:
 
 
 class MCPToolMetadataPulumiManager:
-    def __init__(self):
-        self.metadata_file_path = get_mcp_tool_metadata_file_path()
+    def __init__(self, app_name: str):
+        self.metadata_file_path = get_mcp_tool_metadata_file_path(app_name)
 
     def load_metadata(self) -> set[MCPToolMetadata]:
         metadata_list = load_from_yaml(self.metadata_file_path)
@@ -129,8 +129,8 @@ class MCPToolMetadataPulumiManager:
 
 
 class MCPPromptMetadataPulumiManager:
-    def __init__(self):
-        self.metadata_file_path = get_mcp_prompt_metadata_file_path()
+    def __init__(self, app_name: str):
+        self.metadata_file_path = get_mcp_prompt_metadata_file_path(app_name)
 
     def load_metadata(self) -> set[MCPPromptMetadata]:
         metadata_list = load_from_yaml(self.metadata_file_path)
@@ -195,8 +195,8 @@ class MCPPromptMetadataPulumiManager:
 
 
 class MCPResourceMetadataPulumiManager:
-    def __init__(self):
-        self.metadata_file_path = get_mcp_resource_metadata_file_path()
+    def __init__(self, app_name: str):
+        self.metadata_file_path = get_mcp_resource_metadata_file_path(app_name)
 
     def load_metadata(self) -> set[MCPResourceMetadata]:
         metadata_list = load_from_yaml(self.metadata_file_path)

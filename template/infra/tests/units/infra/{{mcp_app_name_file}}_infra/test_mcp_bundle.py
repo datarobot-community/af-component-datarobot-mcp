@@ -21,19 +21,24 @@ import pulumi
 import pytest
 
 import infra as infra_dir
-from infra.{{mcp_app_name_file}}_infra.mcp_bundle import (
-    FileBundler,
-    ensure_docker_build_context_files,
-    normalize_shell_scripts,
+
+from . import APP_NAME, app_module
+
+_mcp_bundle = app_module("mcp_bundle")
+FileBundler = _mcp_bundle.FileBundler
+ensure_docker_build_context_files = _mcp_bundle.ensure_docker_build_context_files
+normalize_shell_scripts = _mcp_bundle.normalize_shell_scripts
+_workload = app_module("workload")
+GENERATED_DOCKERFILE_BUILD_DIR_IGNORE_PATTERNS = (
+    _workload.GENERATED_DOCKERFILE_BUILD_DIR_IGNORE_PATTERNS
 )
-from infra.{{mcp_app_name_file}}_infra.workload import (
-    GENERATED_DOCKERFILE_BUILD_DIR_IGNORE_PATTERNS,
-    PROVIDED_DOCKERFILE_BUILD_DIR_IGNORE_PATTERNS,
+PROVIDED_DOCKERFILE_BUILD_DIR_IGNORE_PATTERNS = (
+    _workload.PROVIDED_DOCKERFILE_BUILD_DIR_IGNORE_PATTERNS
 )
 
 
 def test_ensure_docker_build_context_files_passes_when_all_present(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name_file}}"
+    deployments_path = tmp_path / APP_NAME
     deployments_path.mkdir(parents=True)
     (deployments_path / "Dockerfile").write_text("FROM scratch\n", encoding="utf-8")
     (deployments_path / "pyproject.toml").write_text("content\n", encoding="utf-8")
@@ -44,7 +49,7 @@ def test_ensure_docker_build_context_files_passes_when_all_present(tmp_path: Pat
 
 
 def test_ensure_docker_build_context_files_raises_when_missing(tmp_path: Path):
-    deployments_path = tmp_path / "{{mcp_app_name_file}}"
+    deployments_path = tmp_path / APP_NAME
     deployments_path.mkdir(parents=True)
     (deployments_path / "pyproject.toml").write_text("content\n", encoding="utf-8")
 
@@ -102,7 +107,7 @@ class TestFileBundler:
 
     @pytest.fixture
     def deployment_app_path(self, project_dir):
-        yield project_dir / "{{mcp_app_name_file}}"
+        yield project_dir / APP_NAME
 
     def test_setup_build_dir_for_workload_artifact_source_dir_return(self, tmp_path):
         ignore_patterns = ["file.py"]
@@ -190,7 +195,7 @@ class TestFileBundler:
     def test_resolve_dockerfile_relative_path__returns_default_dockerfile(
         self, tmp_path
     ):
-        mcp_dir = tmp_path / "infra" / "{{mcp_app_name_file}}"
+        mcp_dir = tmp_path / "infra" / APP_NAME
         mcp_dir.mkdir(parents=True)
         (mcp_dir / "Dockerfile").write_text("FROM scratch\n")
         with (

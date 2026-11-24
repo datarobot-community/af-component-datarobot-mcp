@@ -127,8 +127,12 @@ If you need more fine grained control and prefer using copier directly,
 you can run this to have more control over the process:
 
 ```bash
-uvx copier update -a .datarobot/answers/drmcp-<mcp_app_name>.yml -A
+uvx copier update --trust -a .datarobot/answers/drmcp-<mcp_app_name>.yml -A
 ```
+
+`--trust` lets the component's migrations run (`dr component update` passes it by default).
+They carry your edits across when a release moves a file, such as the runtime
+parameters that moved to `infra/infra/<mcp_app_name>_infra/user_params.py`.
 
 # Use with an agent application
 
